@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom'; // <--- 1. Import từ React Router DOM
+import { useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast, { Toaster } from 'react-hot-toast';
 import Sidebar from '../../components/admin/Sidebar';
@@ -221,13 +221,11 @@ const UsersManager = () => (
     </div>
 );
 
-// --- MAIN DASHBOARD (DÙNG REUTER DOM ĐỂ F5 KHÔNG MẤT TAB) ---
+// --- MAIN DASHBOARD
 const Dashboard = () => {
-  // 1. Dùng useSearchParams để lấy state từ URL (Thay vì useState nội bộ)
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'dashboard';
 
-  // 2. Load Movies từ LocalStorage (Để F5 không mất dữ liệu mới thêm)
   const [movies, setMovies] = useState(() => {
     const saved = localStorage.getItem('admin_movies');
     return saved ? JSON.parse(saved) : initialMovies;
@@ -236,12 +234,10 @@ const Dashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentMovie, setCurrentMovie] = useState(null);
 
-  // 3. Auto Save Movies vào LocalStorage khi có thay đổi
   useEffect(() => {
     localStorage.setItem('admin_movies', JSON.stringify(movies));
   }, [movies]);
 
-  // Wrapper chuyển tab -> Đẩy vào URL
   const handleTabChange = (tabId) => {
     setSearchParams({ tab: tabId });
   };

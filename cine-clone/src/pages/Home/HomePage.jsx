@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react'; // Bỏ useState
-import { useSearchParams } from 'react-router-dom'; // <--- Import cái này
+import React, { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Navbar from '../../components/common/Navbar';
 import Hero from '../../components/common/Hero';
 import Footer from '../../components/common/Footer';
@@ -8,13 +8,10 @@ import { movies } from '../../data/mockData';
 import { Ticket } from 'lucide-react';
 
 const HomePage = () => {
-  // 1. Thay useState bằng useSearchParams
   const [searchParams, setSearchParams] = useSearchParams();
   
-  // 2. Lấy giá trị tab từ URL (Mặc định là 'now' nếu không có)
   const activeTab = searchParams.get('tab') || 'now';
 
-  // Hàm chuyển tab tiện lợi
   const handleTabChange = (tab) => {
     setSearchParams({ tab });
   };
@@ -30,7 +27,7 @@ const HomePage = () => {
         {/* Tabs */}
         <div className="flex gap-4 mb-8">
           <button 
-            onClick={() => handleTabChange('now')} // <-- Gọi hàm đổi URL
+            onClick={() => handleTabChange('now')}
             className={`px-6 py-2 rounded-full font-medium transition-all ${
               activeTab === 'now' 
                 ? 'bg-white shadow border border-gray-200 text-gray-900' 
@@ -40,7 +37,7 @@ const HomePage = () => {
             Phim Đang Chiếu
           </button>
           <button 
-             onClick={() => handleTabChange('coming')} // <-- Gọi hàm đổi URL
+             onClick={() => handleTabChange('coming')}
              className={`px-6 py-2 rounded-full font-medium transition-all ${
               activeTab === 'coming' 
                 ? 'bg-white shadow border border-gray-200 text-gray-900' 
@@ -51,12 +48,8 @@ const HomePage = () => {
           </button>
         </div>
 
-        {/* Grid phim */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Ví dụ logic lọc phim (Giả sử bạn muốn lọc thật) */}
           {movies
-            // Nếu muốn lọc thật thì dùng dòng này (cần thêm trường type vào data):
-            // .filter(movie => activeTab === 'now' ? movie.isNowShowing : movie.isComingSoon)
             .map((movie) => (
             <MovieCard key={movie.id} movie={movie} />
           ))}

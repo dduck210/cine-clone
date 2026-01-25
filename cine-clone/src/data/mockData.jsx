@@ -1,5 +1,3 @@
-// src/data/mockData.js
-
 export const movies = [
   {
     id: 1,

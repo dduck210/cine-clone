@@ -1,8 +1,6 @@
-// src/components/admin/Sidebar.jsx
 import React from 'react';
 import { LayoutDashboard, Film, Calendar, ShoppingCart, Users, Settings, Ticket } from 'lucide-react';
 
-// Nhận vào props: activeTab (tab đang chọn) và onTabChange (hàm đổi tab)
 const Sidebar = ({ activeTab, onTabChange }) => {
   const menuItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -24,7 +22,6 @@ const Sidebar = ({ activeTab, onTabChange }) => {
         {menuItems.map((item) => (
           <button 
             key={item.id}
-            // Khi bấm thì gọi hàm onTabChange để đổi giao diện
             onClick={() => onTabChange(item.id)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
               activeTab === item.id 
