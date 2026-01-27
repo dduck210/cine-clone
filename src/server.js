@@ -4,17 +4,17 @@ const { Server } = require('socket.io');
 const app = require('./app'); // express app
 
 // === IMPORT ROUTES ===
-const authRoute = require('./routes/auth.route');
-const userRoute = require('./routes/user.route');
-const staffRoute = require('./routes/staff.route');
-const movieRoute = require('./routes/movie.route');
-const bookingRoute = require('./routes/booking.route');
-const cinemaRoute = require('./routes/cinema.route');
-const genreRoute = require('./routes/genre.route');
-const roomRoute = require('./routes/room.route');
-const comboRoute = require('./routes/combo.route');
-const paymentRoute = require('./routes/payment.route');
-const adminRoute = require('./routes/admin.route');
+const authRoute = require('./router/auth.route');
+const userRoute = require('./router/user.route');
+const staffRoute = require('./router/staff.route');
+const movieRoute = require('./router/movie.route');
+const bookingRoute = require('./router/booking.route');
+const cinemaRoute = require('./router/cinema.route');
+const genreRoute = require('./router/genre.route');
+const roomRoute = require('./router/room.route');
+const comboRoute = require('./router/combo.route');
+const paymentRoute = require('./router/payment.route');
+const adminRoute = require('./router/admin.route');
 
 // === SETUP HTTP SERVER & SOCKET.IO ===
 const server = http.createServer(app);
