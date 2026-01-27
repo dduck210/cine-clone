@@ -1,11 +1,13 @@
 /** @type {import('tailwindcss').Config} */
-export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+module.exports = {
+  content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        // Chỉ cần 1 dòng này là đủ dùng cho tất cả các độ đậm
+        bromega: ["BROmega", "sans-serif"],
+      },
+    },
   },
   plugins: [],
-}
+};
