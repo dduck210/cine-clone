@@ -19,8 +19,16 @@ const adminRoute = require('./routes/admin.route');
 // === SETUP HTTP SERVER & SOCKET.IO ===
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: { origin: '*' }
+    cors: {
+        origin: process.env.FRONTEND_URL || '*',
+        methods: ['GET', 'POST'],
+        credentials: true
+    },
+    transports: ['websocket', 'polling']
 });
+
+// Make io accessible to routes
+app.set('io', io);
 
 // === REGISTER ROUTES ===
 app.use('/api/auth', authRoute);
@@ -42,21 +50,27 @@ io.on('connection', (socket) => {
     // Join showtime room for real-time seat updates
     socket.on('joinShowtime', (showtimeId) => {
         socket.join(showtimeId);
-        console.log(`Client ${socket.id} joined showtime: ${showtimeId}`);
+        console.log(`📍 Client ${socket.id} joined showtime: ${showtimeId}`);
+    });
+
+    // Leave showtime room
+    socket.on('leaveShowtime', (showtimeId) => {
+        socket.leave(showtimeId);
+        console.log(`📍 Client ${socket.id} left showtime: ${showtimeId}`);
     });
 
     // Emit when seat is being held
-    socket.on('holdSeat', ({ showtimeId, seatCode }) => {
-        socket.to(showtimeId).emit('seatHolding', {
+    socket.on('holdSeat', ({ showtimeId, seatCode, userId }) => {
+        io.to(showtimeId).emit('seatHolding', {
             seatCode,
             status: 'holding',
-            userId: socket.id
+            userId
         });
     });
 
     // Emit when seat is booked
     socket.on('bookSeat', ({ showtimeId, seatCode }) => {
-        socket.to(showtimeId).emit('seatBooked', {
+        io.to(showtimeId).emit('seatBooked', {
             seatCode,
             status: 'booked'
         });
@@ -64,7 +78,7 @@ io.on('connection', (socket) => {
 
     // Emit when seat hold is released
     socket.on('releaseSeat', ({ showtimeId, seatCode }) => {
-        socket.to(showtimeId).emit('seatAvailable', {
+        io.to(showtimeId).emit('seatAvailable', {
             seatCode,
             status: 'available'
         });
@@ -72,11 +86,48 @@ io.on('connection', (socket) => {
 
     // Update seat layout in real-time
     socket.on('updateSeats', ({ showtimeId, seats }) => {
-        socket.to(showtimeId).emit('seatsUpdated', seats);
+        io.to(showtimeId).emit('seatsUpdated', seats);
     });
 
+    // Handle seat release on disconnect
     socket.on('disconnect', () => {
         console.log('❌ Client disconnected:', socket.id);
+    });
+
+    // Error handling
+    socket.on('error', (error) => {
+        console.error('❌ Socket error:', error);
+    });
+});
+
+// === START SERVER ===
+const PORT = process.env.PORT || 5000;
+
+server.listen(PORT, () => {
+    console.log(`
+╔═══════════════════════════════════════╗
+║   🎬 5CINE BACKEND SERVER STARTED    ║
+║   Port: ${PORT}                           ║
+║   Environment: ${process.env.NODE_ENV || 'development'}           ║
+║   Database: Connected to MongoDB     ║
+╚═══════════════════════════════════════╝
+    `);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', () => {
+    console.log('SIGINT received, shutting down gracefully');
+    server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
     });
 });
 

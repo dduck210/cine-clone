@@ -1,17 +1,40 @@
-# 5Cine Backend API Documentation
+# 🎬 5Cine Backend API - v1.0.0
 
-## Cấu Trúc Dự Án
+Hệ thống backend cho nền tảng đặt vé xem phim trực tuyến.
+
+## ⚡ Quick Start
+
+### Chạy Local
+```bash
+# Install dependencies
+npm install
+
+# Copy .env.example thành .env
+cp .env.example .env
+
+# Chạy development mode (auto reload)
+npm run dev
+
+# Server chạy tại http://localhost:5000
+```
+
+### Deploy lên Render
+Xem file [DEPLOYMENT.md](./DEPLOYMENT.md) để hướng dẫn chi tiết.
+
+---
+
+## 📁 Cấu Trúc Dự Án
 
 ```
 BE/
 ├── src/
-│   ├── app.js              # Express app setup
-│   ├── server.js           # HTTP server + Socket.io
+│   ├── app.js                    # Express app setup & middleware
+│   ├── server.js                 # HTTP server + Socket.io config
 │   ├── config/
-│   │   └── db.js           # MongoDB connection
+│   │   └── db.js                 # MongoDB connection
 │   ├── middlewares/
-│   │   └── auth.middleware.js
-│   ├── models/
+│   │   └── auth.middleware.js    # JWT authentication
+│   ├── models/                   # MongoDB schemas
 │   │   ├── users.model.js
 │   │   ├── movie.model.js
 │   │   ├── genre.model.js
@@ -22,7 +45,7 @@ BE/
 │   │   ├── order.model.js
 │   │   ├── combo.model.js
 │   │   └── payment.model.js
-│   └── routes/
+│   └── routes/                   # API routes
 │       ├── auth.route.js
 │       ├── user.route.js
 │       ├── movie.route.js
@@ -34,20 +57,12 @@ BE/
 │       ├── payment.route.js
 │       ├── staff.route.js
 │       └── admin.route.js
-├── .env.example
-└── package.json
-```
-
-## Hướng Dẫn Cài Đặt
-
-### 1. Clone repository
-```bash
-cd DATN/BE
-```
-
-### 2. Cài đặt dependencies
-```bash
-npm install
+├── .env                          # Environment variables (local)
+├── .env.example                  # Environment template
+├── .gitignore                    # Git ignore rules
+├── package.json                  # Project dependencies
+├── README.md                     # This file
+└── DEPLOYMENT.md                 # Deployment guide
 ```
 
 ### 3. Cấu hình môi trường

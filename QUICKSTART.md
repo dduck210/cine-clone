@@ -1,33 +1,241 @@
-# 🚀 Quick Start Guide - 5Cine Backend
+# ⚡ QUICKSTART - 5Cine Backend
 
-## Cài Đặt Nhanh
+**⏱️ Thời gian: 5 phút để chạy server local**
 
-### Bước 1: Cải Thiện Môi Trường (.env)
+---
 
-Tạo file `.env` từ `.env.example`:
+## 🎯 Quick Setup (Windows)
 
+### Bước 1: Run Setup Script
 ```bash
-cd BE
-cp .env.example .env
+.\setup.bat
 ```
+Script sẽ tự động:
+- Copy .env.example → .env
+- Cài npm dependencies
 
-**Sửa các thông tin quan trọng trong .env:**
-```
-MONGO_URI=mongodb://localhost:27017/cinema_booking
-JWT_SECRET=your-secret-key-12345
+### Bước 2: Cấu Hình .env
+Mở file `.env` và cập nhật:
+
+```env
+# ⚠️ QUAN TRỌNG: MongoDB
+MONGO_URI=mongodb+srv://your_username:your_password@cluster0.xxxxx.mongodb.net/5cine_booking
+
+# ⚠️ QUAN TRỌNG: JWT Secret
+JWT_SECRET=your_secret_key_min_32_characters
+
+# Mặc định OK
 PORT=5000
 NODE_ENV=development
+FRONTEND_URL=http://localhost:3000
 ```
 
-### Bước 2: Cài Dependencies
+### Bước 3: Chạy Server
+```bash
+npm run dev
+```
+
+**Output:**
+```
+╔═══════════════════════════════════════╗
+║   🎬 5CINE BACKEND SERVER STARTED    ║
+║   Port: 5000                           ║
+║   Environment: development             ║
+║   Database: Connected to MongoDB     ║
+╚═══════════════════════════════════════╝
+```
+
+### Bước 4: Test API
+```bash
+# Mở browser hoặc Postman
+http://localhost:5000/api/health
+
+# Response:
+{
+  "status": "OK",
+  "message": "Server is running ✅",
+  "timestamp": "2024-01-27T...",
+  "environment": "development"
+}
+```
+
+---
+
+## 🗄️ MongoDB Atlas Setup (2 phút)
+
+### Option 1: Nhanh nhất - Dùng Free Tier
+
+1. **Tạo tài khoản**: https://www.mongodb.com/cloud/atlas
+2. **Tạo Cluster**:
+   - Select M0 (Free)
+   - Click Create
+   - Chờ 2-3 phút
+
+3. **Tạo User**:
+   - Security → Database Access
+   - Add User
+   - Remember username & password
+
+4. **Allow Network**:
+   - Security → Network Access
+   - Add IP: 0.0.0.0/0
+
+5. **Lấy Connection String**:
+   - Clusters → Connect → Drivers
+   - Copy URL
+   - Format: `mongodb+srv://user:pass@cluster0.xxxxx.mongodb.net/5cine_booking`
+
+6. **Paste vào .env**:
+   ```env
+   MONGO_URI=mongodb+srv://your_user:your_pass@cluster0.xxxxx.mongodb.net/5cine_booking
+   ```
+
+### Option 2: Local MongoDB
 
 ```bash
-npm install
+# Cài MongoDB Community
+# Windows: https://www.mongodb.com/try/download/community
+# Mac: brew install mongodb-community
+
+# Khởi động
+mongod
+
+# .env
+MONGO_URI=mongodb://localhost:27017/5cine_booking
 ```
 
-### Bước 3: Khởi Động MongoDB
+---
 
-**Nếu chưa cài MongoDB:**
+## 📝 .env Template
+
+Copy & paste vào .env:
+
+```env
+# 📦 Database
+MONGO_URI=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/5cine_booking
+
+# 🖥️ Server
+PORT=5000
+NODE_ENV=development
+
+# 🔐 JWT
+JWT_SECRET=use_this_command_to_generate:_node_-e_require_crypto_randomBytes_32_toString_hex
+JWT_EXPIRE=7d
+
+# 🌐 Frontend
+FRONTEND_URL=http://localhost:3000
+
+# 📧 Email
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASSWORD=app_password_not_main_password
+
+# 💳 Payment (Optional - can leave as is)
+VNPAY_TMN_CODE=xxxxx
+VNPAY_HASH_SECRET=xxxxx
+MOMO_PARTNER_CODE=xxxxx
+```
+
+---
+
+## 🧪 Test Endpoints
+
+### Postman
+1. Download: https://www.postman.com
+2. Method: GET
+3. URL: `http://localhost:5000/api/health`
+4. Send
+
+### Terminal (cURL)
+```bash
+curl http://localhost:5000/api/health
+```
+
+### Browser
+```
+http://localhost:5000/api/health
+```
+
+---
+
+## 📚 Các File Cần Đọc
+
+| File | Dùng khi |
+|------|---------|
+| [SETUP_GUIDE.md](./SETUP_GUIDE.md) | Muốn setup chi tiết |
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | Muốn deploy lên Render |
+| [README.md](./README.md) | Muốn hiểu project structure |
+| [API_SPECIFICATION.md](./API_SPECIFICATION.md) | Muốn xem API endpoints |
+
+---
+
+## ⚠️ Common Issues
+
+### Port 5000 đang dùng
+```bash
+# Thay port trong .env
+PORT=5001
+```
+
+### MongoDB connection error
+```
+Kiểm tra:
+1. MONGO_URI đúng format
+2. Username/password đúng
+3. IP whitelist (0.0.0.0/0)
+```
+
+### Dependencies error
+```bash
+npm install --legacy-peer-deps
+```
+
+---
+
+## ✅ Checklist
+
+- [ ] Node.js v18+ installed
+- [ ] npm v9+ installed
+- [ ] Repository cloned
+- [ ] .env created & filled
+- [ ] MongoDB Atlas/Local configured
+- [ ] `npm install` ran
+- [ ] Server started (`npm run dev`)
+- [ ] Health endpoint tested (/api/health)
+
+---
+
+## 🚀 Next Steps
+
+1. **Bạn đang ở đâu:**
+   - ✅ Server chạy local
+   - ✅ Database connected
+   - ✅ API ready
+
+2. **Tiếp theo:**
+   - Chạy frontend: `cd ../FE/cine-clone && npm run dev`
+   - Hoặc deploy lên Render: xem DEPLOYMENT.md
+   - Hoặc explore APIs: xem API_SPECIFICATION.md
+
+---
+
+## 💡 Tips
+
+- Dùng `npm run dev` khi develop (auto reload)
+- Dùng `npm start` khi test production
+- Kiểm tra Render docs: https://docs.render.com
+- Kiểm tra MongoDB docs: https://docs.mongodb.com
+
+---
+
+**You're all set! 🎉**
+
+Nếu gặp vấn đề:
+1. Đọc error message kỹ
+2. Xem terminal output
+3. Kiểm tra .env file
+4. Xem SETUP_GUIDE.md troubleshooting section
 ```bash
 # Windows: Download từ mongodb.com hoặc dùng WSL
 # Linux/Mac: brew install mongodb-community
