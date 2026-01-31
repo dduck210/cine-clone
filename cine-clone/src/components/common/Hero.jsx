@@ -21,7 +21,7 @@ const Hero = () => {
               .lock("landscape-primary")
               .catch(() => {});
           }
-        } catch (err) {
+        } catch {
           console.warn("Tính năng tự động xoay bị hạn chế.");
         }
       }
@@ -53,8 +53,8 @@ const Hero = () => {
               <Star size={14} fill="currentColor" /> Sự kiện hot tháng này
             </div>
 
-            <h1 className="font-bromega font-black text-3xl sm:text-5xl md:text-7xl text-white leading-[1.1] tracking-tight drop-shadow-2xl">
-              Ưu Đãi Đặc Biệt <br className="hidden xs:block" />
+            <h1 className="font-bromega font-black text-3xl sm:text-5xl md:text-7xl text-white leading-[1.1] tracking-tight drop-shadow-2xl flex flex-col gap-1 md:gap-3">
+              <span>Ưu Đãi Đặc Biệt</span>
               <span className="font-bromega font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400 tracking-wide">
                 Ngày Tình Yêu
               </span>
