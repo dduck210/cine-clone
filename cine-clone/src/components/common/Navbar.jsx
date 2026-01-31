@@ -1,93 +1,118 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, User, LogOut, History, Gift, Award } from "lucide-react";
+import {
+  Search,
+  User,
+  LogOut,
+  History,
+  Gift,
+  Award,
+  Menu,
+  X,
+} from "lucide-react";
 import AuthModal from "../auth/AuthModal";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [currentUser, setCurrentUser] = useState(() => {
     const savedUser = localStorage.getItem("currentUser");
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) setIsMobileMenuOpen(false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
     localStorage.setItem("currentUser", JSON.stringify(user));
     setIsDropdownOpen(false);
+    setIsAuthModalOpen(false);
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem("currentUser");
     setIsDropdownOpen(false);
+    setIsMobileMenuOpen(false);
     navigate("/");
   };
 
+  const navLinks = [
+    { name: "Trang chủ", path: "/" },
+    { name: "Phim", path: "/movies" },
+    { name: "Rạp chiếu", path: "/cinemas" },
+    { name: "Khuyến mãi", path: "/promotions" },
+  ];
+
   return (
     <>
-      <nav className="font-bromega bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
-        <div className="container mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-4">
-          <Link to="/" className="flex items-center gap-2 group">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="42"
-              height="42"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#dc2626"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="lucide lucide-ticket transform group-hover:-rotate-12 transition-transform duration-300"
+      <nav className="font-bromega bg-white border-b border-gray-100 fixed top-0 left-0 w-full z-[100] shadow-sm">
+        <div className="container mx-auto px-4 sm:px-6 h-16 md:h-20 flex items-center justify-between gap-2">
+          <div className="flex md:hidden">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path>
-              <path d="M13 5v2"></path>
-              <path d="M13 17v2"></path>
-              <path d="M13 11v2"></path>
-            </svg>
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
 
-            <span className="text-2xl font-black text-[#dc2626] tracking-tight">
+          <Link
+            to="/"
+            className="flex items-center gap-2 group transition-transform active:scale-95"
+          >
+            <div className="text-[#dc2626]">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="md:w-10 md:h-10 transform group-hover:-rotate-12 transition-transform duration-300"
+              >
+                <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+                <path d="M13 5v2" />
+                <path d="M13 17v2" />
+                <path d="M13 11v2" />
+              </svg>
+            </div>
+            <span className="text-xl md:text-2xl font-black text-[#dc2626] tracking-tight">
               5Cine
             </span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-8">
-            <Link
-              to="/"
-              className="text-gray-600 font-bold hover:text-[#dc2626] transition-colors"
-            >
-              Trang chủ
-            </Link>
-            <Link
-              to="/movies"
-              className="text-gray-600 font-bold hover:text-[#dc2626] transition-colors"
-            >
-              Phim
-            </Link>
-            <Link
-              to="/cinemas"
-              className="text-gray-600 font-bold hover:text-[#dc2626] transition-colors"
-            >
-              Rạp chiếu
-            </Link>
-            <Link
-              to="/promotions"
-              className="text-gray-600 font-bold hover:text-[#dc2626] transition-colors"
-            >
-              Khuyến mãi
-            </Link>
+          <div className="hidden md:flex items-center gap-6 lg:gap-8">
+            {navLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className="text-gray-600 font-bold hover:text-[#dc2626] transition-colors text-sm lg:text-base"
+              >
+                {link.name}
+              </Link>
+            ))}
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center bg-gray-100 rounded-full px-4 py-2 w-48 lg:w-64 border border-transparent focus-within:border-[#dc2626] focus-within:bg-white transition-all">
-              <Search size={18} className="text-gray-400" />
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="hidden sm:flex items-center bg-gray-100 rounded-full px-4 py-2 w-32 lg:w-64 border border-transparent focus-within:border-[#dc2626] focus-within:bg-white transition-all">
+              <Search size={16} className="text-gray-400 flex-shrink-0" />
               <input
                 type="text"
-                placeholder="Tìm kiếm phim..."
-                className="bg-transparent border-none outline-none text-sm ml-2 w-full text-gray-700 placeholder-gray-400 font-bromega font-thin"
+                placeholder="Tìm kiếm..."
+                className="bg-transparent border-none outline-none text-sm ml-2 w-full text-gray-700 placeholder-gray-400 font-bold"
               />
             </div>
 
@@ -95,9 +120,9 @@ const Navbar = () => {
               <div className="relative">
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-3 hover:bg-gray-50 py-1 px-2 rounded-lg transition-colors focus:outline-none"
+                  className="flex items-center gap-2 hover:bg-gray-50 p-1 md:px-2 md:py-1 rounded-lg transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center border border-gray-300 overflow-hidden">
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-200 border border-gray-300 overflow-hidden flex-shrink-0">
                     {currentUser.avatar ? (
                       <img
                         src={currentUser.avatar}
@@ -105,48 +130,41 @@ const Navbar = () => {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <User className="text-gray-400" size={24} />
+                      <User className="text-gray-400 p-1" size={24} />
                     )}
                   </div>
                   <div className="hidden lg:block text-left">
-                    <div className="flex items-center gap-1">
-                      <p className="font-bold text-gray-700 text-sm">
-                        {currentUser.name}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <span className="flex items-center text-yellow-600 font-bold">
-                        <Award size={12} className="mr-1" /> {currentUser.rank}
-                      </span>
-                      <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                      <span className="flex items-center text-orange-500 font-bold">
-                        <Gift size={12} className="mr-1" /> {currentUser.points}{" "}
-                        Stars
-                      </span>
-                    </div>
+                    <p className="font-bold text-gray-700 text-sm leading-tight">
+                      {currentUser.name}
+                    </p>
+                    <p className="text-[10px] text-yellow-600 font-black uppercase">
+                      {currentUser.rank}
+                    </p>
                   </div>
                 </button>
 
                 {isDropdownOpen && (
-                  <div className="absolute right-0 top-14 w-56 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden animate-fade-in z-50">
-                    <div className="py-2">
+                  <div className="absolute right-0 top-14 w-52 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden animate-fade-in z-50">
+                    <div className="py-1">
                       <Link
                         to="/profile"
-                        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-gray-700 text-sm font-bold transition-colors"
+                        onClick={() => setIsDropdownOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-gray-700 text-sm font-bold"
                       >
                         <User size={18} className="text-[#dc2626]" /> Tài Khoản
                       </Link>
                       <Link
                         to="/my-tickets"
-                        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-gray-700 text-sm font-bold transition-colors"
+                        onClick={() => setIsDropdownOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-gray-700 text-sm font-bold"
                       >
                         <History size={18} className="text-[#dc2626]" /> Lịch Sử
-                        Đặt vé
+                        Vé
                       </Link>
-                      <div className="border-t border-gray-100 my-1"></div>
+                      <div className="border-t border-gray-100 mx-2"></div>
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 text-red-600 text-sm font-bold transition-colors text-left"
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 text-red-600 text-sm font-bold transition-colors"
                       >
                         <LogOut size={18} /> Đăng Xuất
                       </button>
@@ -157,26 +175,57 @@ const Navbar = () => {
             ) : (
               <button
                 onClick={() => setIsAuthModalOpen(true)}
-                className="flex items-center gap-2 text-gray-700 font-bold hover:text-[#dc2626] transition-colors px-3 py-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-2 text-gray-700 font-bold hover:text-[#dc2626] p-2 rounded-lg transition-all active:scale-95"
               >
-                <User size={20} />
-                <span className="hidden sm:inline font-bold">Đăng nhập</span>
+                <User size={22} />
+                <span className="hidden sm:inline">Đăng nhập</span>
               </button>
             )}
           </div>
         </div>
+
+        <div
+          className={`md:hidden bg-white border-t border-gray-50 transition-all duration-300 ease-in-out overflow-hidden ${isMobileMenuOpen ? "max-h-[400px] border-b shadow-lg" : "max-h-0"}`}
+        >
+          <div className="p-4 space-y-2">
+            {navLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block px-4 py-3 text-gray-700 font-bold hover:bg-red-50 hover:text-[#dc2626] rounded-xl transition-all"
+              >
+                {link.name}
+              </Link>
+            ))}
+            <div className="pt-2">
+              <div className="flex items-center bg-gray-100 rounded-xl px-4 py-3 w-full border border-gray-200">
+                <Search size={18} className="text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm phim..."
+                  className="bg-transparent border-none outline-none text-sm ml-2 w-full font-bold"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </nav>
+
+      <div className="h-16 md:h-20" />
 
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onLoginSuccess={handleLoginSuccess}
       />
-
-      {isDropdownOpen && (
+      {(isDropdownOpen || isMobileMenuOpen) && (
         <div
-          className="fixed inset-0 z-30"
-          onClick={() => setIsDropdownOpen(false)}
+          className="fixed inset-0 z-40 bg-black/5 md:bg-transparent"
+          onClick={() => {
+            setIsDropdownOpen(false);
+            setIsMobileMenuOpen(false);
+          }}
         ></div>
       )}
     </>
