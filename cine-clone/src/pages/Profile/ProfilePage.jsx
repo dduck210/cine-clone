@@ -94,7 +94,6 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            {/* 2. Menu Điều hướng */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <MenuButton
                 active={activeTab === "info"}

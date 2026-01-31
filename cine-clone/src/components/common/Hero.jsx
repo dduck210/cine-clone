@@ -37,7 +37,7 @@ const Hero = () => {
 
   return (
     <>
-      <section className="relative w-full h-auto min-h-[580px] md:h-[650px] overflow-hidden group flex items-center pt-16 md:pt-0">
+      <section className="relative w-full h-auto min-h-[580px] md:h-[650px] overflow-hidden group flex items-center mt-16 md:mt-20">
         <div className="absolute inset-0 z-0">
           <img
             src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2000&auto=format&fit=crop"
@@ -49,18 +49,18 @@ const Hero = () => {
 
         <div className="container mx-auto px-6 sm:px-10 relative z-10 py-20 md:py-0">
           <div className="max-w-3xl space-y-5 md:space-y-8 animate-fade-in">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-600/20 border border-red-500/30 text-red-400 text-[10px] md:text-sm font-bromega font-bold tracking-widest uppercase backdrop-blur-md">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-600/20 border border-red-500/30 text-red-400 text-[10px] md:text-sm font-sans font-bold tracking-widest uppercase backdrop-blur-md">
               <Star size={14} fill="currentColor" /> Sự kiện hot tháng này
             </div>
 
-            <h1 className="font-bromega font-black text-3xl sm:text-5xl md:text-7xl text-white leading-[1.1] tracking-tight drop-shadow-2xl flex flex-col gap-1 md:gap-3">
+            <h1 className="font-sans font-black text-3xl sm:text-5xl md:text-7xl text-white leading-[1.1] tracking-tight drop-shadow-2xl flex flex-col gap-1 md:gap-3">
               <span>Ưu Đãi Đặc Biệt</span>
-              <span className="font-bromega font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400 tracking-wide">
+              <span className="font-sans font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400 tracking-wide">
                 Ngày Tình Yêu
               </span>
             </h1>
 
-            <p className="font-bromega text-sm md:text-xl text-gray-300 max-w-xl leading-relaxed opacity-90">
+            <p className="font-sans text-sm md:text-xl text-gray-300 max-w-xl leading-relaxed opacity-90">
               Trải nghiệm điện ảnh đỉnh cao với combo vé đôi giảm giá đến{" "}
               <strong className="text-white text-lg md:text-2xl font-black">
                 50%
@@ -73,14 +73,14 @@ const Hero = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4 pt-4 w-full sm:w-auto">
-              <button className="w-full sm:w-auto h-[56px] flex items-center justify-center gap-3 bg-red-600 hover:bg-red-700 text-white font-bromega font-extrabold px-10 rounded-2xl shadow-lg transition-all active:scale-95 text-sm md:text-base whitespace-nowrap">
+              <button className="w-full sm:w-auto h-[56px] flex items-center justify-center gap-3 bg-red-600 hover:bg-red-700 text-white font-sans font-extrabold px-10 rounded-2xl shadow-lg transition-all active:scale-95 text-sm md:text-base whitespace-nowrap">
                 <Ticket size={20} className="shrink-0" />
                 <span>ĐẶT VÉ NGAY</span>
               </button>
 
               <button
                 onClick={openTrailer}
-                className="w-full sm:w-auto h-[56px] flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bromega font-bold px-10 rounded-2xl backdrop-blur-xl transition-all active:scale-95 group/play text-sm md:text-base whitespace-nowrap"
+                className="w-full sm:w-auto h-[56px] flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-sans font-bold px-10 rounded-2xl backdrop-blur-xl transition-all active:scale-95 group/play text-sm md:text-base whitespace-nowrap"
               >
                 <div className="w-8 h-8 rounded-full bg-white text-gray-900 flex items-center justify-center shrink-0 shadow-lg">
                   <Play size={14} fill="currentColor" className="ml-0.5" />
@@ -89,7 +89,7 @@ const Hero = () => {
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[11px] md:text-sm text-gray-400 pt-8 border-t border-white/10 mt-10 w-fit font-bromega">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[11px] md:text-sm text-gray-400 pt-8 border-t border-white/10 mt-10 w-fit font-sans">
               <div className="flex items-center gap-2">
                 <Calendar size={16} className="text-orange-500" />
                 Áp dụng: 13/02 - 15/02

@@ -6,7 +6,7 @@ const MovieCard = ({ movie }) => {
   return (
     <Link
       to={`/movie/${movie.id}`}
-      className="group relative block bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+      className="group relative block transition-all duration-300 transform hover:-translate-y-1"
     >
       <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-gray-200">
         <img

@@ -1,15 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  Search,
-  User,
-  LogOut,
-  History,
-  Gift,
-  Award,
-  Menu,
-  X,
-} from "lucide-react";
+import { Search, User, LogOut, History, Menu, X } from "lucide-react";
 import AuthModal from "../auth/AuthModal";
 
 const Navbar = () => {
@@ -55,7 +46,7 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="font-bromega bg-white border-b border-gray-100 fixed top-0 left-0 w-full z-[100] shadow-sm">
+      <nav className="font-bromega bg-white/95 backdrop-blur-md border-b border-gray-100 fixed top-0 left-0 w-full z-[100] shadow-sm transition-all duration-300">
         <div className="container mx-auto px-4 sm:px-6 h-16 md:h-20 flex items-center justify-between gap-2">
           <div className="flex md:hidden">
             <button
@@ -112,7 +103,7 @@ const Navbar = () => {
               <input
                 type="text"
                 placeholder="Tìm kiếm..."
-                className="bg-transparent border-none outline-none text-sm ml-2 w-full text-gray-700 placeholder-gray-400 font-bold"
+                className="bg-transparent border-none outline-none text-xs ml-2 w-full text-gray-700 placeholder-gray-400 font-bold"
               />
             </div>
 
@@ -161,6 +152,40 @@ const Navbar = () => {
                         <History size={18} className="text-[#dc2626]" /> Lịch Sử
                         Vé
                       </Link>
+
+                      {currentUser.rank === "ADMIN" && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setIsDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-gray-700 text-sm font-bold"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="text-[#dc2626]"
+                          >
+                            <rect
+                              width="18"
+                              height="18"
+                              x="3"
+                              y="3"
+                              rx="2"
+                              ry="2"
+                            />
+                            <path d="M9 3v18" />
+                            <path d="m14 9 3 3-3 3" />
+                          </svg>
+                          Quản trị
+                        </Link>
+                      )}
+
                       <div className="border-t border-gray-100 mx-2"></div>
                       <button
                         onClick={handleLogout}
@@ -185,7 +210,9 @@ const Navbar = () => {
         </div>
 
         <div
-          className={`md:hidden bg-white border-t border-gray-50 transition-all duration-300 ease-in-out overflow-hidden ${isMobileMenuOpen ? "max-h-[400px] border-b shadow-lg" : "max-h-0"}`}
+          className={`md:hidden bg-white border-t border-gray-50 transition-all duration-300 ease-in-out overflow-hidden ${
+            isMobileMenuOpen ? "max-h-[400px] border-b shadow-lg" : "max-h-0"
+          }`}
         >
           <div className="p-4 space-y-2">
             {navLinks.map((link) => (
@@ -212,13 +239,12 @@ const Navbar = () => {
         </div>
       </nav>
 
-      <div className="h-16 md:h-20" />
-
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onLoginSuccess={handleLoginSuccess}
       />
+
       {(isDropdownOpen || isMobileMenuOpen) && (
         <div
           className="fixed inset-0 z-40 bg-black/5 md:bg-transparent"

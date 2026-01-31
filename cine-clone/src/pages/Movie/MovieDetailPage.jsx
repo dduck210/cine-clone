@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import React, { useState, useMemo } from "react";
+import { useParams, Link } from "react-router-dom";
 import { movies } from "../../data/mockData";
 import Navbar from "../../components/common/Navbar";
 import Footer from "../../components/common/Footer";
@@ -15,21 +15,34 @@ import {
   Ticket,
 } from "lucide-react";
 
+const defaultDetails = {
+  description:
+    "Một tác phẩm điện ảnh đầy cảm xúc, đưa người xem vào một hành trình không thể quên. Với kỹ xảo mãn nhãn và cốt truyện sâu sắc, bộ phim hứa hẹn sẽ bùng nổ tại các rạp chiếu.",
+  duration: "135 phút",
+  releaseDate: "20/02/2026",
+  director: "Christopher Nolan",
+  cast: "Leonardo DiCaprio, Cillian Murphy, Emily Blunt",
+  genres: ["Hành động", "Phiêu lưu"],
+};
+
 const MovieDetailPage = () => {
   const { id } = useParams();
-  const [movie, setMovie] = useState(null);
+
+  const movie = useMemo(() => {
+    const foundMovie = movies.find((m) => m.id === parseInt(id));
+    if (foundMovie) {
+      return {
+        ...defaultDetails,
+        ...foundMovie,
+        genres: foundMovie.genre
+          ? foundMovie.genre.split(", ")
+          : defaultDetails.genres,
+      };
+    }
+    return null;
+  }, [id]);
 
   const [selectedShowtime, setSelectedShowtime] = useState(null);
-
-  const defaultDetails = {
-    description:
-      "Một tác phẩm điện ảnh đầy cảm xúc, đưa người xem vào một hành trình không thể quên. Với kỹ xảo mãn nhãn và cốt truyện sâu sắc, bộ phim hứa hẹn sẽ bùng nổ tại các rạp chiếu.",
-    duration: "135 phút",
-    releaseDate: "20/02/2026",
-    director: "Christopher Nolan",
-    cast: "Leonardo DiCaprio, Cillian Murphy, Emily Blunt",
-    genres: ["Hành động", "Phiêu lưu"],
-  };
 
   const cinemas = [
     {
@@ -56,19 +69,6 @@ const MovieDetailPage = () => {
   ];
 
   const [cinemaList, setCinemaList] = useState(cinemas);
-
-  useEffect(() => {
-    const foundMovie = movies.find((m) => m.id === parseInt(id));
-    if (foundMovie) {
-      setMovie({
-        ...defaultDetails,
-        ...foundMovie,
-        genres: foundMovie.genre
-          ? foundMovie.genre.split(", ")
-          : defaultDetails.genres,
-      });
-    }
-  }, [id]);
 
   const toggleCinema = (cinemaId) => {
     setCinemaList(
@@ -99,7 +99,7 @@ const MovieDetailPage = () => {
     <div className="min-h-screen bg-white font-sans text-gray-900">
       <Navbar />
 
-      <main className="container mx-auto px-6 py-12 max-w-6xl">
+      <main className="container mx-auto px-6 pb-12 pt-24 md:pt-32 max-w-6xl">
         <div className="flex flex-col md:flex-row gap-10 mb-16 animate-fade-in-up">
           <div className="w-full md:w-[300px] flex-shrink-0">
             <div className="rounded-xl overflow-hidden shadow-2xl border border-gray-200 relative group">
@@ -224,21 +224,33 @@ const MovieDetailPage = () => {
             {cinemaList.map((cinema) => (
               <div
                 key={cinema.id}
-                className={`border rounded-xl overflow-hidden transition-all bg-white ${cinema.isOpen ? "border-blue-300 shadow-md" : "border-gray-200"}`}
+                className={`border rounded-xl overflow-hidden transition-all bg-white ${
+                  cinema.isOpen
+                    ? "border-blue-300 shadow-md"
+                    : "border-gray-200"
+                }`}
               >
                 <div
-                  className={`flex justify-between items-center p-5 cursor-pointer ${cinema.isOpen ? "bg-blue-50" : "bg-white hover:bg-gray-50"}`}
+                  className={`flex justify-between items-center p-5 cursor-pointer ${
+                    cinema.isOpen ? "bg-blue-50" : "bg-white hover:bg-gray-50"
+                  }`}
                   onClick={() => toggleCinema(cinema.id)}
                 >
                   <div className="flex items-center gap-4">
                     <div
-                      className={`p-2 rounded-full ${cinema.isOpen ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-400"}`}
+                      className={`p-2 rounded-full ${
+                        cinema.isOpen
+                          ? "bg-blue-100 text-blue-600"
+                          : "bg-gray-100 text-gray-400"
+                      }`}
                     >
                       <MapPin size={20} />
                     </div>
                     <div>
                       <h3
-                        className={`font-bold text-lg ${cinema.isOpen ? "text-blue-700" : "text-gray-800"}`}
+                        className={`font-bold text-lg ${
+                          cinema.isOpen ? "text-blue-700" : "text-gray-800"
+                        }`}
                       >
                         {cinema.name}
                       </h3>
@@ -271,13 +283,13 @@ const MovieDetailPage = () => {
                             key={idx}
                             onClick={() => handleSelectTime(time, cinema)}
                             className={`
-                                                    rounded-lg py-2 text-sm font-semibold transition-all border
-                                                    ${
-                                                      isSelected
-                                                        ? "bg-[#0369a1] text-white border-[#0369a1] shadow-lg scale-105"
-                                                        : "bg-white text-gray-700 border-gray-300 hover:border-blue-500 hover:text-blue-600 hover:shadow"
-                                                    }
-                                                `}
+                                rounded-lg py-2 text-sm font-semibold transition-all border
+                                ${
+                                  isSelected
+                                    ? "bg-[#0369a1] text-white border-[#0369a1] shadow-lg scale-105"
+                                    : "bg-white text-gray-700 border-gray-300 hover:border-blue-500 hover:text-blue-600 hover:shadow"
+                                }
+                              `}
                           >
                             {time}
                           </button>
