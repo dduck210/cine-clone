@@ -22,7 +22,7 @@ export const OrderDetailModal = ({ order, onClose }) => {
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 shrink-0 print:hidden">
           <div>
             <h3 className="font-bold text-lg text-slate-800 tracking-tight flex items-center gap-2">
-              <Ticket className="text-[#0369a1]" size={20} />
+              <Ticket className="text-[#dc2626]" size={20} />
               Chi tiết vé - {order.orderId}
             </h3>
           </div>
@@ -62,7 +62,7 @@ export const OrderDetailModal = ({ order, onClose }) => {
             </div>
           </div>
           <div className="bg-white rounded-3xl shadow-md overflow-hidden border border-slate-200 relative print:shadow-none print:border-black">
-            <div className="bg-[#0369a1] p-6 text-white relative overflow-hidden print:bg-black print:text-black">
+            <div className="bg-slate-800 p-6 text-white relative overflow-hidden print:bg-black print:text-black">
               <div className="flex justify-between items-start relative z-10">
                 <div>
                   <h2 className="text-2xl font-bold mb-1">
