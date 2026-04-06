@@ -85,7 +85,7 @@ export const OrderDetailModal = ({ order, onClose }) => {
                     <p className="font-bold text-slate-900 flex items-center gap-2">
                       <MapPin
                         size={16}
-                        className="text-[#0369a1] print:hidden"
+                        className="text-[#dc2626] print:hidden"
                       />{" "}
                       {order.cinemaName}
                     </p>
@@ -98,7 +98,7 @@ export const OrderDetailModal = ({ order, onClose }) => {
                       <p className="font-bold text-slate-900 flex items-center gap-2">
                         <Calendar
                           size={16}
-                          className="text-[#0369a1] print:hidden"
+                          className="text-[#dc2626] print:hidden"
                         />{" "}
                         {order.showDate}
                       </p>
@@ -110,7 +110,7 @@ export const OrderDetailModal = ({ order, onClose }) => {
                       <p className="font-bold text-slate-900 flex items-center gap-2">
                         <Clock
                           size={16}
-                          className="text-[#0369a1] print:hidden"
+                          className="text-[#dc2626] print:hidden"
                         />{" "}
                         {order.showTime}
                       </p>
@@ -120,7 +120,7 @@ export const OrderDetailModal = ({ order, onClose }) => {
                     <p className="text-slate-400 text-xs uppercase tracking-wider font-semibold mb-1">
                       Ghế ngồi
                     </p>
-                    <p className="font-extrabold text-[#0369a1] text-xl tracking-widest print:text-black">
+                    <p className="font-extrabold text-[#dc2626] text-xl tracking-widest print:text-black">
                       {order.selectedSeats.join(", ")}
                     </p>
                   </div>
