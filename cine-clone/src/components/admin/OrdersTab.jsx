@@ -246,7 +246,7 @@ export const OrdersManager = ({ onViewTicket }) => {
                 <td className="p-4 pr-6 text-right">
                   <button
                     onClick={() => onViewTicket(order)}
-                    className="p-2 text-slate-400 hover:text-[#0369a1] hover:bg-blue-50 rounded-lg transition-all tooltip"
+                    className="p-2 text-slate-400 hover:text-[#dc2626] hover:bg-red-50 rounded-lg transition-all tooltip"
                     title="Xem chi tiết vé"
                   >
                     <Eye size={18} />

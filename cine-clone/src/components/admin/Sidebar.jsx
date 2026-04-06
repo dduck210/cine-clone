@@ -13,7 +13,7 @@ const Sidebar = ({ activeTab, onTabChange }) => {
     { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
     { id: "movies", label: "Quản lý Phim", icon: Film },
     { id: "schedules", label: "Lịch chiếu", icon: Calendar },
-    { id: "orders", label: "Đơn hàng", icon: ShoppingCart },
+    { id: "orders", label: "Đơn đặt vé", icon: ShoppingCart },
     { id: "users", label: "Người dùng", icon: Users },
   ];
 
