@@ -15,65 +15,42 @@ import {
   X,
 } from "lucide-react";
 import { stats, moviesList as initialMovies } from "../../data/adminData";
-
 import {
   OrdersManager,
   OrderDetailModal,
 } from "../../components/admin/OrdersTab";
 import { MoviesManager, MovieModal } from "../../components/admin/MoviesTab";
 
-const toastConfig = {
-  position: "top-right",
-  toastOptions: {
-    duration: 4000,
-    className:
-      "!bg-white !text-slate-800 !shadow-2xl !rounded-xl !border !border-slate-100 !font-medium",
-  },
-};
-
-const DashboardView = () => (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-    {stats.map((stat, index) => (
-      <div
-        key={index}
-        className="bg-white p-6 rounded-2xl border hover:shadow-lg transition-all"
-      >
-        <h3 className="text-3xl font-extrabold text-slate-800 mt-1">
-          {stat.value}
-        </h3>
-      </div>
-    ))}
-  </div>
-);
-
-const UsersManager = () => (
-  <div className="space-y-6">
-    <h2 className="text-2xl font-bold">Thành viên hệ thống</h2>
-  </div>
-);
+const toastConfig = { position: "top-right", toastOptions: { duration: 4000 } };
+const DashboardView = () => <div>Dashboard</div>;
+const UsersManager = () => <div>Users</div>;
 
 const Dashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "dashboard";
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
   return (
-    <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden relative">
-      <aside
-        className={`fixed inset-y-0 left-0 z-[50] w-64 bg-white border-r transition-transform md:relative md:translate-x-0 md:block`}
-      >
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
+      <aside className="w-64 bg-white border-r">
         <Sidebar
           activeTab={activeTab}
           onTabChange={(t) => setSearchParams({ tab: t })}
         />
       </aside>
-      <main className="flex-1 flex flex-col overflow-hidden relative z-0">
-        <header className="flex justify-between items-center p-4 bg-white border-b shadow-sm">
-          <h1 className="text-lg font-extrabold text-slate-800">
-            Quản Trị Tạm Thời
-          </h1>
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <header className="flex justify-between items-center px-4 md:px-8 py-3 bg-white/80 backdrop-blur-xl border-b border-white/50 sticky top-0 z-30 shadow-sm shrink-0">
+          <div className="flex flex-col">
+            <h1 className="text-lg md:text-xl font-extrabold text-slate-800 capitalize tracking-tight flex items-center gap-2">
+              {activeTab === "dashboard"
+                ? "Tổng Quan"
+                : activeTab === "movies"
+                  ? "Quản Lý Phim"
+                  : activeTab === "orders"
+                    ? "Đơn Hàng"
+                    : "Thành Viên"}
+            </h1>
+          </div>
         </header>
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+        <div className="flex-1 overflow-y-auto p-4">
           <Toaster {...toastConfig} />
         </div>
       </main>
