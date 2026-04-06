@@ -172,7 +172,7 @@ export const OrdersManager = ({ onViewTicket }) => {
   const mockOrders = [
     {
       orderId: "XC-99281",
-      customerName: "Nguyễn Văn A",
+      customerName: "Dương Anh Đức",
       phone: "0987654321",
       bookingTime: "06/04/2026 14:30",
       movieTitle: "Avatar: The Way of Water",
@@ -185,7 +185,7 @@ export const OrdersManager = ({ onViewTicket }) => {
     },
     {
       orderId: "XC-12345",
-      customerName: "Trần Thị B",
+      customerName: "Nguyễn Văn Hoàn",
       phone: "0912345678",
       bookingTime: "06/04/2026 15:00",
       movieTitle: "Mai",
