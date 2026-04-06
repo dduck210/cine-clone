@@ -80,7 +80,7 @@ const Navbar = () => {
                 <path d="M13 11v2" />
               </svg>
             </div>
-            <span className="text-xl md:text-2xl font-black text-[#dc2626] tracking-tight">
+            <span className="text-xl md:text-2xl font-black text-[#dc2626] tracking-tight leading-none pt-1">
               5Cine
             </span>
           </Link>
@@ -209,6 +209,7 @@ const Navbar = () => {
           </div>
         </div>
 
+        {/* MENU MOBILE EXPAND */}
         <div
           className={`md:hidden bg-white border-t border-gray-50 transition-all duration-300 ease-in-out overflow-hidden ${
             isMobileMenuOpen ? "max-h-[400px] border-b shadow-lg" : "max-h-0"
@@ -245,6 +246,7 @@ const Navbar = () => {
         onLoginSuccess={handleLoginSuccess}
       />
 
+      {/* Overlay */}
       {(isDropdownOpen || isMobileMenuOpen) && (
         <div
           className="fixed inset-0 z-40 bg-black/5 md:bg-transparent"

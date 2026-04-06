@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { movies } from "../../data/mockData";
 import Navbar from "../../components/common/Navbar";
@@ -27,6 +27,10 @@ const defaultDetails = {
 
 const MovieDetailPage = () => {
   const { id } = useParams();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
 
   const movie = useMemo(() => {
     const foundMovie = movies.find((m) => m.id === parseInt(id));
@@ -106,7 +110,7 @@ const MovieDetailPage = () => {
               <img
                 src={movie.poster}
                 alt={movie.title}
-                className="w-full h-[450px] object-cover"
+                className="w-full h-[450px] object-cover transition-transform duration-500 group-hover:scale-105"
               />
             </div>
           </div>
@@ -136,7 +140,7 @@ const MovieDetailPage = () => {
                     Thời lượng
                   </span>
                   <div className="flex items-center gap-2 text-gray-600 text-sm">
-                    <Clock size={16} className="text-blue-600" />{" "}
+                    <Clock size={16} className="text-[#dc2626]" />{" "}
                     {movie.duration}
                   </div>
                 </div>
@@ -145,7 +149,7 @@ const MovieDetailPage = () => {
                     Ngày phát hành
                   </span>
                   <div className="flex items-center gap-2 text-gray-600 text-sm">
-                    <Calendar size={16} className="text-blue-600" />{" "}
+                    <Calendar size={16} className="text-[#dc2626]" />{" "}
                     {movie.releaseDate}
                   </div>
                 </div>
@@ -156,7 +160,7 @@ const MovieDetailPage = () => {
                   <div className="flex items-start gap-2 text-gray-600 text-sm">
                     <User
                       size={16}
-                      className="text-blue-600 mt-0.5 flex-shrink-0"
+                      className="text-[#dc2626] mt-0.5 flex-shrink-0"
                     />{" "}
                     {movie.cast}
                   </div>
@@ -184,7 +188,7 @@ const MovieDetailPage = () => {
                     Đạo diễn
                   </span>
                   <div className="flex items-center gap-2 text-gray-600 text-sm">
-                    <Info size={16} className="text-blue-600" />{" "}
+                    <Info size={16} className="text-[#dc2626]" />{" "}
                     {movie.director}
                   </div>
                 </div>
@@ -200,7 +204,7 @@ const MovieDetailPage = () => {
                 }}
                 className="w-full"
               >
-                <button className="w-full bg-[#0369a1] hover:bg-[#0284c7] text-white font-bold py-4 rounded-lg shadow-lg shadow-blue-200 transition-all uppercase tracking-wider text-sm flex items-center justify-center gap-2 animate-bounce-short">
+                <button className="w-full bg-[#dc2626] hover:bg-red-700 text-white font-bold py-4 rounded-lg shadow-lg shadow-red-200 transition-all uppercase tracking-wider text-sm flex items-center justify-center gap-2 animate-bounce-short">
                   <Ticket size={20} /> Mua Vé Suất: {selectedShowtime.time} -{" "}
                   {selectedShowtime.cinemaName}
                 </button>
@@ -217,7 +221,7 @@ const MovieDetailPage = () => {
         </div>
 
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 border-l-4 border-blue-600 pl-3">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 border-l-4 border-[#dc2626] pl-3">
             Lịch Chiếu Phim
           </h2>
           <div className="space-y-4">
@@ -225,14 +229,12 @@ const MovieDetailPage = () => {
               <div
                 key={cinema.id}
                 className={`border rounded-xl overflow-hidden transition-all bg-white ${
-                  cinema.isOpen
-                    ? "border-blue-300 shadow-md"
-                    : "border-gray-200"
+                  cinema.isOpen ? "border-red-300 shadow-md" : "border-gray-200"
                 }`}
               >
                 <div
                   className={`flex justify-between items-center p-5 cursor-pointer ${
-                    cinema.isOpen ? "bg-blue-50" : "bg-white hover:bg-gray-50"
+                    cinema.isOpen ? "bg-red-50" : "bg-white hover:bg-gray-50"
                   }`}
                   onClick={() => toggleCinema(cinema.id)}
                 >
@@ -240,7 +242,7 @@ const MovieDetailPage = () => {
                     <div
                       className={`p-2 rounded-full ${
                         cinema.isOpen
-                          ? "bg-blue-100 text-blue-600"
+                          ? "bg-red-100 text-[#dc2626]"
                           : "bg-gray-100 text-gray-400"
                       }`}
                     >
@@ -249,7 +251,7 @@ const MovieDetailPage = () => {
                     <div>
                       <h3
                         className={`font-bold text-lg ${
-                          cinema.isOpen ? "text-blue-700" : "text-gray-800"
+                          cinema.isOpen ? "text-[#dc2626]" : "text-gray-800"
                         }`}
                       >
                         {cinema.name}
@@ -269,7 +271,7 @@ const MovieDetailPage = () => {
                 </div>
 
                 {cinema.isOpen && (
-                  <div className="p-5 pt-0 bg-blue-50/30 border-t border-blue-100">
+                  <div className="p-5 pt-0 bg-red-50/30 border-t border-red-100">
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-4">
                       2D Phụ Đề
                     </p>
@@ -286,8 +288,8 @@ const MovieDetailPage = () => {
                                 rounded-lg py-2 text-sm font-semibold transition-all border
                                 ${
                                   isSelected
-                                    ? "bg-[#0369a1] text-white border-[#0369a1] shadow-lg scale-105"
-                                    : "bg-white text-gray-700 border-gray-300 hover:border-blue-500 hover:text-blue-600 hover:shadow"
+                                    ? "bg-[#dc2626] text-white border-[#dc2626] shadow-lg scale-105"
+                                    : "bg-white text-gray-700 border-gray-300 hover:border-red-500 hover:text-[#dc2626] hover:shadow"
                                 }
                               `}
                           >

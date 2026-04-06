@@ -19,7 +19,7 @@ const MovieCard = ({ movie }) => {
 
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <span className="font-bromega bg-red-600 text-white py-2 px-6 rounded-full shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
-            Đặt vé
+            Xem chi tiết
           </span>
         </div>
       </div>
