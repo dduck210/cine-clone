@@ -158,7 +158,7 @@ export const OrderDetailModal = ({ order, onClose }) => {
           </button>
           <button
             onClick={() => window.print()}
-            className="px-6 py-2.5 bg-[#0369a1] hover:bg-[#0284c7] text-white rounded-xl font-bold shadow-lg shadow-blue-200 transition-all text-sm flex items-center gap-2"
+            className="px-6 py-2.5 bg-[#dc2626] hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-200 transition-all text-sm flex items-center gap-2"
           >
             <Printer size={18} /> In vé cứng
           </button>
