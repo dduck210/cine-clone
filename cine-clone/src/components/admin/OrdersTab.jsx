@@ -118,8 +118,6 @@ export const OrderDetailModal = ({ order, onClose }) => {
                     </p>
                   </div>
                 </div>
-
-                {/* THÊM BOX SỐ GHẾ */}
                 <div className="p-3 bg-[#fffaf0] border border-[#f3e3b7] rounded-lg flex justify-between items-center print:border-gray-400 print:bg-transparent print:border-2">
                   <div>
                     <p className="text-[9px] text-[#b8860b] font-bold uppercase tracking-[0.2em] mb-0.5 print:text-black">
@@ -135,6 +133,33 @@ export const OrderDetailModal = ({ order, onClose }) => {
                     </p>
                     <p className="text-[24px] font-black text-slate-900 tracking-tighter leading-none print:text-black">
                       03
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* THÊM QR CODE VÀ BARCODE */}
+              <div className="mt-4 pt-3 border-t-2 border-dashed border-gray-200 flex flex-col items-center justify-center shrink-0 print:border-gray-400 print:mt-2 print:pt-2">
+                <div className="flex gap-4 items-center w-full px-2">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${order.orderId}`}
+                    alt="QR Code"
+                    className="w-[60px] h-[60px] mix-blend-multiply shrink-0"
+                  />
+                  <div className="flex-1 flex flex-col justify-center items-center">
+                    <div className="h-6 flex gap-[2px] opacity-80 justify-center w-full print:opacity-100">
+                      {[2, 4, 1, 3, 2, 1, 1, 3, 4, 2, 1, 2, 3, 1, 1].map(
+                        (w, i) => (
+                          <div
+                            key={i}
+                            className="bg-slate-900 h-full print:bg-black"
+                            style={{ width: `${w}px` }}
+                          ></div>
+                        ),
+                      )}
+                    </div>
+                    <p className="font-mono font-bold text-slate-600 text-[10px] mt-1.5 tracking-widest uppercase print:text-black">
+                      {order.orderId}
                     </p>
                   </div>
                 </div>
