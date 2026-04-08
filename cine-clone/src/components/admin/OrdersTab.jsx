@@ -69,7 +69,7 @@ export const OrderDetailModal = ({ order, onClose }) => {
 
           <div
             id="print-ticket"
-            className="bg-white mx-auto w-full max-w-[400px] rounded-2xl shadow-2xl overflow-hidden font-sans text-gray-900 border border-gray-200"
+            className="bg-white mx-auto w-full max-w-[400px] rounded-2xl shadow-2xl overflow-hidden font-sans text-gray-900 border border-gray-200 relative print:border-none print:shadow-none"
           >
             <div className="bg-slate-900 p-5 pb-5 relative overflow-hidden print:bg-black print:text-white shrink-0">
               <div className="absolute -right-10 -top-10 opacity-10 print:opacity-30">
@@ -91,6 +91,19 @@ export const OrderDetailModal = ({ order, onClose }) => {
                 <div className="mt-2 inline-block px-2 py-1 border border-[#d4af37]/30 bg-[#d4af37]/10 rounded text-[#d4af37] text-[9px] font-bold tracking-widest uppercase print:border-white print:text-white print:bg-transparent">
                   2D Subtitle
                 </div>
+              </div>
+            </div>
+
+            <div className="p-4 pb-2 space-y-4 bg-white flex-1 relative print:border-x-2 print:border-black">
+              <div
+                className="absolute inset-0 opacity-[0.03] pointer-events-none print:hidden"
+                style={{
+                  backgroundImage: "radial-gradient(#000 1px, transparent 1px)",
+                  backgroundSize: "12px 12px",
+                }}
+              ></div>
+              <div className="relative z-10 space-y-2">
+                {/* Content goes here */}
               </div>
             </div>
           </div>
