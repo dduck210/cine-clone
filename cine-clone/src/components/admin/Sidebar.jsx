@@ -10,7 +10,7 @@ import {
 
 const Sidebar = ({ activeTab, onTabChange }) => {
   const menuItems = [
-    { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
+    // { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },,,,
     { id: "movies", label: "Quản lý Phim", icon: Film },
     { id: "schedules", label: "Lịch chiếu", icon: Calendar },
     { id: "orders", label: "Đơn đặt vé", icon: ShoppingCart },
