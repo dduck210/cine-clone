@@ -53,7 +53,6 @@ export const OrderDetailModal = ({ order, onClose }) => {
             </div>
           </div>
 
-          {/* VÉ ĐIỆN TỬ */}
           <div
             id="print-ticket"
             className="bg-white mx-auto w-full max-w-[400px] rounded-xl shadow-2xl overflow-hidden font-sans text-gray-900 border border-gray-200 relative print:border-none print:shadow-none"
@@ -80,6 +79,45 @@ export const OrderDetailModal = ({ order, onClose }) => {
                 </h2>
                 <div className="mt-2 inline-block px-2 py-0.5 bg-[#d4af37] text-slate-900 text-[9px] font-black tracking-widest uppercase rounded-sm print:bg-white print:text-black">
                   2D Subtitle
+                </div>
+              </div>
+            </div>
+
+            {/* THÊM PHẦN BOX DATA */}
+            <div className="p-4 relative bg-white flex-1 flex flex-col print:bg-white print:border-x-2 print:border-black print:p-2">
+              <div
+                className="absolute inset-0 opacity-[0.03] pointer-events-none print:hidden"
+                style={{
+                  backgroundImage: "radial-gradient(#000 1px, transparent 1px)",
+                  backgroundSize: "12px 12px",
+                }}
+              ></div>
+              <div className="relative z-10 space-y-2 flex-1">
+                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg print:border-gray-400 print:bg-transparent">
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em] mb-0.5 print:text-gray-600">
+                    Cinema
+                  </p>
+                  <p className="text-[14px] font-extrabold text-slate-900 leading-tight uppercase print:text-black">
+                    {order.cinemaName}
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg print:border-gray-400 print:bg-transparent">
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em] mb-0.5 print:text-gray-600">
+                      Date
+                    </p>
+                    <p className="text-[12px] font-extrabold text-slate-900 print:text-black">
+                      {order.showDate}
+                    </p>
+                  </div>
+                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg print:border-gray-400 print:bg-transparent">
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em] mb-0.5 print:text-gray-600">
+                      Time
+                    </p>
+                    <p className="text-[12px] font-extrabold text-slate-900 print:text-black">
+                      {order.showTime}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
