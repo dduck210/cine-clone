@@ -82,7 +82,6 @@ export const OrderDetailModal = ({ order, onClose }) => {
                 </div>
               </div>
             </div>
-
             <div className="p-4 relative bg-white flex-1 flex flex-col print:bg-white print:border-x-2 print:border-black print:p-2">
               <div
                 className="absolute inset-0 opacity-[0.03] pointer-events-none print:hidden"
@@ -163,8 +162,6 @@ export const OrderDetailModal = ({ order, onClose }) => {
                 </div>
               </div>
             </div>
-
-            {/* THÊM FOOTER CHỐT TIỀN */}
             <div className="bg-[#121826] relative shrink-0 print:bg-white print:border-x-2 print:border-b-2 print:border-black">
               <div className="hidden print:block absolute top-0 left-0 w-full border-t-2 border-dashed border-black -mt-[2px]"></div>
               <div className="absolute top-0 left-0 w-full h-[6px] bg-[radial-gradient(circle,transparent_3px,#121826_3px)] bg-[length:14px_12px] -mt-[6px] print:hidden"></div>
@@ -178,6 +175,22 @@ export const OrderDetailModal = ({ order, onClose }) => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* THÊM PHẦN ACTION BUTTONS */}
+        <div className="p-4 border-t border-slate-100 bg-white flex justify-end gap-3 shrink-0 print:hidden">
+          <button
+            onClick={onClose}
+            className="px-6 py-2.5 text-slate-600 border border-slate-200 hover:bg-slate-50 rounded-xl font-semibold transition-all text-sm"
+          >
+            Đóng
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="px-6 py-2.5 bg-[#dc2626] hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-200 transition-all text-sm flex items-center gap-2"
+          >
+            <Printer size={18} /> In vé cứng
+          </button>
         </div>
       </div>
     </div>
