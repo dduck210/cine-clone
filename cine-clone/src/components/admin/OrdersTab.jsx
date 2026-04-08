@@ -103,7 +103,14 @@ export const OrderDetailModal = ({ order, onClose }) => {
                 }}
               ></div>
               <div className="relative z-10 space-y-2">
-                {/* Content goes here */}
+                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg print:border-gray-400 print:bg-transparent print:p-1 print:border-0">
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em] mb-0.5 print:text-gray-600">
+                    Cinema
+                  </p>
+                  <p className="text-[14px] font-extrabold text-slate-900 leading-tight uppercase print:text-black">
+                    {order.cinemaName}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
