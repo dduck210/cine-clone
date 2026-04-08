@@ -129,6 +129,24 @@ export const OrderDetailModal = ({ order, onClose }) => {
                     </p>
                   </div>
                 </div>
+                <div className="p-3 bg-[#fffaf0] border border-[#f3e3b7] rounded-lg flex justify-between items-center print:border-gray-400 print:bg-transparent print:border-y-2 print:border-x-0 print:rounded-none print:py-2">
+                  <div>
+                    <p className="text-[9px] text-[#b8860b] font-bold uppercase tracking-[0.2em] mb-0.5 print:text-black">
+                      Seat(s)
+                    </p>
+                    <p className="text-[22px] font-black text-slate-900 tracking-tighter leading-none print:text-black">
+                      {order.selectedSeats?.join(", ")}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[9px] text-[#b8860b] font-bold uppercase tracking-[0.2em] mb-0.5 print:text-black">
+                      Room
+                    </p>
+                    <p className="text-[22px] font-black text-slate-900 tracking-tighter leading-none print:text-black">
+                      03
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
