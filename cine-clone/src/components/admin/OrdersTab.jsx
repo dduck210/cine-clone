@@ -175,6 +175,20 @@ export const OrderDetailModal = ({ order, onClose }) => {
                 </div>
               </div>
             </div>
+
+            <div className="bg-slate-900 relative shrink-0 print:bg-white print:border-x-2 print:border-b-2 print:border-black">
+              <div className="hidden print:block absolute top-0 left-0 w-full border-t-2 border-dashed border-black -mt-[2px]"></div>
+              <div className="absolute top-0 left-0 w-full h-[6px] bg-[radial-gradient(circle,transparent_3px,#0f172a_3px)] bg-[length:14px_12px] -mt-[6px] print:hidden"></div>
+
+              <div className="p-4 flex justify-between items-end">
+                <span className="text-[11px] font-bold text-[#d4af37] uppercase tracking-widest print:text-black">
+                  Total Paid
+                </span>
+                <span className="text-[18px] font-black text-white print:text-black">
+                  {order.finalTotalPrice?.toLocaleString()} ₫
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
