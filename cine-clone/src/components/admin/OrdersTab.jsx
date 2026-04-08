@@ -66,6 +66,34 @@ export const OrderDetailModal = ({ order, onClose }) => {
               </div>
             </div>
           </div>
+
+          <div
+            id="print-ticket"
+            className="bg-white mx-auto w-full max-w-[400px] rounded-2xl shadow-2xl overflow-hidden font-sans text-gray-900 border border-gray-200"
+          >
+            <div className="bg-slate-900 p-5 pb-5 relative overflow-hidden print:bg-black print:text-white shrink-0">
+              <div className="absolute -right-10 -top-10 opacity-10 print:opacity-30">
+                <Crown size={120} className="text-[#d4af37] print:text-white" />
+              </div>
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-2">
+                  <Crown
+                    size={14}
+                    className="text-[#d4af37] print:text-white"
+                  />
+                  <p className="text-[#d4af37] text-[9px] font-bold tracking-[0.3em] uppercase print:text-white">
+                    V.I.P Admission
+                  </p>
+                </div>
+                <h2 className="text-[20px] font-black text-white leading-tight uppercase tracking-wide">
+                  {order.movieTitle}
+                </h2>
+                <div className="mt-2 inline-block px-2 py-1 border border-[#d4af37]/30 bg-[#d4af37]/10 rounded text-[#d4af37] text-[9px] font-bold tracking-widest uppercase print:border-white print:text-white print:bg-transparent">
+                  2D Subtitle
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
