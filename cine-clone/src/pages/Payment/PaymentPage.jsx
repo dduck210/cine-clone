@@ -36,17 +36,42 @@ const PaymentPage = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [countdown, setCountdown] = useState(5);
 
+  const [customerInfo, setCustomerInfo] = useState({
+    name: "",
+    phone: "",
+    email: "",
+  });
+
   useEffect(() => {
     window.scrollTo(0, 0);
-    if (!location.state) {
-      navigate("/");
-    }
+    if (!location.state) navigate("/");
   }, [location, navigate]);
 
   const handlePayment = () => {
     setIsSuccess(true);
-
     const fakeOrderId = `XC-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    const newOrder = {
+      orderId: fakeOrderId,
+      customerName: customerInfo.name || "Khách hàng Vãng lai",
+      phone: customerInfo.phone || "Không cung cấp",
+      bookingTime: new Date().toLocaleString("vi-VN"),
+      movieTitle,
+      cinemaName,
+      showDate,
+      showTime,
+      selectedSeats,
+      finalTotalPrice,
+      status: "Đã thanh toán",
+    };
+
+    const existingOrders = JSON.parse(
+      localStorage.getItem("admin_orders") || "[]",
+    );
+    localStorage.setItem(
+      "admin_orders",
+      JSON.stringify([newOrder, ...existingOrders]),
+    );
 
     const timer = setInterval(() => {
       setCountdown((prev) => {
@@ -94,7 +119,6 @@ const PaymentPage = () => {
               Vé đã được gửi tới email và số điện thoại của bạn. Chúc bạn xem
               phim vui vẻ!
             </p>
-
             <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl p-5 mb-8">
               <p className="text-sm text-gray-500 mb-1 uppercase tracking-wider">
                 Mã đặt vé
@@ -103,7 +127,6 @@ const PaymentPage = () => {
                 XC-{Math.floor(100000 + Math.random() * 900000)}
               </p>
             </div>
-
             <button
               onClick={() => navigate("/")}
               className="w-full bg-[#0369a1] hover:bg-[#0284c7] text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-200"
@@ -143,6 +166,9 @@ const PaymentPage = () => {
                   <input
                     type="text"
                     placeholder="Họ và tên (Bắt buộc)"
+                    onChange={(e) =>
+                      setCustomerInfo({ ...customerInfo, name: e.target.value })
+                    }
                     className="w-full bg-gray-50/50 border border-gray-200 rounded-xl pl-12 pr-4 py-3 focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all font-medium"
                   />
                 </div>
@@ -155,6 +181,12 @@ const PaymentPage = () => {
                     <input
                       type="tel"
                       placeholder="Số điện thoại (Bắt buộc)"
+                      onChange={(e) =>
+                        setCustomerInfo({
+                          ...customerInfo,
+                          phone: e.target.value,
+                        })
+                      }
                       className="w-full bg-gray-50/50 border border-gray-200 rounded-xl pl-12 pr-4 py-3 focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all font-medium"
                     />
                   </div>
@@ -166,6 +198,12 @@ const PaymentPage = () => {
                     <input
                       type="email"
                       placeholder="Email (Nhận vé)"
+                      onChange={(e) =>
+                        setCustomerInfo({
+                          ...customerInfo,
+                          email: e.target.value,
+                        })
+                      }
                       className="w-full bg-gray-50/50 border border-gray-200 rounded-xl pl-12 pr-4 py-3 focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all font-medium"
                     />
                   </div>
@@ -180,19 +218,16 @@ const PaymentPage = () => {
                 </div>
                 Phương thức thanh toán
               </h3>
-
               <div className="space-y-4">
                 <label
-                  className={`relative flex items-center gap-5 p-5 border-2 rounded-2xl cursor-pointer transition-all duration-300 shadow-sm overflow-hidden group
-                            ${paymentMethod === "momo" ? "border-[#d82d8b] bg-[#fff0f6]" : "border-gray-100 bg-white hover:border-gray-300 hover:shadow-md"}`}
+                  onClick={() => setPaymentMethod("momo")}
+                  className={`relative flex items-center gap-5 p-5 border-2 rounded-2xl cursor-pointer transition-all duration-300 shadow-sm overflow-hidden group ${paymentMethod === "momo" ? "border-[#d82d8b] bg-[#fff0f6]" : "border-gray-100 bg-white hover:border-gray-300 hover:shadow-md"}`}
                 >
                   <Smartphone
                     className={`absolute -right-6 -bottom-6 w-24 h-24 transition-all opacity-10 group-hover:opacity-20 rotate-12 ${paymentMethod === "momo" ? "text-[#d82d8b]" : "text-gray-400"}`}
                   />
-
                   <div
-                    className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all shrink-0
-                                 ${paymentMethod === "momo" ? "bg-[#d82d8b] text-white shadow-lg shadow-pink-200 scale-110" : "bg-gray-100 text-gray-400"}`}
+                    className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all shrink-0 ${paymentMethod === "momo" ? "bg-[#d82d8b] text-white shadow-lg shadow-pink-200 scale-110" : "bg-gray-100 text-gray-400"}`}
                   >
                     <QrCode size={28} />
                   </div>
@@ -209,8 +244,7 @@ const PaymentPage = () => {
                     </p>
                   </div>
                   <div
-                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all shrink-0
-                                ${paymentMethod === "momo" ? "border-[#d82d8b] bg-[#d82d8b] text-white" : "border-gray-300"}`}
+                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${paymentMethod === "momo" ? "border-[#d82d8b] bg-[#d82d8b] text-white" : "border-gray-300"}`}
                   >
                     {paymentMethod === "momo" && (
                       <CheckCircle size={16} fill="currentColor" />
@@ -219,16 +253,14 @@ const PaymentPage = () => {
                 </label>
 
                 <label
-                  className={`relative flex items-center gap-5 p-5 border-2 rounded-2xl cursor-pointer transition-all duration-300 shadow-sm overflow-hidden group
-                            ${paymentMethod === "zalopay" ? "border-[#0068ff] bg-[#e5f0ff]" : "border-gray-100 bg-white hover:border-gray-300 hover:shadow-md"}`}
+                  onClick={() => setPaymentMethod("zalopay")}
+                  className={`relative flex items-center gap-5 p-5 border-2 rounded-2xl cursor-pointer transition-all duration-300 shadow-sm overflow-hidden group ${paymentMethod === "zalopay" ? "border-[#0068ff] bg-[#e5f0ff]" : "border-gray-100 bg-white hover:border-gray-300 hover:shadow-md"}`}
                 >
                   <Smartphone
                     className={`absolute -right-6 -bottom-6 w-24 h-24 transition-all opacity-10 group-hover:opacity-20 rotate-12 ${paymentMethod === "zalopay" ? "text-[#0068ff]" : "text-gray-400"}`}
                   />
-
                   <div
-                    className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all shrink-0
-                                 ${paymentMethod === "zalopay" ? "bg-[#0068ff] text-white shadow-lg shadow-blue-200 scale-110" : "bg-gray-100 text-gray-400"}`}
+                    className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all shrink-0 ${paymentMethod === "zalopay" ? "bg-[#0068ff] text-white shadow-lg shadow-blue-200 scale-110" : "bg-gray-100 text-gray-400"}`}
                   >
                     <span className="font-bold text-xs">ZaloPay</span>
                   </div>
@@ -245,8 +277,7 @@ const PaymentPage = () => {
                     </p>
                   </div>
                   <div
-                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all shrink-0
-                                ${paymentMethod === "zalopay" ? "border-[#0068ff] bg-[#0068ff] text-white" : "border-gray-300"}`}
+                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${paymentMethod === "zalopay" ? "border-[#0068ff] bg-[#0068ff] text-white" : "border-gray-300"}`}
                   >
                     {paymentMethod === "zalopay" && (
                       <CheckCircle size={16} fill="currentColor" />
@@ -255,16 +286,14 @@ const PaymentPage = () => {
                 </label>
 
                 <label
-                  className={`relative flex items-center gap-5 p-5 border-2 rounded-2xl cursor-pointer transition-all duration-300 shadow-sm overflow-hidden group
-                            ${paymentMethod === "card" ? "border-gray-800 bg-gray-50" : "border-gray-100 bg-white hover:border-gray-300 hover:shadow-md"}`}
+                  onClick={() => setPaymentMethod("card")}
+                  className={`relative flex items-center gap-5 p-5 border-2 rounded-2xl cursor-pointer transition-all duration-300 shadow-sm overflow-hidden group ${paymentMethod === "card" ? "border-gray-800 bg-gray-50" : "border-gray-100 bg-white hover:border-gray-300 hover:shadow-md"}`}
                 >
                   <CreditCard
                     className={`absolute -right-6 -bottom-6 w-24 h-24 transition-all opacity-10 group-hover:opacity-20 rotate-12 ${paymentMethod === "card" ? "text-gray-800" : "text-gray-400"}`}
                   />
-
                   <div
-                    className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all shrink-0
-                                 ${paymentMethod === "card" ? "bg-gray-800 text-white shadow-lg scale-110" : "bg-gray-100 text-gray-400"}`}
+                    className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all shrink-0 ${paymentMethod === "card" ? "bg-gray-800 text-white shadow-lg scale-110" : "bg-gray-100 text-gray-400"}`}
                   >
                     <CreditCard size={28} />
                   </div>
@@ -281,8 +310,7 @@ const PaymentPage = () => {
                     </p>
                   </div>
                   <div
-                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all shrink-0
-                                ${paymentMethod === "card" ? "border-gray-800 bg-gray-800 text-white" : "border-gray-300"}`}
+                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${paymentMethod === "card" ? "border-gray-800 bg-gray-800 text-white" : "border-gray-300"}`}
                   >
                     {paymentMethod === "card" && (
                       <CheckCircle size={16} fill="currentColor" />
@@ -329,7 +357,6 @@ const PaymentPage = () => {
                 <div className="absolute -left-3 top-0 w-6 h-6 bg-[#f8fafc] rounded-full"></div>
                 <div className="absolute -right-3 top-0 w-6 h-6 bg-[#f8fafc] rounded-full"></div>
                 <div className="border-t-2 border-dashed border-gray-200 mb-8"></div>
-
                 <div className="space-y-6">
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-[#0369a1] shrink-0">
@@ -357,7 +384,6 @@ const PaymentPage = () => {
                       <p className="text-gray-500 text-sm mt-0.5">Phòng 03</p>
                     </div>
                   </div>
-
                   <div className="flex items-start gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
                     <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#0369a1] shrink-0 shadow-sm">
                       <Armchair size={20} />
@@ -371,7 +397,6 @@ const PaymentPage = () => {
                       </p>
                     </div>
                   </div>
-
                   {combos && combos.some((c) => c.quantity > 0) && (
                     <div className="flex items-start gap-4 bg-orange-50 p-4 rounded-2xl border border-orange-100">
                       <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-orange-500 shrink-0 shadow-sm">
@@ -402,7 +427,6 @@ const PaymentPage = () => {
                     </div>
                   )}
                 </div>
-
                 <div className="mt-8 pt-6 border-t-2 border-gray-100">
                   <div className="flex justify-between items-end">
                     <span className="text-gray-600 font-bold text-lg">
@@ -414,7 +438,6 @@ const PaymentPage = () => {
                     </span>
                   </div>
                 </div>
-
                 <button
                   onClick={handlePayment}
                   className="w-full bg-gradient-to-r from-[#0369a1] to-[#0284c7] hover:from-[#0284c7] hover:to-[#0369a1] text-white font-bold py-4 rounded-xl shadow-xl shadow-blue-200/50 transition-all text-lg uppercase tracking-wider mt-8 transform hover:-translate-y-1"
@@ -433,5 +456,4 @@ const PaymentPage = () => {
     </div>
   );
 };
-
 export default PaymentPage;
