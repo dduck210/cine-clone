@@ -323,7 +323,7 @@ const PaymentPage = () => {
 
           <div className="lg:col-span-5 sticky top-28">
             <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200">
-              <div className="relative h-48 bg-slate-900 flex items-end p-6 overflow-hidden">
+              <div className="relative h-48 bg-slate-900 flex items-center p-6 overflow-hidden">
                 {poster && (
                   <>
                     <img
@@ -334,15 +334,16 @@ const PaymentPage = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
                   </>
                 )}
-                <div className="relative z-10 w-full flex gap-4 items-end">
+
+                <div className="relative z-10 w-full flex gap-5 items-center">
                   {poster && (
                     <img
                       src={poster}
-                      className="w-24 h-36 object-cover rounded-lg shadow-lg border-2 border-white/20"
+                      className="w-24 h-36 object-cover rounded-lg shadow-lg border border-white/20 shrink-0"
                       alt="poster"
                     />
                   )}
-                  <div className="flex-1 pb-2">
+                  <div className="flex-1">
                     <h3 className="font-extrabold text-2xl text-white mb-2 leading-tight text-shadow-sm line-clamp-2">
                       {movieTitle}
                     </h3>
@@ -353,7 +354,6 @@ const PaymentPage = () => {
                 </div>
               </div>
 
-              {/* Thông tin vé bên dưới */}
               <div className="p-6 sm:p-8 relative bg-white">
                 <div className="absolute -left-3 top-0 w-6 h-6 bg-slate-50 rounded-full border-r border-slate-200 shadow-inner"></div>
                 <div className="absolute -right-3 top-0 w-6 h-6 bg-slate-50 rounded-full border-l border-slate-200 shadow-inner"></div>
