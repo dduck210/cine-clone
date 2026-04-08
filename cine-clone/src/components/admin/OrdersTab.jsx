@@ -23,7 +23,6 @@ export const OrderDetailModal = ({ order, onClose }) => {
           </button>
         </div>
         <div className="overflow-y-auto custom-scrollbar flex-1 bg-slate-50 p-6 print:p-0">
-          {/* Thông tin khách hàng */}
           <div className="bg-white rounded-2xl p-5 mb-8 border border-slate-200 shadow-sm print:hidden">
             <h4 className="font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2 flex items-center gap-2">
               <User size={18} className="text-slate-400" /> Thông tin người đặt
@@ -50,6 +49,38 @@ export const OrderDetailModal = ({ order, onClose }) => {
                 >
                   {order.status}
                 </span>
+              </div>
+            </div>
+          </div>
+
+          {/* VÉ ĐIỆN TỬ */}
+          <div
+            id="print-ticket"
+            className="bg-white mx-auto w-full max-w-[400px] rounded-xl shadow-2xl overflow-hidden font-sans text-gray-900 border border-gray-200 relative print:border-none print:shadow-none"
+          >
+            <div className="bg-[#121826] p-5 pb-5 relative overflow-hidden print:bg-[#121826] print:text-white shrink-0">
+              <div className="absolute -right-6 -top-6 opacity-10 print:opacity-20">
+                <Ticket
+                  size={100}
+                  className="text-[#d4af37] rotate-12 print:text-white"
+                />
+              </div>
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-2">
+                  <Crown
+                    size={14}
+                    className="text-[#d4af37] print:text-white"
+                  />
+                  <p className="text-[#d4af37] text-[10px] font-bold tracking-[0.3em] uppercase print:text-white">
+                    V.I.P Admission
+                  </p>
+                </div>
+                <h2 className="text-[20px] font-black text-white leading-tight uppercase tracking-wide">
+                  {order.movieTitle}
+                </h2>
+                <div className="mt-2 inline-block px-2 py-0.5 bg-[#d4af37] text-slate-900 text-[9px] font-black tracking-widest uppercase rounded-sm print:bg-white print:text-black">
+                  2D Subtitle
+                </div>
               </div>
             </div>
           </div>
