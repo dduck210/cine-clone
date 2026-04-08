@@ -83,7 +83,6 @@ export const OrderDetailModal = ({ order, onClose }) => {
               </div>
             </div>
 
-            {/* THÊM PHẦN BOX DATA */}
             <div className="p-4 relative bg-white flex-1 flex flex-col print:bg-white print:border-x-2 print:border-black print:p-2">
               <div
                 className="absolute inset-0 opacity-[0.03] pointer-events-none print:hidden"
@@ -116,6 +115,26 @@ export const OrderDetailModal = ({ order, onClose }) => {
                     </p>
                     <p className="text-[12px] font-extrabold text-slate-900 print:text-black">
                       {order.showTime}
+                    </p>
+                  </div>
+                </div>
+
+                {/* THÊM BOX SỐ GHẾ */}
+                <div className="p-3 bg-[#fffaf0] border border-[#f3e3b7] rounded-lg flex justify-between items-center print:border-gray-400 print:bg-transparent print:border-2">
+                  <div>
+                    <p className="text-[9px] text-[#b8860b] font-bold uppercase tracking-[0.2em] mb-0.5 print:text-black">
+                      Seat(s)
+                    </p>
+                    <p className="text-[24px] font-black text-slate-900 tracking-tighter leading-none print:text-black">
+                      {order.selectedSeats?.join(", ")}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[9px] text-[#b8860b] font-bold uppercase tracking-[0.2em] mb-0.5 print:text-black">
+                      Room
+                    </p>
+                    <p className="text-[24px] font-black text-slate-900 tracking-tighter leading-none print:text-black">
+                      03
                     </p>
                   </div>
                 </div>
