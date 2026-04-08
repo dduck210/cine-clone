@@ -109,7 +109,8 @@ const MyTicketsPage = () => {
     <div className="min-h-screen bg-[#f8fafc] font-sans text-gray-900">
       <Navbar />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
+      {/* SỬA LỖI Ở ĐÂY: Thay py-12 thành pt-28 pb-12 để đẩy nội dung xuống né Navbar */}
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-28 pb-12">
         <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2 border-l-4 border-red-600 pl-4">
