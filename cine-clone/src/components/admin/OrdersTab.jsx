@@ -148,6 +148,32 @@ export const OrderDetailModal = ({ order, onClose }) => {
                   </div>
                 </div>
               </div>
+
+              <div className="mt-3 pt-3 flex flex-col items-center justify-center shrink-0 print:mt-1 print:pt-1">
+                <div className="flex gap-4 items-center w-full px-2 justify-center">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${order.orderId}`}
+                    alt="QR Code"
+                    className="w-[60px] h-[60px] mix-blend-multiply shrink-0"
+                  />
+                  <div className="flex flex-col justify-center items-center">
+                    <div className="h-6 flex gap-[2px] opacity-80 justify-center w-full print:opacity-100">
+                      {[2, 4, 1, 3, 2, 1, 1, 3, 4, 2, 1, 2, 3, 1, 1].map(
+                        (w, i) => (
+                          <div
+                            key={i}
+                            className="bg-slate-900 h-full print:bg-black"
+                            style={{ width: `${w}px` }}
+                          ></div>
+                        ),
+                      )}
+                    </div>
+                    <p className="font-mono font-bold text-slate-600 text-[10px] mt-1.5 tracking-widest uppercase print:text-black">
+                      {order.orderId}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
