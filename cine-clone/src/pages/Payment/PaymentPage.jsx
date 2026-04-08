@@ -15,6 +15,7 @@ import {
   Armchair,
   Popcorn,
 } from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
 
 const PaymentPage = () => {
   const location = useLocation();
@@ -26,14 +27,15 @@ const PaymentPage = () => {
     showTime,
     showDate,
     showAddress,
-    selectedSeats,
-    combos,
+    selectedSeats = [],
+    combos = [],
     finalTotalPrice,
     poster,
   } = location.state || {};
 
   const [paymentMethod, setPaymentMethod] = useState("momo");
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [countdown, setCountdown] = useState(5);
 
   const [customerInfo, setCustomerInfo] = useState({
@@ -41,55 +43,51 @@ const PaymentPage = () => {
     phone: "",
     email: "",
   });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     window.scrollTo(0, 0);
     if (!location.state) navigate("/");
   }, [location, navigate]);
 
+  const validateForm = () => {
+    let newErrors = {};
+    const phoneRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!customerInfo.name.trim()) newErrors.name = "Vui lòng nhập họ tên";
+    if (!customerInfo.phone.trim()) {
+      newErrors.phone = "Vui lòng nhập số điện thoại";
+    } else if (!phoneRegex.test(customerInfo.phone)) {
+      newErrors.phone = "Số điện thoại không hợp lệ";
+    }
+    if (!customerInfo.email.trim()) {
+      newErrors.email = "Vui lòng nhập email";
+    } else if (!emailRegex.test(customerInfo.email)) {
+      newErrors.email = "Email sai định dạng";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handlePayment = () => {
+    if (isProcessing) return;
+    if (!validateForm()) {
+      toast.error("Thông tin chưa chính xác!", { id: "pay-val" });
+      return;
+    }
+
+    setIsProcessing(true);
     setIsSuccess(true);
+
     const fakeOrderId = `XC-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    const newOrder = {
-      orderId: fakeOrderId,
-      customerName: customerInfo.name || "Khách hàng Vãng lai",
-      phone: customerInfo.phone || "Không cung cấp",
-      bookingTime: new Date().toLocaleString("vi-VN"),
-      movieTitle,
-      cinemaName,
-      showDate,
-      showTime,
-      selectedSeats,
-      finalTotalPrice,
-      status: "Đã thanh toán",
-    };
-
-    const existingOrders = JSON.parse(
-      localStorage.getItem("admin_orders") || "[]",
-    );
-    localStorage.setItem(
-      "admin_orders",
-      JSON.stringify([newOrder, ...existingOrders]),
-    );
-
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev === 1) {
           clearInterval(timer);
           navigate("/payment-success", {
-            state: {
-              movieTitle,
-              cinemaName,
-              showTime,
-              showDate,
-              showAddress,
-              selectedSeats,
-              combos,
-              finalTotalPrice,
-              poster,
-              orderId: fakeOrderId,
-            },
+            state: { ...location.state, orderId: fakeOrderId },
           });
         }
         return prev - 1;
@@ -102,331 +100,306 @@ const PaymentPage = () => {
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 relative">
       <Navbar />
+      <Toaster position="top-center" />
 
       {isSuccess && (
-        <div className="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center relative overflow-hidden animate-scale-up border border-slate-100">
-            <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-green-100">
+        <div className="fixed inset-0 bg-slate-900/80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-[32px] shadow-2xl p-10 max-w-md w-full text-center border border-slate-100">
+            <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-100 shadow-inner">
               <CheckCircle
-                className="w-12 h-12 text-green-500 animate-bounce-short"
-                fill="currentColor"
+                className="w-12 h-12 text-emerald-500 animate-bounce-short"
+                strokeWidth={3}
               />
             </div>
-            <h2 className="text-3xl font-extrabold text-slate-800 mb-3">
-              Thanh toán thành công!
+            <h2 className="text-2xl font-black text-slate-800 mb-2">
+              Thanh toán xong!
             </h2>
             <p className="text-slate-500 mb-8 font-medium">
-              Vé đã được gửi tới email và số điện thoại của bạn. Chúc bạn xem
-              phim vui vẻ!
+              Đang chuyển hướng sau {countdown}s...
             </p>
-            <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-5 mb-8">
-              <p className="text-sm text-slate-400 mb-1 uppercase tracking-widest font-bold">
-                Mã đặt vé
-              </p>
-              <p className="text-2xl font-mono font-black text-[#dc2626] tracking-widest drop-shadow-sm">
-                XC-{Math.floor(100000 + Math.random() * 900000)}
-              </p>
-            </div>
-            <button
-              onClick={() => navigate("/")}
-              className="w-full bg-[#dc2626] hover:bg-red-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-red-200 uppercase tracking-wide"
-            >
-              Về trang chủ ({countdown}s)
-            </button>
           </div>
         </div>
       )}
 
-      <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-28 pb-16">
-        <div className="mb-10 text-center">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-800 mb-3">
+      <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-28 pb-20">
+        <div className="mb-12 text-center">
+          <h1 className="text-3xl font-black text-slate-800 mb-3 uppercase tracking-tight">
             Xác nhận & Thanh toán
           </h1>
           <p className="text-slate-500 max-w-2xl mx-auto font-medium">
-            Vui lòng kiểm tra lại thông tin đặt vé và chọn phương thức thanh
-            toán phù hợp.
+            An toàn - Nhanh chóng - Bảo mật
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-          <div className="lg:col-span-7 space-y-8">
-            <section className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200">
-              <h3 className="font-bold text-xl text-slate-800 mb-6 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-[#dc2626]">
-                  <User size={20} strokeWidth={2.5} />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="lg:col-span-7 flex flex-col gap-8">
+            <section className="bg-white p-10 rounded-[32px] shadow-sm border border-slate-200">
+              <h3 className="font-bold text-xl text-slate-800 mb-8 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-[#dc2626]">
+                  <User size={22} strokeWidth={2.5} />
                 </div>
                 Thông tin người nhận
               </h3>
-              <div className="space-y-5">
+              <div className="space-y-6">
                 <div className="relative">
                   <User
-                    className="absolute left-4 top-3.5 text-slate-400"
+                    className={`absolute left-4 top-4 ${errors.name ? "text-red-500" : "text-slate-400"}`}
                     size={20}
                   />
                   <input
                     type="text"
                     placeholder="Họ và tên (Bắt buộc)"
-                    onChange={(e) =>
-                      setCustomerInfo({ ...customerInfo, name: e.target.value })
-                    }
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-3 focus:ring-2 focus:ring-red-100 focus:border-[#dc2626] outline-none transition-all font-medium text-slate-800 placeholder:text-slate-400"
+                    className={`w-full bg-slate-50 border rounded-xl pl-12 pr-4 py-3.5 outline-none transition-all font-semibold ${errors.name ? "border-red-500 ring-4 ring-red-50" : "border-slate-200 focus:border-[#dc2626] focus:ring-4 focus:ring-red-50"}`}
+                    onChange={(e) => {
+                      setCustomerInfo({
+                        ...customerInfo,
+                        name: e.target.value,
+                      });
+                      if (errors.name) setErrors({ ...errors, name: "" });
+                    }}
                   />
+                  {errors.name && (
+                    <p className="text-red-500 text-[11px] mt-2 font-bold italic ml-1">
+                      {errors.name}
+                    </p>
+                  )}
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="relative">
                     <Phone
-                      className="absolute left-4 top-3.5 text-slate-400"
+                      className={`absolute left-4 top-4 ${errors.phone ? "text-red-500" : "text-slate-400"}`}
                       size={20}
                     />
                     <input
                       type="tel"
-                      placeholder="Số điện thoại (Bắt buộc)"
-                      onChange={(e) =>
+                      placeholder="Số điện thoại"
+                      className={`w-full bg-slate-50 border rounded-xl pl-12 pr-4 py-3.5 outline-none transition-all font-semibold ${errors.phone ? "border-red-500 ring-4 ring-red-50" : "border-slate-200 focus:border-[#dc2626] focus:ring-4 focus:ring-red-50"}`}
+                      onChange={(e) => {
                         setCustomerInfo({
                           ...customerInfo,
                           phone: e.target.value,
-                        })
-                      }
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-3 focus:ring-2 focus:ring-red-100 focus:border-[#dc2626] outline-none transition-all font-medium text-slate-800 placeholder:text-slate-400"
+                        });
+                        if (errors.phone) setErrors({ ...errors, phone: "" });
+                      }}
                     />
                   </div>
                   <div className="relative">
                     <Mail
-                      className="absolute left-4 top-3.5 text-slate-400"
+                      className={`absolute left-4 top-4 ${errors.email ? "text-red-500" : "text-slate-400"}`}
                       size={20}
                     />
                     <input
                       type="email"
-                      placeholder="Email (Nhận vé)"
-                      onChange={(e) =>
+                      placeholder="Email nhận vé"
+                      className={`w-full bg-slate-50 border rounded-xl pl-12 pr-4 py-3.5 outline-none transition-all font-semibold ${errors.email ? "border-red-500 ring-4 ring-red-50" : "border-slate-200 focus:border-[#dc2626] focus:ring-4 focus:ring-red-50"}`}
+                      onChange={(e) => {
                         setCustomerInfo({
                           ...customerInfo,
                           email: e.target.value,
-                        })
-                      }
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-3 focus:ring-2 focus:ring-red-100 focus:border-[#dc2626] outline-none transition-all font-medium text-slate-800 placeholder:text-slate-400"
+                        });
+                        if (errors.email) setErrors({ ...errors, email: "" });
+                      }}
                     />
                   </div>
                 </div>
+                {(errors.phone || errors.email) && (
+                  <p className="text-red-500 text-[11px] font-bold italic ml-1">
+                    {errors.phone || errors.email}
+                  </p>
+                )}
               </div>
             </section>
 
-            <section className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200">
-              <h3 className="font-bold text-xl text-slate-800 mb-6 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-[#dc2626]">
-                  <CreditCard size={20} strokeWidth={2.5} />
+            <section className="bg-white p-10 rounded-[32px] shadow-sm border border-slate-200">
+              <h3 className="font-bold text-xl text-slate-800 mb-8 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-[#dc2626]">
+                  <CreditCard size={22} strokeWidth={2.5} />
                 </div>
                 Phương thức thanh toán
               </h3>
               <div className="space-y-4">
-                <label
-                  onClick={() => setPaymentMethod("momo")}
-                  className={`relative flex items-center gap-5 p-5 border-2 rounded-2xl cursor-pointer transition-all duration-300 shadow-sm overflow-hidden group ${paymentMethod === "momo" ? "border-[#d82d8b] bg-[#fff0f6]" : "border-slate-100 bg-white hover:border-slate-300 hover:shadow-md"}`}
-                >
-                  <Smartphone
-                    className={`absolute -right-6 -bottom-6 w-24 h-24 transition-all opacity-10 group-hover:opacity-20 rotate-12 ${paymentMethod === "momo" ? "text-[#d82d8b]" : "text-slate-400"}`}
-                  />
-                  <div
-                    className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all shrink-0 ${paymentMethod === "momo" ? "bg-[#d82d8b] text-white shadow-lg shadow-pink-200 scale-110" : "bg-slate-100 text-slate-400"}`}
+                {["momo", "zalopay", "card"].map((method) => (
+                  <label
+                    key={method}
+                    onClick={() => setPaymentMethod(method)}
+                    className={`relative flex items-center gap-6 p-6 border-2 rounded-[24px] cursor-pointer transition-all duration-300 shadow-sm overflow-hidden group 
+        ${
+          paymentMethod === method
+            ? method === "momo"
+              ? "border-[#d82d8b] bg-[#fff0f6]"
+              : method === "zalopay"
+                ? "border-[#0068ff] bg-[#e5f0ff]"
+                : "border-slate-800 bg-slate-50"
+            : "border-slate-100 bg-white hover:border-slate-300"
+        }`}
                   >
-                    <QrCode size={28} />
-                  </div>
-                  <div className="flex-1 relative z-10">
-                    <h4
-                      className={`font-bold text-lg ${paymentMethod === "momo" ? "text-[#d82d8b]" : "text-slate-800"}`}
+                    <div
+                      className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all shrink-0 
+            ${
+              paymentMethod === method
+                ? method === "momo"
+                  ? "bg-[#d82d8b] text-white shadow-lg shadow-pink-200"
+                  : method === "zalopay"
+                    ? "bg-[#0068ff] text-white shadow-lg shadow-blue-200"
+                    : "bg-slate-800 text-white shadow-lg"
+                : "bg-slate-100 text-slate-400"
+            }`}
                     >
-                      Ví điện tử MoMo
-                    </h4>
-                    <p
-                      className={`text-sm font-medium mt-0.5 ${paymentMethod === "momo" ? "text-pink-700" : "text-slate-500"}`}
-                    >
-                      Quét mã QR để thanh toán nhanh chóng
-                    </p>
-                  </div>
-                  <div
-                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${paymentMethod === "momo" ? "border-[#d82d8b] bg-[#d82d8b] text-white" : "border-slate-300"}`}
-                  >
-                    {paymentMethod === "momo" && (
-                      <CheckCircle size={16} strokeWidth={3} />
-                    )}
-                  </div>
-                </label>
+                      {method === "card" ? (
+                        <CreditCard size={28} />
+                      ) : (
+                        <QrCode size={28} />
+                      )}
+                    </div>
 
-                <label
-                  onClick={() => setPaymentMethod("zalopay")}
-                  className={`relative flex items-center gap-5 p-5 border-2 rounded-2xl cursor-pointer transition-all duration-300 shadow-sm overflow-hidden group ${paymentMethod === "zalopay" ? "border-[#0068ff] bg-[#e5f0ff]" : "border-slate-100 bg-white hover:border-slate-300 hover:shadow-md"}`}
-                >
-                  <Smartphone
-                    className={`absolute -right-6 -bottom-6 w-24 h-24 transition-all opacity-10 group-hover:opacity-20 rotate-12 ${paymentMethod === "zalopay" ? "text-[#0068ff]" : "text-slate-400"}`}
-                  />
-                  <div
-                    className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all shrink-0 ${paymentMethod === "zalopay" ? "bg-[#0068ff] text-white shadow-lg shadow-blue-200 scale-110" : "bg-slate-100 text-slate-400"}`}
-                  >
-                    <span className="font-black text-xs">ZaloPay</span>
-                  </div>
-                  <div className="flex-1 relative z-10">
-                    <h4
-                      className={`font-bold text-lg ${paymentMethod === "zalopay" ? "text-[#0068ff]" : "text-slate-800"}`}
-                    >
-                      Ví ZaloPay
-                    </h4>
-                    <p
-                      className={`text-sm font-medium mt-0.5 ${paymentMethod === "zalopay" ? "text-blue-700" : "text-slate-500"}`}
-                    >
-                      Thanh toán qua ứng dụng Zalo
-                    </p>
-                  </div>
-                  <div
-                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${paymentMethod === "zalopay" ? "border-[#0068ff] bg-[#0068ff] text-white" : "border-slate-300"}`}
-                  >
-                    {paymentMethod === "zalopay" && (
-                      <CheckCircle size={16} strokeWidth={3} />
-                    )}
-                  </div>
-                </label>
+                    <div className="flex-1 relative z-10">
+                      <h4
+                        className={`font-black text-lg ${
+                          paymentMethod === method
+                            ? method === "momo"
+                              ? "text-[#d82d8b]"
+                              : method === "zalopay"
+                                ? "text-[#0068ff]"
+                                : "text-slate-900"
+                            : "text-slate-800"
+                        }`}
+                      >
+                        {method === "card"
+                          ? "Thẻ Quốc tế / Nội địa"
+                          : method === "momo"
+                            ? "Ví điện tử MoMo"
+                            : "Ví ZaloPay"}
+                      </h4>
+                      <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">
+                        Thanh toán bảo mật 100%
+                      </p>
+                    </div>
 
-                <label
-                  onClick={() => setPaymentMethod("card")}
-                  className={`relative flex items-center gap-5 p-5 border-2 rounded-2xl cursor-pointer transition-all duration-300 shadow-sm overflow-hidden group ${paymentMethod === "card" ? "border-slate-800 bg-slate-50" : "border-slate-100 bg-white hover:border-slate-300 hover:shadow-md"}`}
-                >
-                  <CreditCard
-                    className={`absolute -right-6 -bottom-6 w-24 h-24 transition-all opacity-10 group-hover:opacity-20 rotate-12 ${paymentMethod === "card" ? "text-slate-800" : "text-slate-400"}`}
-                  />
-                  <div
-                    className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all shrink-0 ${paymentMethod === "card" ? "bg-slate-800 text-white shadow-lg scale-110" : "bg-slate-100 text-slate-400"}`}
-                  >
-                    <CreditCard size={28} />
-                  </div>
-                  <div className="flex-1 relative z-10">
-                    <h4
-                      className={`font-bold text-lg ${paymentMethod === "card" ? "text-slate-900" : "text-slate-800"}`}
+                    <div
+                      className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all shrink-0 
+          ${
+            paymentMethod === method
+              ? method === "momo"
+                ? "border-[#d82d8b] bg-[#d82d8b] text-white"
+                : method === "zalopay"
+                  ? "border-[#0068ff] bg-[#0068ff] text-white"
+                  : "border-slate-800 bg-slate-800 text-white"
+              : "border-slate-200 bg-transparent"
+          }`}
                     >
-                      Thẻ Quốc tế / Nội địa
-                    </h4>
-                    <p
-                      className={`text-sm font-medium mt-0.5 ${paymentMethod === "card" ? "text-slate-700" : "text-slate-500"}`}
-                    >
-                      Visa, Master, JCB, Napas
-                    </p>
-                  </div>
-                  <div
-                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${paymentMethod === "card" ? "border-slate-800 bg-slate-800 text-white" : "border-slate-300"}`}
-                  >
-                    {paymentMethod === "card" && (
-                      <CheckCircle size={16} strokeWidth={3} />
-                    )}
-                  </div>
-                </label>
+                      {paymentMethod === method && (
+                        <CheckCircle
+                          size={18}
+                          strokeWidth={3}
+                          className="animate-scale-in"
+                        />
+                      )}
+                    </div>
+                  </label>
+                ))}
               </div>
             </section>
           </div>
 
           <div className="lg:col-span-5 sticky top-28">
-            <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200">
+            <div className="bg-white rounded-[32px] shadow-xl overflow-hidden border border-slate-200">
               <div className="relative h-48 bg-slate-900 flex items-center p-6 overflow-hidden">
                 {poster && (
-                  <>
-                    <img
-                      src={poster}
-                      className="absolute inset-0 w-full h-full object-cover opacity-40 blur-sm scale-110"
-                      alt="bg"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
-                  </>
+                  <img
+                    src={poster}
+                    className="absolute inset-0 w-full h-full object-cover opacity-30 blur-sm scale-110"
+                    alt="bg"
+                  />
                 )}
-
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
                 <div className="relative z-10 w-full flex gap-5 items-center">
                   {poster && (
                     <img
                       src={poster}
-                      className="w-24 h-36 object-cover rounded-lg shadow-lg border border-white/20 shrink-0"
+                      className="w-20 h-28 object-cover rounded-xl shadow-2xl border border-white/20 shrink-0"
                       alt="poster"
                     />
                   )}
                   <div className="flex-1">
-                    <h3 className="font-extrabold text-2xl text-white mb-2 leading-tight text-shadow-sm line-clamp-2">
+                    <h3 className="font-black text-xl text-white mb-2 leading-tight uppercase tracking-tight line-clamp-2">
                       {movieTitle}
                     </h3>
-                    <p className="text-white/90 text-xs font-bold bg-white/20 inline-block px-2.5 py-1 rounded backdrop-blur-md uppercase tracking-wider">
+                    <div className="bg-[#dc2626] text-white text-[9px] font-black px-2 py-1 rounded uppercase tracking-widest inline-block shadow-md">
                       2D Phụ Đề
-                    </p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="p-6 sm:p-8 relative bg-white">
+              <div className="p-8 relative bg-white">
                 <div className="absolute -left-3 top-0 w-6 h-6 bg-slate-50 rounded-full border-r border-slate-200 shadow-inner"></div>
                 <div className="absolute -right-3 top-0 w-6 h-6 bg-slate-50 rounded-full border-l border-slate-200 shadow-inner"></div>
-                <div className="border-t-2 border-dashed border-slate-200 mb-8"></div>
+                <div className="border-t-2 border-dashed border-slate-100 mb-8"></div>
 
                 <div className="space-y-6">
                   <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-[#dc2626] shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-[#dc2626] shrink-0 border border-red-100 shadow-sm">
                       <MapPin size={20} strokeWidth={2.5} />
                     </div>
                     <div>
-                      <p className="text-slate-400 font-bold uppercase tracking-wider text-[11px] mb-1">
+                      <p className="text-slate-400 font-bold uppercase tracking-wider text-[9px] mb-0.5">
                         Rạp chiếu
                       </p>
-                      <p className="font-bold text-slate-800 text-lg leading-tight">
+                      <p className="font-bold text-slate-800 text-[16px] leading-tight">
                         {cinemaName}
-                      </p>
-                      <p className="text-slate-500 text-sm mt-0.5 font-medium">
-                        {showAddress}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-[#dc2626] shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-[#dc2626] shrink-0 border border-red-100 shadow-sm">
                       <Calendar size={20} strokeWidth={2.5} />
                     </div>
                     <div>
-                      <p className="text-slate-400 font-bold uppercase tracking-wider text-[11px] mb-1">
+                      <p className="text-slate-400 font-bold uppercase tracking-wider text-[9px] mb-0.5">
                         Suất chiếu
                       </p>
-                      <p className="font-bold text-slate-800 text-lg leading-tight">
+                      <p className="font-bold text-slate-800 text-[16px] leading-tight">
                         {showTime} - {showDate}
-                      </p>
-                      <p className="text-slate-500 text-sm mt-0.5 font-medium">
-                        Phòng 03
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#dc2626] shrink-0 shadow-sm">
+
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center gap-4 shadow-inner">
+                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[#dc2626] shrink-0 shadow-sm border border-slate-100">
                       <Armchair size={20} strokeWidth={2.5} />
                     </div>
                     <div className="flex-1">
-                      <p className="text-slate-400 font-bold uppercase tracking-wider text-[11px] mb-1">
-                        Ghế đã chọn ({selectedSeats?.length})
+                      <p className="text-slate-400 font-bold uppercase tracking-wider text-[9px] mb-0.5">
+                        Vị trí ghế
                       </p>
-                      <p className="font-black text-[#dc2626] text-xl break-words tracking-widest">
+                      <p className="font-black text-[#dc2626] text-xl tracking-widest">
                         {selectedSeats?.join(", ")}
                       </p>
                     </div>
                   </div>
+
                   {combos && combos.some((c) => c.quantity > 0) && (
-                    <div className="flex items-start gap-4 bg-orange-50 p-4 rounded-2xl border border-orange-100">
-                      <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-orange-500 shrink-0 shadow-sm">
-                        <Popcorn size={20} strokeWidth={2.5} />
+                    <div className="bg-red-50/50 p-4 rounded-2xl border border-red-100/50 flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-red-500 shrink-0 shadow-sm">
+                        <Popcorn size={20} />
                       </div>
                       <div className="flex-1">
-                        <p className="text-orange-700 text-[11px] font-bold uppercase tracking-wider mb-2">
-                          Combo bắp nước
+                        <p className="text-red-700 text-[10px] font-bold uppercase tracking-wider mb-2">
+                          Bắp & Nước
                         </p>
-                        <ul className="space-y-2">
+                        <ul className="space-y-1.5">
                           {combos
                             .filter((c) => c.quantity > 0)
                             .map((c) => (
                               <li
                                 key={c.id}
-                                className="flex justify-between text-sm text-slate-800 font-bold"
+                                className="flex justify-between text-[13px] text-slate-700 font-bold"
                               >
                                 <span>
                                   {c.quantity}x {c.name}
                                 </span>
-                                <span>
-                                  {(c.price * c.quantity).toLocaleString()} đ
+                                <span className="text-slate-400">
+                                  {(c.price * c.quantity).toLocaleString()}đ
                                 </span>
                               </li>
                             ))}
@@ -436,27 +409,26 @@ const PaymentPage = () => {
                   )}
                 </div>
 
-                <div className="mt-8 pt-6 border-t-2 border-slate-100">
-                  <div className="flex justify-between items-end">
-                    <span className="text-slate-500 font-bold uppercase tracking-wider text-xs">
-                      Tổng thanh toán
+                <div className="mt-8 pt-6 border-t-2 border-slate-100 flex justify-between items-end">
+                  <span className="text-slate-400 font-black uppercase tracking-widest text-[9px] mb-1">
+                    Tổng tiền thanh toán
+                  </span>
+                  <span className="text-2xl font-black text-slate-900 leading-none">
+                    {finalTotalPrice?.toLocaleString("vi-VN")}{" "}
+                    <span className="text-base text-slate-300 font-normal">
+                      đ
                     </span>
-                    <span className="text-3xl font-black text-[#dc2626]">
-                      {finalTotalPrice?.toLocaleString("vi-VN")}{" "}
-                      <span className="text-xl text-slate-400">₫</span>
-                    </span>
-                  </div>
+                  </span>
                 </div>
 
                 <button
                   onClick={handlePayment}
-                  className="w-full bg-[#dc2626] hover:bg-red-700 text-white font-black py-4 rounded-xl shadow-lg shadow-red-200 transition-all text-[15px] uppercase tracking-widest mt-8 transform hover:-translate-y-1"
+                  disabled={isProcessing}
+                  className={`w-full font-black py-4 rounded-2xl shadow-xl transition-all text-sm uppercase tracking-widest mt-8 flex items-center justify-center gap-3 
+                  ${isProcessing ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none" : "bg-[#dc2626] hover:bg-red-700 text-white shadow-red-200 transform hover:-translate-y-1"}`}
                 >
-                  Xác nhận thanh toán
+                  {isProcessing ? "ĐANG XỬ LÝ..." : "XÁC NHẬN THANH TOÁN"}
                 </button>
-                <p className="text-xs text-center text-slate-400 mt-4 font-medium">
-                  Bằng việc xác nhận, bạn đồng ý với điều khoản sử dụng.
-                </p>
               </div>
             </div>
           </div>
