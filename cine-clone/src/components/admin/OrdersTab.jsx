@@ -17,6 +17,16 @@ export const OrderDetailModal = ({ order, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+      <style type="text/css" media="print">
+        {`
+          @page { size: 80mm 145mm; margin: 0; }
+          html, body { width: 80mm !important; height: 145mm !important; margin: 0 !important; padding: 0 !important; background: white !important; overflow: hidden !important; }
+          body * { visibility: hidden !important; }
+          #print-ticket, #print-ticket * { visibility: visible !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+          #print-ticket { position: fixed !important; top: 0 !important; left: 0 !important; width: 80mm !important; height: 144mm !important; padding: 4mm !important; margin: 0 !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; display: flex !important; flex-direction: column !important; justify-content: space-between !important; z-index: 999999 !important; transform: none !important; }
+        `}
+      </style>
+
       <div
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity print:hidden"
         onClick={onClose}
@@ -190,6 +200,30 @@ export const OrderDetailModal = ({ order, onClose }) => {
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="p-4 border-t border-slate-100 bg-white flex justify-end gap-3 shrink-0 print:hidden">
+          <button
+            onClick={onClose}
+            className="px-6 py-2.5 text-slate-600 border border-slate-200 hover:bg-slate-50 rounded-xl font-semibold transition-all text-sm"
+          >
+            Đóng
+          </button>
+          {isPaid ? (
+            <button
+              onClick={() => window.print()}
+              className="px-6 py-2.5 bg-[#dc2626] hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-200 transition-all text-sm flex items-center gap-2"
+            >
+              <Printer size={18} /> In vé cứng
+            </button>
+          ) : (
+            <button
+              disabled
+              className="px-6 py-2.5 bg-gray-200 text-gray-500 rounded-xl font-bold cursor-not-allowed text-sm flex items-center gap-2"
+            >
+              <Printer size={18} /> Chưa thanh toán
+            </button>
+          )}
         </div>
       </div>
     </div>
