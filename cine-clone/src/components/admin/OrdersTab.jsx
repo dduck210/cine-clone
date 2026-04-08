@@ -1,5 +1,7 @@
 export const OrderDetailModal = ({ order, onClose }) => {
   if (!order) return null;
+  const isPaid = order.status === "Đã thanh toán";
+
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       <div
@@ -21,7 +23,9 @@ export const OrderDetailModal = ({ order, onClose }) => {
             <X size={20} />
           </button>
         </div>
-        <div className="overflow-y-auto custom-scrollbar flex-1 bg-slate-50 p-6 print:p-0"></div>
+        <div className="overflow-y-auto custom-scrollbar flex-1 bg-slate-50 p-6 print:p-0">
+          {/* Nội dung sẽ đắp dần vào đây */}
+        </div>
       </div>
     </div>
   );
