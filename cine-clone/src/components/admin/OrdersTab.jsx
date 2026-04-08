@@ -177,7 +177,6 @@ export const OrderDetailModal = ({ order, onClose }) => {
           </div>
         </div>
 
-        {/* THÊM PHẦN ACTION BUTTONS */}
         <div className="p-4 border-t border-slate-100 bg-white flex justify-end gap-3 shrink-0 print:hidden">
           <button
             onClick={onClose}
@@ -185,12 +184,23 @@ export const OrderDetailModal = ({ order, onClose }) => {
           >
             Đóng
           </button>
-          <button
-            onClick={() => window.print()}
-            className="px-6 py-2.5 bg-[#dc2626] hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-200 transition-all text-sm flex items-center gap-2"
-          >
-            <Printer size={18} /> In vé cứng
-          </button>
+
+          {/* CẬP NHẬT LOGIC CHECK isPaid VÀO NÚT */}
+          {isPaid ? (
+            <button
+              onClick={() => window.print()}
+              className="px-6 py-2.5 bg-[#dc2626] hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-200 transition-all text-sm flex items-center gap-2"
+            >
+              <Printer size={18} /> In vé cứng
+            </button>
+          ) : (
+            <button
+              disabled
+              className="px-6 py-2.5 bg-gray-200 text-gray-500 rounded-xl font-bold cursor-not-allowed text-sm flex items-center gap-2"
+            >
+              <Printer size={18} /> Chưa thanh toán
+            </button>
+          )}
         </div>
       </div>
     </div>
