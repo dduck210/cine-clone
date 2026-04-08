@@ -111,6 +111,24 @@ export const OrderDetailModal = ({ order, onClose }) => {
                     {order.cinemaName}
                   </p>
                 </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg print:border-gray-400 print:bg-transparent print:p-1 print:border-0">
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em] mb-0.5 print:text-gray-600">
+                      Date
+                    </p>
+                    <p className="text-[13px] font-extrabold text-slate-900 print:text-black">
+                      {order.showDate}
+                    </p>
+                  </div>
+                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-right print:border-gray-400 print:bg-transparent print:p-1 print:border-0">
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em] mb-0.5 print:text-gray-600">
+                      Time
+                    </p>
+                    <p className="text-[13px] font-extrabold text-slate-900 print:text-black">
+                      {order.showTime}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
