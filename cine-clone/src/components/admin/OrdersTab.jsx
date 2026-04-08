@@ -3,6 +3,18 @@ export const OrderDetailModal = ({ order, onClose }) => {
   const isPaid = order.status === "Đã thanh toán";
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+      {/* THÊM STYLE PRINT CSS ĐỂ HOÀN THIỆN TÍNH NĂNG IN */}
+      <style type="text/css" media="print">
+        {`
+          @page { size: 80mm 116mm; margin: 0; }
+          html, body { width: 80mm !important; height: 116mm !important; background: white !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
+          body * { visibility: hidden !important; }
+          * { transform: none !important; animation: none !important; }
+          #print-ticket, #print-ticket * { visibility: visible !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          #print-ticket { position: absolute !important; top: 0 !important; left: 0 !important; width: 80mm !important; height: 115mm !important; padding: 3mm !important; margin: 0 !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; display: flex !important; flex-direction: column !important; justify-content: space-between !important; overflow: hidden !important; page-break-inside: avoid !important; page-break-after: avoid !important; }
+        `}
+      </style>
+
       <div
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity print:hidden"
         onClick={onClose}
@@ -184,8 +196,6 @@ export const OrderDetailModal = ({ order, onClose }) => {
           >
             Đóng
           </button>
-
-          {/* CẬP NHẬT LOGIC CHECK isPaid VÀO NÚT */}
           {isPaid ? (
             <button
               onClick={() => window.print()}
