@@ -19,6 +19,10 @@ import MoviesPage from "./pages/MoviesPage";
 import CinemasPage from "./pages/CinemasPage";
 import PromotionsPage from "./pages/PromotionsPage";
 
+// --- IMPORT TEST PAGES ---
+import TestAPI from "./pages/TestAPI";
+import TestAuth from "./pages/TestAuth";
+
 function App() {
   return (
     <>
@@ -47,6 +51,10 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/admin" element={<Dashboard />} />
+
+        {/* Route Test API & Auth */}
+        <Route path="/test-api" element={<TestAPI />} />
+        <Route path="/test-auth" element={<TestAuth />} />
       </Routes>
     </>
   );
