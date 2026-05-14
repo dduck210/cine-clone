@@ -1,3 +1,4 @@
+require('dns').setServers(['8.8.8.8', '8.8.4.4']);
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const Genre = require('./models/Genre');
@@ -50,7 +51,7 @@ const seedDB = async () => {
                 title: 'The Avengers',
                 genre: [createdGenres[0]._id],
                 duration: 143,
-                poster: 'https://via.placeholder.com/300x450?text=The+Avengers',
+                poster: 'https://image.tmdb.org/t/p/w500/RYMX2wcKCBAr24UyPD7xwmjaTn.jpg',
                 trailer: 'https://www.youtube.com/watch?v=eOviiWA-_yc',
                 description: 'Earth\'s mightiest heroes must come together to prevent an alien invasion.',
                 rating: 8,
@@ -61,7 +62,7 @@ const seedDB = async () => {
                 title: 'Superbad',
                 genre: [createdGenres[1]._id],
                 duration: 113,
-                poster: 'https://via.placeholder.com/300x450?text=Superbad',
+                poster: 'https://image.tmdb.org/t/p/w500/ek8e8txUyUwd2BNqj6lFEerJfbq.jpg',
                 trailer: 'https://www.youtube.com/watch?v=H9H0ujS28xo',
                 description: 'Two misfit friends try to navigate high school and get girls.',
                 rating: 7.6,
@@ -72,7 +73,7 @@ const seedDB = async () => {
                 title: 'The Shawshank Redemption',
                 genre: [createdGenres[2]._id],
                 duration: 142,
-                poster: 'https://via.placeholder.com/300x450?text=Shawshank',
+                poster: 'https://image.tmdb.org/t/p/w500/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg',
                 trailer: 'https://www.youtube.com/watch?v=6hB3S9bIaco',
                 description: 'Two imprisoned men bond over a number of years, finding solace and eventual redemption.',
                 rating: 9.3,
@@ -83,7 +84,7 @@ const seedDB = async () => {
                 title: 'The Ring',
                 genre: [createdGenres[3]._id],
                 duration: 115,
-                poster: 'https://via.placeholder.com/300x450?text=The+Ring',
+                poster: 'https://image.tmdb.org/t/p/w500/AeRpUynJKDpJveklBJipOYrVxCS.jpg',
                 trailer: 'https://www.youtube.com/watch?v=HQuC_yW_8aE',
                 description: 'A woman must deal with a mysterious videotape that kills anyone who watches it.',
                 rating: 7.1,
@@ -94,7 +95,7 @@ const seedDB = async () => {
                 title: 'The Notebook',
                 genre: [createdGenres[4]._id],
                 duration: 123,
-                poster: 'https://via.placeholder.com/300x450?text=The+Notebook',
+                poster: 'https://image.tmdb.org/t/p/w500/rNzQyW4f8B8cQeg7Dgj3n6eT5k9.jpg',
                 trailer: 'https://www.youtube.com/watch?v=FCWyj-zt3r8',
                 description: 'A poor man falls in love with a rich girl but they are separated due to class differences.',
                 rating: 7.8,
@@ -105,7 +106,7 @@ const seedDB = async () => {
                 title: 'Interstellar',
                 genre: [createdGenres[5]._id, createdGenres[2]._id],
                 duration: 169,
-                poster: 'https://via.placeholder.com/300x450?text=Interstellar',
+                poster: 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
                 trailer: 'https://www.youtube.com/watch?v=zSID6FbzZkE',
                 description: 'A team of astronauts must travel through a wormhole to save humanity.',
                 rating: 8.6,
