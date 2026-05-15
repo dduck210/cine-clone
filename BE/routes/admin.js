@@ -10,7 +10,7 @@ const Seat = require('../models/Seat');
 const { protect, admin } = require('../middleware/auth');
 
 // Get all cinemas
-router.get('/cinemas', async (req, res) => {
+router.get('/cinemas', protect, admin, async (req, res) => {
     try {
         const cinemas = await Cinema.find({});
         res.json(cinemas);

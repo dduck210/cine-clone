@@ -11,6 +11,10 @@ router.post('/', protect, async (req, res) => {
     try {
         const booking = await Booking.findById(bookingId);
         if (!booking) return res.status(404).json({ message: 'Booking not found' });
+        if (booking.user.toString() !== req.user._id.toString())
+            return res.status(403).json({ message: 'Not authorized' });
+        if (booking.status === 'paid')
+            return res.status(400).json({ message: 'Booking already paid' });
 
         const isCash = method === 'cash';
 
@@ -48,7 +52,7 @@ router.get('/:id', protect, async (req, res) => {
     }
 });
 
-// Refund payment
+// Refund payment (admin only)
 router.post('/:id/refund', protect, async (req, res) => {
     try {
         const payment = await Payment.findById(req.params.id);
@@ -56,6 +60,10 @@ router.post('/:id/refund', protect, async (req, res) => {
 
         const booking = await Booking.findById(payment.booking);
         if (!booking) return res.status(404).json({ message: 'Booking not found' });
+        if (req.user.role !== 'admin' && booking.user.toString() !== req.user._id.toString())
+            return res.status(403).json({ message: 'Not authorized' });
+        if (booking.status === 'cancelled')
+            return res.status(400).json({ message: 'Booking already cancelled' });
 
         payment.status = 'cancelled';
         payment.refundAmount = payment.amount;
