@@ -77,12 +77,8 @@ router.post('/ipn', async (req, res) => {
     }
 
     if (resultCode === 0) {
-        try {
-            const { bookingId } = JSON.parse(Buffer.from(extraData, 'base64').toString('utf8'));
-            await processSuccessfulPayment(bookingId, transId.toString(), parseInt(amount));
-        } catch (err) {
-            console.error('IPN error:', err.message);
-        }
+        const { bookingId } = JSON.parse(Buffer.from(extraData, 'base64').toString('utf8'));
+        await processSuccessfulPayment(bookingId, transId.toString(), parseInt(amount));
     }
 
     res.status(200).json({ message: 'ok' });
@@ -112,13 +108,13 @@ router.post('/confirm', protect, async (req, res) => {
 
         if (booking.status === 'pending') {
             await processSuccessfulPayment(bookingId, transId.toString(), parseInt(amount));
-            await booking.reload?.() || Object.assign(booking, await Booking.findById(bookingId));
         }
 
         const updatedBooking = await Booking.findById(bookingId)
             .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }] });
 
         res.json({
+            bookingId: updatedBooking._id,
             bookingCode: updatedBooking.bookingCode,
             movieTitle: updatedBooking.showtime?.movie?.title || '',
             cinemaName: updatedBooking.showtime?.cinema?.name || '',
@@ -128,6 +124,7 @@ router.post('/confirm', protect, async (req, res) => {
             selectedSeats: updatedBooking.seatNumbers || [],
             finalTotalPrice: updatedBooking.totalPrice,
             poster: updatedBooking.showtime?.movie?.poster || '',
+            combos: updatedBooking.extraItems || [],
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -135,8 +132,13 @@ router.post('/confirm', protect, async (req, res) => {
 });
 
 async function processSuccessfulPayment(bookingId, transactionId, amount) {
-    const booking = await Booking.findById(bookingId);
-    if (!booking || booking.status !== 'pending') return;
+    // Atomic gate — only one concurrent call can transition from 'pending' to 'paid'
+    const booking = await Booking.findOneAndUpdate(
+        { _id: bookingId, status: 'pending' },
+        { $set: { status: 'paid' } },
+        { new: true }
+    );
+    if (!booking) return; // already paid or not found
 
     const payment = new Payment({
         booking: bookingId,
@@ -148,7 +150,6 @@ async function processSuccessfulPayment(bookingId, transactionId, amount) {
     });
     await payment.save();
 
-    booking.status = 'paid';
     booking.paymentId = payment._id;
     await booking.save();
 

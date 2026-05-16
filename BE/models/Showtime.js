@@ -5,9 +5,17 @@ const showtimeSchema = new mongoose.Schema({
     cinema: { type: mongoose.Schema.Types.ObjectId, ref: 'Cinema', required: true },
     room: { type: mongoose.Schema.Types.ObjectId, ref: 'CinemaRoom', required: true },
     date: { type: Date, required: true },
-    startTime: { type: String, required: true }, // HH:mm format
+    startTime: { type: String, required: true }, // HH:mm
     endTime: { type: String },
-    price: { type: Number, required: true },
+    // Pricing: base + multipliers stored as final calculated prices
+    basePrice: { type: Number, required: true },
+    priceConfig: {
+        normal: { type: Number, required: true },
+        vip: { type: Number, required: true },
+        couple: { type: Number, required: true },
+    },
+    timeSlot: { type: String, enum: ['morning', 'evening', 'night'], required: true },
+    dayType: { type: String, enum: ['weekday', 'weekend', 'holiday'], required: true },
     totalSeats: { type: Number, required: true },
     availableSeats: { type: Number, required: true },
     status: { type: String, enum: ['active', 'cancelled'], default: 'active' },
