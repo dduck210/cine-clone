@@ -11,17 +11,18 @@ const generateToken = (id) => {
 
 // Register user
 router.post('/register', async (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, email, password, phone } = req.body;
     try {
         const userExists = await User.findOne({ email });
         if (userExists) {
             return res.status(400).json({ message: 'Email đã được sử dụng' });
         }
-        const user = await User.create({ name, email, password });
+        const user = await User.create({ name, email, password, phone: phone || '' });
         res.status(201).json({
             _id: user._id,
             name: user.name,
             email: user.email,
+            phone: user.phone || '',
             role: user.role,
             token: generateToken(user._id),
         });
@@ -47,6 +48,17 @@ router.post('/login', async (req, res) => {
         } else {
             res.status(401).json({ message: 'Email hoặc mật khẩu không đúng' });
         }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Get current user profile
+router.get('/profile', protect, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select('-password');
+        if (!user) return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+        res.json({ _id: user._id, name: user.name, email: user.email, phone: user.phone || '', role: user.role });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

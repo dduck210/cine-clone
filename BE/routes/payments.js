@@ -65,12 +65,12 @@ router.post('/:id/refund', protect, async (req, res) => {
         if (booking.status === 'cancelled')
             return res.status(400).json({ message: 'Booking already cancelled' });
 
-        payment.status = 'cancelled';
+        payment.status = 'refunded';
         payment.refundAmount = payment.amount;
         payment.refundDate = new Date();
         await payment.save();
 
-        booking.status = 'cancelled';
+        booking.status = 'refunded';
         await booking.save();
 
         // Release seats back to available

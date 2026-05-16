@@ -3,48 +3,95 @@ const router = express.Router();
 const Booking = require('../models/Booking');
 const Showtime = require('../models/Showtime');
 const Seat = require('../models/Seat');
+const Payment = require('../models/Payment');
 const { protect } = require('../middleware/auth');
+
+const HOLD_MINUTES = 5;
+
+// Validate no available seat gaps between selected seats in same row
+async function validateNoGap(showtimeId, selectedSeatNumbers) {
+    const allSeats = await Seat.find({ showtime: showtimeId });
+    const seatMap = {};
+    for (const s of allSeats) {
+        seatMap[s.seatNumber] = s;
+    }
+
+    // Group selected seats by row
+    const byRow = {};
+    for (const sn of selectedSeatNumbers) {
+        const row = sn.match(/^([A-Z]+)/)?.[1];
+        const col = parseInt(sn.match(/(\d+)$/)?.[1]);
+        if (!row || isNaN(col)) continue;
+        if (!byRow[row]) byRow[row] = [];
+        byRow[row].push(col);
+    }
+
+    for (const [row, cols] of Object.entries(byRow)) {
+        cols.sort((a, b) => a - b);
+        for (let i = 0; i < cols.length - 1; i++) {
+            const from = cols[i];
+            const to = cols[i + 1];
+            for (let gap = from + 1; gap < to; gap++) {
+                const gapSeatNumber = `${row}${gap}`;
+                const gapSeat = seatMap[gapSeatNumber];
+                // If gap seat exists and is available → invalid selection
+                if (gapSeat && gapSeat.status === 'available' && !gapSeat.isLocked) {
+                    return `Cannot leave seat ${gapSeatNumber} empty between your selections`;
+                }
+            }
+        }
+    }
+    return null;
+}
 
 // Create booking
 router.post('/', protect, async (req, res) => {
-    const { showtimeId, seats, extraAmount = 0 } = req.body;
+    const { showtimeId, seats: seatNumbers, extraItems = [] } = req.body;
     try {
         const showtime = await Showtime.findById(showtimeId);
         if (!showtime) return res.status(404).json({ message: 'Showtime not found' });
+        if (showtime.status === 'cancelled') return res.status(400).json({ message: 'Showtime is cancelled' });
 
-        // Atomically reserve seats — only updates seats that are still 'available'
-        const reserveResult = await Seat.updateMany(
-            { showtime: showtimeId, seatNumber: { $in: seats }, status: 'available' },
-            { $set: { status: 'reserved' } }
-        );
+        // Validate seat gap rule
+        const gapError = await validateNoGap(showtimeId, seatNumbers);
+        if (gapError) return res.status(400).json({ message: gapError });
 
-        if (reserveResult.modifiedCount !== seats.length) {
-            // Roll back any seats we just reserved
-            if (reserveResult.modifiedCount > 0) {
-                await Seat.updateMany(
-                    { showtime: showtimeId, seatNumber: { $in: seats }, status: 'reserved' },
-                    { $set: { status: 'available' } }
-                );
-            }
-            return res.status(409).json({ message: 'Một số ghế vừa được người khác đặt. Vui lòng chọn lại ghế.' });
+        // Check availability (not reserved, not booked, not locked)
+        const availableSeats = await Seat.find({
+            showtime: showtimeId,
+            seatNumber: { $in: seatNumbers },
+            status: 'available',
+            isLocked: false,
+        });
+
+        if (availableSeats.length !== seatNumbers.length) {
+            return res.status(400).json({ message: 'Some seats are not available' });
         }
 
-        const reservedSeats = await Seat.find({ showtime: showtimeId, seatNumber: { $in: seats } });
+        // Calculate total: seat prices + extra items
+        const seatTotal = availableSeats.reduce((sum, s) => sum + s.price, 0);
+        const extraTotal = extraItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const totalPrice = seatTotal + extraTotal;
 
-        // Calculate total price (seats + combos)
-        const totalPrice = showtime.price * seats.length + extraAmount;
+        const expiresAt = new Date(Date.now() + HOLD_MINUTES * 60 * 1000);
 
-        // Create booking
         const booking = new Booking({
             user: req.user._id,
             showtime: showtimeId,
-            seats: reservedSeats.map(s => s._id),
-            seatNumbers: seats,
+            seats: availableSeats.map(s => s._id),
+            seatNumbers,
             totalPrice,
-            status: 'pending'
+            status: 'pending',
+            expiresAt,
+            extraItems,
         });
-
         await booking.save();
+
+        // Mark seats as reserved
+        await Seat.updateMany(
+            { _id: { $in: availableSeats.map(s => s._id) } },
+            { status: 'reserved', bookedBy: booking._id }
+        );
 
         res.status(201).json(booking);
     } catch (error) {
@@ -73,36 +120,40 @@ router.get('/:id', protect, async (req, res) => {
             .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }] })
             .populate('seats');
         if (!booking) return res.status(404).json({ message: 'Booking not found' });
-        if (booking.user.toString() !== req.user._id.toString())
-            return res.status(403).json({ message: 'Not authorized' });
         res.json(booking);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
-// Cancel booking
+// Cancel booking by user (only pending allowed)
 router.put('/:id/cancel', protect, async (req, res) => {
     try {
         const booking = await Booking.findById(req.params.id);
         if (!booking) return res.status(404).json({ message: 'Booking not found' });
-        if (booking.user.toString() !== req.user._id.toString())
-            return res.status(403).json({ message: 'Not authorized' });
 
-        if (booking.status !== 'pending') {
-            return res.status(400).json({ message: 'Can only cancel pending bookings' });
+        if (!['pending', 'confirmed'].includes(booking.status)) {
+            return res.status(400).json({ message: 'Cannot cancel this booking' });
         }
 
-        booking.status = 'cancelled';
+        const wasConfirmed = booking.status === 'paid';
+        booking.status = wasConfirmed ? 'refunded' : 'cancelled';
         await booking.save();
 
-        // Release seats back to available
         await Seat.updateMany(
             { _id: { $in: booking.seats } },
-            { status: 'available' }
+            { status: 'available', bookedBy: null }
         );
 
-        res.json({ message: 'Booking cancelled', booking });
+        if (wasConfirmed && booking.paymentId) {
+            await Payment.findByIdAndUpdate(booking.paymentId, {
+                status: 'refunded',
+                refundDate: new Date(),
+                refundAmount: booking.totalPrice,
+            });
+        }
+
+        res.json({ message: wasConfirmed ? 'Booking refunded' : 'Booking cancelled', booking });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

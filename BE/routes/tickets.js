@@ -14,6 +14,7 @@ router.get('/:bookingId/pdf', protect, async (req, res) => {
 
         if (!booking) return res.status(404).json({ message: 'Booking not found' });
         if (booking.status !== 'paid') return res.status(400).json({ message: 'Booking not paid yet' });
+        if (booking.ticketStatus !== 'printed') return res.status(403).json({ message: 'Vé chưa được xuất. Vui lòng chờ nhân viên rạp xác nhận.' });
 
         const qrCode = await QRCode.toDataURL(booking.bookingCode);
 

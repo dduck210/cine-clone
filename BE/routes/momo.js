@@ -114,6 +114,7 @@ router.post('/confirm', protect, async (req, res) => {
             .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }] });
 
         res.json({
+            bookingId: updatedBooking._id,
             bookingCode: updatedBooking.bookingCode,
             movieTitle: updatedBooking.showtime?.movie?.title || '',
             cinemaName: updatedBooking.showtime?.cinema?.name || '',
@@ -123,6 +124,7 @@ router.post('/confirm', protect, async (req, res) => {
             selectedSeats: updatedBooking.seatNumbers || [],
             finalTotalPrice: updatedBooking.totalPrice,
             poster: updatedBooking.showtime?.movie?.poster || '',
+            combos: updatedBooking.extraItems || [],
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
