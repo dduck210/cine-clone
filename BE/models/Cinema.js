@@ -8,7 +8,6 @@ const cinemaSchema = new mongoose.Schema({
     email: { type: String },
     city: { type: String },
     totalRooms: { type: Number, default: 0 },
-    image: { type: String, default: '' },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
 }, { timestamps: true });
 
