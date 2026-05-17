@@ -34,7 +34,7 @@ function App() {
   const location = useLocation();
   const prevPath = useRef(null);
 
-  const hideSplash = useCallback(() => setShowSplash(false), []);
+  const hideSplash = useCallback(() => { window.scrollTo(0, 0); setShowSplash(false); }, []);
 
   // Re-trigger splash khi navigate về "/" (kể cả khi đang ở "/")
   useEffect(() => {
