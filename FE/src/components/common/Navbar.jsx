@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Search, User, LogOut, History, Menu, X, ChevronDown, LayoutDashboard, Ticket } from "lucide-react";
 import AuthModal from "../auth/AuthModal";
@@ -10,6 +11,7 @@ const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const [currentUser, setCurrentUser] = useState(() => {
     const savedUser = localStorage.getItem("currentUser");
@@ -33,12 +35,20 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
-    setCurrentUser(null);
-    localStorage.removeItem("currentUser");
-    localStorage.removeItem("token");
     setIsDropdownOpen(false);
     setIsMobileMenuOpen(false);
-    navigate("/");
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutConfirm(false);
+    toast.success("Đăng xuất thành công!", { duration: 2000 });
+    setTimeout(() => {
+      setCurrentUser(null);
+      localStorage.removeItem("currentUser");
+      localStorage.removeItem("token");
+      navigate("/");
+    }, 800);
   };
 
   const navLinks = [
@@ -61,8 +71,8 @@ const Navbar = () => {
             </button>
           </div>
 
-          <Link
-            to="/"
+          <button
+            onClick={() => navigate("/", { state: { splashTs: Date.now() } })}
             className="flex items-center gap-2 group transition-transform active:scale-95"
           >
             <div className="text-[#dc2626]">
@@ -87,7 +97,7 @@ const Navbar = () => {
             <span className="text-xl md:text-2xl font-black text-[#dc2626] tracking-tight leading-none pt-1">
               5Cine
             </span>
-          </Link>
+          </button>
 
           <div className="hidden md:flex items-center gap-6 lg:gap-8">
             {navLinks.map((link) => (
@@ -289,6 +299,33 @@ const Navbar = () => {
             setIsMobileMenuOpen(false);
           }}
         ></div>
+      )}
+
+      {/* Logout Confirm Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 mx-4 w-full max-w-sm">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-50 mx-auto mb-4">
+              <LogOut size={22} className="text-red-500" />
+            </div>
+            <h3 className="text-lg font-black text-gray-900 text-center mb-1">Đăng xuất?</h3>
+            <p className="text-sm text-gray-500 text-center mb-6">Bạn có chắc muốn đăng xuất khỏi tài khoản không?</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-colors"
+              >
+                Huỷ
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 py-2.5 rounded-xl bg-[#dc2626] text-white font-semibold text-sm hover:bg-red-700 transition-colors"
+              >
+                Đăng xuất
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

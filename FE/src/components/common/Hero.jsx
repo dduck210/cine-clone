@@ -3,7 +3,7 @@ import { Play, Calendar, Star, Ticket, X, RotateCw } from "lucide-react";
 
 const Hero = () => {
   const [isTrailerOpen, setIsTrailerOpen] = useState(false);
-  const trailerVideoId = "GYkBA16qTLI";
+  const trailerVideoId = "AkNl8ZSQW9w";
   const modalRef = useRef(null);
 
   const openTrailer = async () => {

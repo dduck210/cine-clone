@@ -1,47 +1,9 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
 import { Tag, Clock } from "lucide-react";
-
-// Mock data khuyến mãi
-const promotions = [
-  {
-    id: 1,
-    title: "Thứ 3 Vui Vẻ - Vé Chỉ 45K",
-    desc: "Áp dụng cho tất cả các suất chiếu vào ngày thứ 3 hàng tuần. Không áp dụng ngày lễ.",
-    date: "Đến 31/12/2026",
-    image:
-      "https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=800&auto=format&fit=crop",
-    color: "bg-orange-500",
-  },
-  {
-    id: 2,
-    title: "Combo Bắp Nước - Mua 1 Tặng 1",
-    desc: "Tặng ngay 1 nước ngọt khi mua Combo Bắp Nước size L. Áp dụng thành viên U22.",
-    date: "Đến 30/06/2026",
-    image:
-      "https://images.unsplash.com/photo-1585647347483-22b66260dfff?q=80&w=800&auto=format&fit=crop",
-    color: "bg-blue-500",
-  },
-  {
-    id: 3,
-    title: "Ưu Đãi Học Sinh Sinh Viên",
-    desc: "Đồng giá 50K cho HSSV khi xuất trình thẻ. Áp dụng trước 17h từ Thứ 2 đến Thứ 6.",
-    date: "Dài hạn",
-    image:
-      "https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?q=80&w=800&auto=format&fit=crop",
-    color: "bg-green-500",
-  },
-  {
-    id: 4,
-    title: "Quà Tặng Sinh Nhật Thành Viên",
-    desc: "Tặng 1 vé xem phim 2D miễn phí trong tháng sinh nhật của thành viên 5Cine Stars.",
-    date: "Dài hạn",
-    image:
-      "https://images.unsplash.com/photo-1464349153735-7db50ed83c84?q=80&w=800&auto=format&fit=crop",
-    color: "bg-purple-500",
-  },
-];
+import { PROMOTIONS_LIST } from "../data/promotionsData";
 
 const PromotionsPage = () => {
   return (
@@ -59,8 +21,9 @@ const PromotionsPage = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          {promotions.map((promo) => (
-            <div
+          {PROMOTIONS_LIST.map((promo) => (
+            <Link
+              to={`/promotions/${promo.id}`}
               key={promo.id}
               className="bg-white rounded-3xl overflow-hidden shadow-lg border border-slate-100 hover:shadow-2xl transition-all duration-300 group flex flex-col"
             >
@@ -94,12 +57,12 @@ const PromotionsPage = () => {
                     <Clock size={16} />
                     {promo.date}
                   </div>
-                  <button className="text-[#dc2626] font-bold text-sm hover:underline">
-                    Xem chi tiết
-                  </button>
+                  <span className="text-[#dc2626] font-bold text-sm">
+                    Xem chi tiết →
+                  </span>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </main>

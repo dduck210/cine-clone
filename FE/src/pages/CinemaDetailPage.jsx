@@ -5,7 +5,7 @@ import Footer from "../components/common/Footer";
 import axiosInstance from "../api/axiosConfig";
 import { MapPin, Phone, ChevronLeft, Film, Clock, Ticket, Star } from "lucide-react";
 
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1517604931442-710c8ef5ad25?q=80&w=800&auto=format&fit=crop";
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&q=80";
 
 const CinemaDetailPage = () => {
   const { id } = useParams();
@@ -114,7 +114,7 @@ const CinemaDetailPage = () => {
           <>
             {/* Header rạp */}
             <div className="relative rounded-3xl overflow-hidden mb-10 shadow-xl">
-              <img src={FALLBACK_IMAGE} alt={cinema.name} className="w-full h-48 md:h-64 object-cover" />
+              <img src={cinema.image || FALLBACK_IMAGE} alt={cinema.name} onError={(e) => { e.target.src = FALLBACK_IMAGE; }} className="w-full h-48 md:h-64 object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
               <div className="absolute bottom-0 left-0 p-6 text-white">
                 <h1 className="text-2xl md:text-3xl font-black mb-2 uppercase tracking-tight">{cinema.name}</h1>

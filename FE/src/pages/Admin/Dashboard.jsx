@@ -5,7 +5,7 @@ import Sidebar from "../../components/admin/Sidebar";
 import axiosInstance from "../../api/axiosConfig";
 import {
   Bell, DollarSign, Ticket, Clock, AlertTriangle, Menu, X, ExternalLink,
-  Popcorn, RefreshCw, TrendingUp,
+  Popcorn, RefreshCw, TrendingUp, Trophy,
 } from "lucide-react";
 import { OrdersManager, OrderDetailModal } from "../../components/admin/OrdersTab";
 import { MoviesManager, MovieModal } from "../../components/admin/MoviesTab";
@@ -60,24 +60,41 @@ const DashboardView = ({ stats, extStats, loading }) => (
         </h3>
         {loading || !extStats.timeslots.length ? (
           <p className="text-slate-400 text-sm italic">Chưa có dữ liệu</p>
-        ) : (
-          <div className="space-y-3">
-            {extStats.timeslots.map((ts) => {
-              const max = extStats.timeslots[0]?.bookings || 1;
-              return (
-                <div key={ts._id}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-slate-700">{TIME_SLOT_LABEL[ts._id] || ts._id}</span>
-                    <span className="font-bold text-slate-800">{ts.bookings} vé</span>
+        ) : (() => {
+          const max = extStats.timeslots[0]?.bookings || 1;
+          const BAR_MAX_PX = 110;
+          const SHORT = { morning: "Sáng", evening: "Chiều", night: "Tối" };
+          const SUB   = { morning: "trước 12h", evening: "12–18h", night: "sau 18h" };
+          const COLORS = { morning: "#f97316", evening: "#dc2626", night: "#991b1b" };
+          return (
+            <div>
+              {/* Chart */}
+              <div className="flex items-end justify-around gap-3 px-2 border-b border-slate-100" style={{ height: `${BAR_MAX_PX + 32}px` }}>
+                {extStats.timeslots.map((ts) => {
+                  const barH = Math.max(10, Math.round((ts.bookings / max) * BAR_MAX_PX));
+                  return (
+                    <div key={ts._id} className="flex flex-col items-center gap-1 flex-1">
+                      <span className="text-xs font-bold text-slate-600 mb-1">{ts.bookings} vé</span>
+                      <div
+                        className="w-full max-w-[52px] rounded-t-lg transition-all duration-700"
+                        style={{ height: `${barH}px`, backgroundColor: COLORS[ts._id] || "#dc2626" }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              {/* X-axis labels */}
+              <div className="flex justify-around gap-3 px-2 pt-3">
+                {extStats.timeslots.map((ts) => (
+                  <div key={ts._id} className="flex-1 text-center">
+                    <p className="text-xs font-bold text-slate-600">{SHORT[ts._id] || ts._id}</p>
+                    <p className="text-[10px] text-slate-400">{SUB[ts._id] || ""}</p>
                   </div>
-                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#dc2626] rounded-full" style={{ width: `${(ts.bookings / max) * 100}%` }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Doanh thu F&B chi tiết */}
@@ -101,6 +118,58 @@ const DashboardView = ({ stats, extStats, loading }) => (
           </div>
         )}
       </div>
+    </div>
+
+    {/* Top phim doanh thu */}
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+      <h3 className="font-bold text-slate-800 mb-5 flex items-center gap-2">
+        <Trophy size={18} className="text-yellow-500" /> Top phim doanh thu cao nhất
+      </h3>
+      {loading || !extStats.topMovies.length ? (
+        loading ? (
+          <div className="space-y-3">
+            {[1,2,3,4,5].map(i => <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />)}
+          </div>
+        ) : (
+          <p className="text-slate-400 text-sm italic">Chưa có dữ liệu</p>
+        )
+      ) : (() => {
+        const maxRevenue = extStats.topMovies[0]?.revenue || 1;
+        const MEDAL = ["🥇", "🥈", "🥉"];
+        return (
+          <div className="space-y-3">
+            {extStats.topMovies.map((movie, idx) => (
+              <div key={movie._id} className="flex items-center gap-3 group">
+                <span className="w-6 text-center text-base flex-shrink-0">
+                  {MEDAL[idx] || <span className="text-xs font-bold text-slate-400">{idx + 1}</span>}
+                </span>
+                {movie.poster ? (
+                  <img src={movie.poster} alt={movie.title} className="w-10 h-14 object-cover rounded-lg flex-shrink-0 shadow-sm" />
+                ) : (
+                  <div className="w-10 h-14 bg-slate-100 rounded-lg flex-shrink-0 flex items-center justify-center">
+                    <Ticket size={16} className="text-slate-300" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-slate-700 text-sm truncate group-hover:text-[#dc2626] transition-colors">{movie.title}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-red-500 to-rose-400 transition-all duration-700"
+                        style={{ width: `${Math.round((movie.revenue / maxRevenue) * 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-slate-400 flex-shrink-0">{movie.bookings} vé</span>
+                  </div>
+                </div>
+                <span className="text-sm font-bold text-[#dc2626] flex-shrink-0 whitespace-nowrap">
+                  {movie.revenue.toLocaleString("vi-VN")}đ
+                </span>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
     </div>
 
     {/* Pending/expired summary */}
@@ -136,7 +205,7 @@ const Dashboard = () => {
   const [moviesLoading, setMoviesLoading] = useState(false);
   const [stats, setStats] = useState({ totalRevenue: 0, totalBookings: 0, pendingBookings: 0 });
   const [statsLoading, setStatsLoading] = useState(false);
-  const [extStats, setExtStats] = useState({ comboRevenue: 0, comboItems: [], timeslots: [], refunds: { totalRefunds: 0, totalRefundAmount: 0 } });
+  const [extStats, setExtStats] = useState({ comboRevenue: 0, comboItems: [], timeslots: [], refunds: { totalRefunds: 0, totalRefundAmount: 0 }, topMovies: [] });
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [users, setUsers] = useState([]);
@@ -163,7 +232,8 @@ const Dashboard = () => {
       axiosInstance.get("/admin/reports/combo-revenue"),
       axiosInstance.get("/admin/reports/timeslots"),
       axiosInstance.get("/admin/reports/refunds"),
-    ]).then(([revenueRes, bookingsRes, comboRes, timeslotsRes, refundsRes]) => {
+      axiosInstance.get("/admin/reports/top-movies"),
+    ]).then(([revenueRes, bookingsRes, comboRes, timeslotsRes, refundsRes, topMoviesRes]) => {
       const byStatus = bookingsRes.data.reduce((acc, item) => {
         acc[item._id] = item;
         return acc;
@@ -179,6 +249,7 @@ const Dashboard = () => {
         comboItems: comboRes.data.items || [],
         timeslots: timeslotsRes.data || [],
         refunds: refundsRes.data || { totalRefunds: 0, totalRefundAmount: 0 },
+        topMovies: topMoviesRes.data || [],
       });
     }).catch(() => {}).finally(() => setStatsLoading(false));
   }, [activeTab]);
@@ -215,6 +286,7 @@ const Dashboard = () => {
             showTime: showtime.startTime || "",
             selectedSeats: booking.seatNumbers || [],
             finalTotalPrice: booking.totalPrice,
+            combos: booking.extraItems || [],
             status: booking.status === "paid" ? "Đã thanh toán" : booking.status === "cancelled" ? "Đã hủy" : booking.status === "expired" ? "Hết hạn" : booking.status === "refunded" ? "Đã hoàn tiền" : "Chờ thanh toán",
             ticketStatus: booking.ticketStatus || "not_printed",
             paymentMethod: booking.paymentId?.method || "",

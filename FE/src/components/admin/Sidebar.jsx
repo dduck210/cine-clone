@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import toast from "react-hot-toast";
 import {
   LayoutDashboard,
   Film,
@@ -10,6 +11,7 @@ import {
 } from "lucide-react";
 
 const Sidebar = ({ activeTab, onTabChange }) => {
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const menuItems = [
     { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
     { id: "movies", label: "Quản lý Phim", icon: Film },
@@ -98,11 +100,7 @@ const Sidebar = ({ activeTab, onTabChange }) => {
 
       <div className="p-4 border-t border-slate-50">
         <button
-          onClick={() => {
-            localStorage.removeItem("token");
-            localStorage.removeItem("currentUser");
-            window.location.href = "/";
-          }}
+          onClick={() => setShowLogoutConfirm(true)}
           className="w-full flex items-center gap-3 px-4 py-3.5 text-slate-500 hover:bg-red-50 hover:text-[#dc2626] rounded-2xl transition-all duration-300 hover:shadow-sm group active:scale-[0.98]"
         >
           <LogOut
@@ -112,6 +110,40 @@ const Sidebar = ({ activeTab, onTabChange }) => {
           <span className="font-bold text-sm">Đăng xuất</span>
         </button>
       </div>
+
+      {/* Logout Confirm Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 mx-4 w-full max-w-sm">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-50 mx-auto mb-4">
+              <LogOut size={22} className="text-red-500" />
+            </div>
+            <h3 className="text-lg font-black text-gray-900 text-center mb-1">Đăng xuất?</h3>
+            <p className="text-sm text-gray-500 text-center mb-6">Bạn có chắc muốn đăng xuất khỏi tài khoản không?</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-colors"
+              >
+                Huỷ
+              </button>
+              <button
+                onClick={() => {
+                  toast.success("Đăng xuất thành công!", { duration: 2000 });
+                  setTimeout(() => {
+                    localStorage.removeItem("token");
+                    localStorage.removeItem("currentUser");
+                    window.location.href = "/";
+                  }, 800);
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-[#dc2626] text-white font-semibold text-sm hover:bg-red-700 transition-colors"
+              >
+                Đăng xuất
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

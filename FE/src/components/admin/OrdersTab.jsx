@@ -3,9 +3,6 @@ import {
   Ticket,
   X,
   User,
-  MapPin,
-  Calendar,
-  Clock,
   Printer,
   Eye,
   Crown,
@@ -154,25 +151,35 @@ export const OrderDetailModal = ({ order, onClose, onPrint }) => {
                     </p>
                   </div>
                 </div>
-                <div className="p-3 bg-[#fffaf0] border border-[#f3e3b7] rounded-lg flex justify-between items-center print:border-gray-400 print:bg-transparent print:border-y-2 print:border-x-0 print:rounded-none print:py-2">
-                  <div>
-                    <p className="text-[9px] text-[#b8860b] font-bold uppercase tracking-[0.2em] mb-0.5 print:text-black">
-                      Seat(s)
-                    </p>
-                    <p className="text-[22px] font-black text-slate-900 tracking-tighter leading-none print:text-black">
-                      {order.selectedSeats?.join(", ")}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[9px] text-[#b8860b] font-bold uppercase tracking-[0.2em] mb-0.5 print:text-black">
-                      Room
-                    </p>
-                    <p className="text-[22px] font-black text-slate-900 tracking-tighter leading-none print:text-black">
-                      03
-                    </p>
-                  </div>
+                <div className="p-3 bg-red-50 border border-red-100 rounded-lg print:border-gray-400 print:bg-transparent print:border-y-2 print:border-x-0 print:rounded-none print:py-2">
+                  <p className="text-[9px] text-[#dc2626] font-bold uppercase tracking-[0.2em] mb-0.5 print:text-black">
+                    Seat(s)
+                  </p>
+                  <p className="text-[22px] font-black text-[#dc2626] tracking-tighter leading-none print:text-black">
+                    {order.selectedSeats?.join(", ")}
+                  </p>
                 </div>
               </div>
+
+              {order.combos?.length > 0 && (
+                <div className="p-3 bg-[#fffaf0] border border-[#f3e3b7] rounded-lg print:border-gray-400 print:bg-transparent print:border-y-2 print:border-x-0 print:rounded-none print:py-2">
+                  <p className="text-[9px] text-[#b8860b] font-bold uppercase tracking-[0.2em] mb-2 print:text-black">
+                    F&amp;B / Combo
+                  </p>
+                  <div className="space-y-1.5">
+                    {order.combos.map((item, i) => (
+                      <div key={i} className="flex justify-between items-center">
+                        <span className="text-[13px] font-semibold text-slate-800 print:text-black">
+                          {item.name} <span className="text-[#b8860b] print:text-black">×{item.quantity}</span>
+                        </span>
+                        <span className="text-[13px] font-bold text-slate-800 print:text-black">
+                          {(item.price * item.quantity).toLocaleString()}đ
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="mt-3 pt-3 flex flex-col items-center justify-center shrink-0 print:mt-1 print:pt-1">
                 <div className="flex gap-4 items-center w-full px-2 justify-center">

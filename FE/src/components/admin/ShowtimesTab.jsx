@@ -379,13 +379,17 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
 export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew, onCancel }) => {
   const [filterMovie, setFilterMovie] = useState("");
   const [filterCinema, setFilterCinema] = useState("");
+  const [filterStatus, setFilterStatus] = useState("active");
   const [detailShowtime, setDetailShowtime] = useState(null);
 
   const filtered = showtimes.filter((st) => {
     const movieOk = !filterMovie || st.movie?._id === filterMovie;
     const cinemaOk = !filterCinema || st.cinema?._id === filterCinema;
-    return movieOk && cinemaOk;
+    const statusOk = !filterStatus || st.status === filterStatus;
+    return movieOk && cinemaOk && statusOk;
   });
+
+  const cancelledCount = showtimes.filter(st => st.status === "cancelled").length;
 
   return (
     <div className="space-y-6">
@@ -403,22 +407,40 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
       </div>
 
       {/* Filter */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="relative">
-          <Film className="absolute left-3 top-3 text-slate-400" size={16} />
-          <select value={filterMovie} onChange={(e) => setFilterMovie(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm font-medium text-slate-700 appearance-none outline-none focus:border-[#dc2626] cursor-pointer">
-            <option value="">Tất cả phim</option>
-            {movies.map((m) => <option key={m._id} value={m._id}>{m.title}</option>)}
-          </select>
-          <ChevronDown className="absolute right-3 top-3 text-slate-400 pointer-events-none" size={16} />
+      <div className="space-y-3">
+        {/* Status toggle */}
+        <div className="flex items-center gap-2">
+          {[
+            { value: "active", label: "Đang chiếu", cls: "bg-emerald-50 text-emerald-600 border-emerald-200" },
+            { value: "cancelled", label: `Đã hủy${cancelledCount > 0 ? ` (${cancelledCount})` : ""}`, cls: "bg-red-50 text-red-500 border-red-200" },
+            { value: "", label: "Tất cả", cls: "bg-slate-100 text-slate-600 border-slate-200" },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setFilterStatus(opt.value)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${filterStatus === opt.value ? opt.cls : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"}`}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
-        <div className="relative">
-          <MapPin className="absolute left-3 top-3 text-slate-400" size={16} />
-          <select value={filterCinema} onChange={(e) => setFilterCinema(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm font-medium text-slate-700 appearance-none outline-none focus:border-[#dc2626] cursor-pointer">
-            <option value="">Tất cả rạp</option>
-            {cinemas.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
-          </select>
-          <ChevronDown className="absolute right-3 top-3 text-slate-400 pointer-events-none" size={16} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="relative">
+            <Film className="absolute left-3 top-3 text-slate-400" size={16} />
+            <select value={filterMovie} onChange={(e) => setFilterMovie(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm font-medium text-slate-700 appearance-none outline-none focus:border-[#dc2626] cursor-pointer">
+              <option value="">Tất cả phim</option>
+              {movies.map((m) => <option key={m._id} value={m._id}>{m.title}</option>)}
+            </select>
+            <ChevronDown className="absolute right-3 top-3 text-slate-400 pointer-events-none" size={16} />
+          </div>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-3 text-slate-400" size={16} />
+            <select value={filterCinema} onChange={(e) => setFilterCinema(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm font-medium text-slate-700 appearance-none outline-none focus:border-[#dc2626] cursor-pointer">
+              <option value="">Tất cả rạp</option>
+              {cinemas.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+            </select>
+            <ChevronDown className="absolute right-3 top-3 text-slate-400 pointer-events-none" size={16} />
+          </div>
         </div>
       </div>
 

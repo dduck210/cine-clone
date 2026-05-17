@@ -15,6 +15,10 @@ const MoviesPage = () => {
   const [activeTab, setActiveTab] = useState("now");
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     axiosInstance
       .get("/movies")
       .then((res) => setMovies(res.data))

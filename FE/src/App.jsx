@@ -1,5 +1,6 @@
-import React from "react";
-import { Routes, Route } from "react-router-dom";
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import { Routes, Route, useLocation } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 
 import HomePage from "./pages/Home/HomePage";
 import MovieDetailPage from "./pages/Movie/MovieDetailPage";
@@ -18,31 +19,68 @@ import PromotionsPage from "./pages/PromotionsPage";
 import PrivateRoute from "./components/auth/PrivateRoute";
 import AdminRoute from "./components/auth/AdminRoute";
 import NewsDetailPage from "./pages/News/NewsDetailPage";
+import PromotionDetailPage from "./pages/Promotions/PromotionDetailPage";
+import StaticPage from "./pages/StaticPage";
+import SplashScreen from "./components/common/SplashScreen";
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
 
 function App() {
+  const [showSplash, setShowSplash] = useState(true);
+  const location = useLocation();
+  const prevPath = useRef(null);
+
+  const hideSplash = useCallback(() => setShowSplash(false), []);
+
+  // Re-trigger splash khi navigate về "/" (kể cả khi đang ở "/")
+  useEffect(() => {
+    if (prevPath.current !== null && location.pathname === "/") {
+      setShowSplash(true);
+    }
+    prevPath.current = location.pathname;
+  }, [location.pathname, location.state?.splashTs]);
+
   return (
-    <Routes>
-      {/* Public */}
-      <Route path="/" element={<HomePage />} />
-      <Route path="/movies" element={<MoviesPage />} />
-      <Route path="/movie/:id" element={<MovieDetailPage />} />
-      <Route path="/cinemas" element={<CinemasPage />} />
-      <Route path="/cinemas/:id" element={<CinemaDetailPage />} />
-      <Route path="/promotions" element={<PromotionsPage />} />
-      <Route path="/news/:id" element={<NewsDetailPage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+    <>
+      {showSplash && <SplashScreen onDone={hideSplash} />}
+      <ScrollToTop />
+      <Toaster position="top-center" toastOptions={{ duration: 2500 }} />
+      <Routes>
+        {/* Public */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/movies" element={<MoviesPage />} />
+        <Route path="/movie/:id" element={<MovieDetailPage />} />
+        <Route path="/cinemas" element={<CinemasPage />} />
+        <Route path="/cinemas/:id" element={<CinemaDetailPage />} />
+        <Route path="/promotions" element={<PromotionsPage />} />
+        <Route path="/promotions/:id" element={<PromotionDetailPage />} />
+        <Route path="/news/:id" element={<NewsDetailPage />} />
+        <Route path="/about" element={<StaticPage />} />
+        <Route path="/careers" element={<StaticPage />} />
+        <Route path="/contact" element={<StaticPage />} />
+        <Route path="/faq" element={<StaticPage />} />
+        <Route path="/help" element={<StaticPage />} />
+        <Route path="/terms" element={<StaticPage />} />
+        <Route path="/privacy" element={<StaticPage />} />
+        <Route path="/cookies" element={<StaticPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-      {/* Yêu cầu đăng nhập */}
-      <Route path="/booking/:id" element={<PrivateRoute><BookingPage /></PrivateRoute>} />
-      <Route path="/payment" element={<PrivateRoute><PaymentPage /></PrivateRoute>} />
-      <Route path="/payment-success" element={<PrivateRoute><PaymentSuccessPage /></PrivateRoute>} />
-      <Route path="/my-tickets" element={<PrivateRoute><MyTicketsPage /></PrivateRoute>} />
-      <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+        {/* Yêu cầu đăng nhập */}
+        <Route path="/booking/:id" element={<PrivateRoute><BookingPage /></PrivateRoute>} />
+        <Route path="/payment" element={<PrivateRoute><PaymentPage /></PrivateRoute>} />
+        <Route path="/payment-success" element={<PrivateRoute><PaymentSuccessPage /></PrivateRoute>} />
+        <Route path="/my-tickets" element={<PrivateRoute><MyTicketsPage /></PrivateRoute>} />
+        <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
 
-      {/* Chỉ dành cho admin */}
-      <Route path="/admin" element={<AdminRoute><Dashboard /></AdminRoute>} />
-    </Routes>
+        {/* Chỉ dành cho admin */}
+        <Route path="/admin" element={<AdminRoute><Dashboard /></AdminRoute>} />
+      </Routes>
+    </>
   );
 }
 
