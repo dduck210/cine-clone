@@ -1,15 +1,65 @@
 import React, { useState, useRef, useEffect } from "react";
+import { QRCodeSVG } from "qrcode.react";
+import { Html5QrcodeScanner } from "html5-qrcode";
 import {
   Ticket,
   X,
   User,
   Printer,
   Eye,
-  Crown,
   CheckCircle,
   Search,
   Filter,
+  ScanLine,
+  Camera,
 } from "lucide-react";
+
+// ── QR Scanner Modal (uses webcam) ────────────────────────────────
+const QrScannerModal = ({ onScanned, onClose }) => {
+  const scannerRef = useRef(null);
+
+  useEffect(() => {
+    const scanner = new Html5QrcodeScanner(
+      "qr-scanner-container",
+      { fps: 10, qrbox: { width: 240, height: 240 }, rememberLastUsedCamera: true },
+      false
+    );
+    scannerRef.current = scanner;
+
+    scanner.render(
+      (text) => {
+        scanner.clear().catch(() => {});
+        onScanned(text.trim());
+      },
+      () => {}
+    );
+
+    return () => {
+      scanner.clear().catch(() => {});
+    };
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <Camera size={18} className="text-[#dc2626]" />
+            <h3 className="font-bold text-slate-800">Quét mã QR vé</h3>
+          </div>
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400">
+            <X size={18} />
+          </button>
+        </div>
+        <div className="p-4">
+          <p className="text-xs text-slate-500 text-center mb-3">Hướng camera vào mã QR trên điện thoại khách</p>
+          <div id="qr-scanner-container" className="w-full rounded-xl overflow-hidden" />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const TICKET_STATUS_BADGE = {
   not_printed: { label: "CHƯA IN", color: "bg-orange-50 text-orange-600 border-orange-200" },
@@ -25,11 +75,12 @@ export const OrderDetailModal = ({ order, onClose, onPrint }) => {
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       <style type="text/css" media="print">
         {`
-          @page { size: 80mm 145mm; margin: 0; }
-          html, body { width: 80mm !important; height: 145mm !important; margin: 0 !important; padding: 0 !important; background: white !important; overflow: hidden !important; }
+          @page { size: A4 portrait; margin: 0; }
+          html, body { width: 210mm !important; height: 297mm !important; margin: 0 !important; padding: 0 !important; background: white !important; overflow: hidden !important; }
           body * { visibility: hidden !important; }
-          #print-ticket, #print-ticket * { visibility: visible !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
-          #print-ticket { position: fixed !important; top: 0 !important; left: 0 !important; width: 80mm !important; height: 144mm !important; padding: 4mm !important; margin: 0 !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; display: flex !important; flex-direction: column !important; justify-content: space-between !important; z-index: 999999 !important; transform: none !important; }
+          #print-wrapper { visibility: visible !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 210mm !important; height: 297mm !important; overflow: hidden !important; display: flex !important; justify-content: center !important; align-items: flex-start !important; }
+          #print-wrapper * { visibility: visible !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+          #print-ticket { width: 360px !important; max-width: none !important; flex-shrink: 0 !important; transform: scale(2.15) !important; transform-origin: top center !important; border-radius: 0 !important; box-shadow: none !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; }
         `}
       </style>
 
@@ -89,138 +140,95 @@ export const OrderDetailModal = ({ order, onClose, onPrint }) => {
             </div>
           </div>
 
+          <div id="print-wrapper">
           <div
             id="print-ticket"
-            className="bg-white mx-auto w-full max-w-[400px] rounded-2xl shadow-2xl overflow-hidden font-sans text-gray-900 border border-gray-200 relative print:border-none print:shadow-none"
+            className="mx-auto w-full max-w-[360px] rounded-xl shadow-2xl overflow-hidden font-mono text-gray-900 print:shadow-none print:rounded-none"
+            style={{
+              border: "1px solid rgb(229,224,213)",
+              backgroundColor: "rgb(253,248,240)",
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='100'%3E%3Ctext x='0' y='60' font-family='monospace' font-size='14' font-weight='900' letter-spacing='2' fill='%23000' opacity='0.20' transform='rotate(-28 90 50)'%3E5CINE%20TICKET%3C/text%3E%3C/svg%3E")`,
+              backgroundSize: "180px 100px",
+            }}
           >
-            <div className="bg-slate-900 p-5 pb-5 relative overflow-hidden print:bg-black print:text-white shrink-0">
-              <div className="absolute -right-10 -top-10 opacity-10 print:opacity-30">
-                <Crown size={120} className="text-[#d4af37] print:text-white" />
-              </div>
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-2">
-                  <Crown
-                    size={14}
-                    className="text-[#d4af37] print:text-white"
-                  />
-                  <p className="text-[#d4af37] text-[9px] font-bold tracking-[0.3em] uppercase print:text-white">
-                    V.I.P Admission
-                  </p>
-                </div>
-                <h2 className="text-[20px] font-black text-white leading-tight uppercase tracking-wide">
-                  {order.movieTitle}
-                </h2>
-                <div className="mt-2 inline-block px-2 py-1 border border-[#d4af37]/30 bg-[#d4af37]/10 rounded text-[#d4af37] text-[9px] font-bold tracking-widest uppercase print:border-white print:text-white print:bg-transparent">
-                  2D Subtitle
-                </div>
-              </div>
+            {/* Header */}
+            <div className="px-5 pt-5 pb-4 border-b border-dashed border-gray-300 text-center">
+              <p className="text-[13px] font-black tracking-[0.3em] text-gray-700 uppercase">THẺ VÀO PHÒNG CHIẾU PHIM</p>
             </div>
 
-            <div className="p-4 pb-2 space-y-4 bg-white flex-1 relative print:border-x-2 print:border-black">
-              <div
-                className="absolute inset-0 opacity-[0.03] pointer-events-none print:hidden"
-                style={{
-                  backgroundImage: "radial-gradient(#000 1px, transparent 1px)",
-                  backgroundSize: "12px 12px",
-                }}
-              ></div>
-              <div className="relative z-10 space-y-2">
-                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg print:border-gray-400 print:bg-transparent print:p-1 print:border-0">
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em] mb-0.5 print:text-gray-600">
-                    Cinema
-                  </p>
-                  <p className="text-[14px] font-extrabold text-slate-900 leading-tight uppercase print:text-black">
-                    {order.cinemaName}
-                  </p>
+            {/* Cinema info */}
+            <div className="relative z-10 px-5 py-4 border-b border-dashed border-gray-300 space-y-0.5">
+              <p className="font-black text-[14px] text-gray-900 uppercase">{order.cinemaName}</p>
+              {order._raw?.showtime?.room?.name && (
+                <p className="text-[11px] font-bold text-gray-500 uppercase">{order._raw.showtime.room.name}</p>
+              )}
+              <p className="text-[10px] text-gray-400 pt-1">Mã ĐH: {order.orderId}</p>
+              <p className="text-[10px] text-gray-400">{order.showDate} — {order.showTime}</p>
+            </div>
+
+            {/* Torn-edge divider */}
+            <div className="relative z-10 h-5 flex items-center">
+              <div className="absolute -left-3 w-6 h-6 rounded-full bg-gray-100 shadow-inner" style={{ border: "1px solid rgb(229,224,213)" }} />
+              <div className="absolute -right-3 w-6 h-6 rounded-full bg-gray-100 shadow-inner" style={{ border: "1px solid rgb(229,224,213)" }} />
+              <div className="w-full mx-4 border-t-2 border-dashed border-gray-300" />
+            </div>
+
+            {/* Movie + details */}
+            <div className="relative z-10 px-5 pt-3 pb-4">
+              <p className="text-[18px] font-black text-gray-900 uppercase leading-tight mb-3">{order.movieTitle}</p>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 text-[11px]">
+                <div>
+                  <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-0.5">Suất chiếu</p>
+                  <p className="font-black text-gray-800">{order.showTime}</p>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg print:border-gray-400 print:bg-transparent print:p-1 print:border-0">
-                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em] mb-0.5 print:text-gray-600">
-                      Date
-                    </p>
-                    <p className="text-[13px] font-extrabold text-slate-900 print:text-black">
-                      {order.showDate}
-                    </p>
-                  </div>
-                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-right print:border-gray-400 print:bg-transparent print:p-1 print:border-0">
-                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em] mb-0.5 print:text-gray-600">
-                      Time
-                    </p>
-                    <p className="text-[13px] font-extrabold text-slate-900 print:text-black">
-                      {order.showTime}
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-0.5">Ngày chiếu</p>
+                  <p className="font-black text-gray-800">{order.showDate}</p>
                 </div>
-                <div className="p-3 bg-red-50 border border-red-100 rounded-lg print:border-gray-400 print:bg-transparent print:border-y-2 print:border-x-0 print:rounded-none print:py-2">
-                  <p className="text-[9px] text-[#dc2626] font-bold uppercase tracking-[0.2em] mb-0.5 print:text-black">
-                    Seat(s)
-                  </p>
-                  <p className="text-[22px] font-black text-[#dc2626] tracking-tighter leading-none print:text-black">
-                    {order.selectedSeats?.join(", ")}
-                  </p>
+                {order._raw?.showtime?.room?.name && (
+                  <div>
+                    <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-0.5">Phòng</p>
+                    <p className="font-black text-gray-800 uppercase">{order._raw.showtime.room.name}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-0.5">Ghế</p>
+                  <p className="font-black text-[#dc2626] text-[16px] leading-none">{order.selectedSeats?.join(", ")}</p>
                 </div>
               </div>
 
               {order.combos?.length > 0 && (
-                <div className="p-3 bg-[#fffaf0] border border-[#f3e3b7] rounded-lg print:border-gray-400 print:bg-transparent print:border-y-2 print:border-x-0 print:rounded-none print:py-2">
-                  <p className="text-[9px] text-[#b8860b] font-bold uppercase tracking-[0.2em] mb-2 print:text-black">
-                    F&amp;B / Combo
-                  </p>
-                  <div className="space-y-1.5">
-                    {order.combos.map((item, i) => (
-                      <div key={i} className="flex justify-between items-center">
-                        <span className="text-[13px] font-semibold text-slate-800 print:text-black">
-                          {item.name} <span className="text-[#b8860b] print:text-black">×{item.quantity}</span>
-                        </span>
-                        <span className="text-[13px] font-bold text-slate-800 print:text-black">
-                          {(item.price * item.quantity).toLocaleString()}đ
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                <div className="mt-3 pt-3 border-t border-dashed border-gray-200 space-y-1.5">
+                  <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-1">F&amp;B / Combo</p>
+                  {order.combos.map((item, i) => (
+                    <div key={i} className="flex justify-between text-[11px]">
+                      <span className="text-gray-600">{item.name} <span className="text-gray-400">×{item.quantity}</span></span>
+                      <span className="font-black text-gray-800">{(item.price * item.quantity).toLocaleString()}đ</span>
+                    </div>
+                  ))}
                 </div>
               )}
-
-              <div className="mt-3 pt-3 flex flex-col items-center justify-center shrink-0 print:mt-1 print:pt-1">
-                <div className="flex gap-4 items-center w-full px-2 justify-center">
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${order.orderId}`}
-                    alt="QR Code"
-                    className="w-[60px] h-[60px] mix-blend-multiply shrink-0"
-                  />
-                  <div className="flex flex-col justify-center items-center">
-                    <div className="h-6 flex gap-[2px] opacity-80 justify-center w-full print:opacity-100">
-                      {[2, 4, 1, 3, 2, 1, 1, 3, 4, 2, 1, 2, 3, 1, 1].map(
-                        (w, i) => (
-                          <div
-                            key={i}
-                            className="bg-slate-900 h-full print:bg-black"
-                            style={{ width: `${w}px` }}
-                          ></div>
-                        ),
-                      )}
-                    </div>
-                    <p className="font-mono font-bold text-slate-600 text-[10px] mt-1.5 tracking-widest uppercase print:text-black">
-                      {order.orderId}
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
 
-            <div className="bg-slate-900 relative shrink-0 print:bg-white print:border-x-2 print:border-b-2 print:border-black">
-              <div className="hidden print:block absolute top-0 left-0 w-full border-t-2 border-dashed border-black -mt-[2px]"></div>
-              <div className="absolute top-0 left-0 w-full h-[6px] bg-[radial-gradient(circle,transparent_3px,#0f172a_3px)] bg-[length:14px_12px] -mt-[6px] print:hidden"></div>
-
-              <div className="p-4 flex justify-between items-end">
-                <span className="text-[11px] font-bold text-[#d4af37] uppercase tracking-widest print:text-black">
-                  Total Paid
-                </span>
-                <span className="text-[18px] font-black text-white print:text-black">
-                  {order.finalTotalPrice?.toLocaleString()} ₫
-                </span>
-              </div>
+            {/* QR Code */}
+            <div className="relative z-10 border-t-2 border-dashed border-gray-300 px-5 py-4 flex flex-col items-center gap-2">
+              <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black">Quét mã để xác thực vé</p>
+              <QRCodeSVG
+                value={order.orderId}
+                size={90}
+                bgColor="transparent"
+                fgColor="#111827"
+                level="M"
+              />
+              <p className="font-mono font-bold text-gray-600 text-[11px] tracking-[0.28em] uppercase">{order.orderId}</p>
             </div>
+
+            {/* Footer */}
+            <div className="relative z-10 px-5 py-3 flex justify-between items-center bg-gray-900">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Paid</span>
+              <span className="font-mono font-black text-white text-[18px]">{order.finalTotalPrice?.toLocaleString()} ₫</span>
+            </div>
+          </div>
           </div>
         </div>
 
@@ -260,7 +268,10 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [showFilter, setShowFilter] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
   const filterRef = useRef(null);
+  const searchRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -270,6 +281,29 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Auto-open modal when a full booking code is scanned/typed
+  useEffect(() => {
+    const trimmed = search.trim();
+    if (!/^BK\d{10,}$/i.test(trimmed)) return;
+    const found = orders.find((o) => o.orderId?.toLowerCase() === trimmed.toLowerCase());
+    if (found) {
+      onViewTicket(found);
+      setSearch("");
+      setScanning(false);
+    }
+  }, [search, orders]);
+
+  const handleScanClick = () => {
+    setShowScanner(true);
+    setScanning(true);
+    setSearch("");
+  };
+
+  const handleScanned = (code) => {
+    setShowScanner(false);
+    setSearch(code);
+  };
 
   const filterOptions = [
     { value: "", label: "Tất cả" },
@@ -297,14 +331,32 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
           <p className="text-sm text-slate-500">Kiểm tra và in vé cho khách</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
+          <button
+            onClick={handleScanClick}
+            className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all border shadow-sm shrink-0 ${
+              scanning
+                ? "bg-[#dc2626] text-white border-[#dc2626] animate-pulse"
+                : "bg-white border-slate-200 text-slate-600 hover:bg-red-50 hover:border-red-300 hover:text-[#dc2626]"
+            }`}
+            title="Quét mã vé bằng máy quét barcode"
+          >
+            <ScanLine size={16} />
+            <span className="hidden sm:inline">{scanning ? "Đang chờ quét..." : "Quét vé"}</span>
+          </button>
           <div className="relative flex-1 sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input
+              ref={searchRef}
               type="text"
-              placeholder="Tìm mã vé, khách hàng, phim..."
+              placeholder={scanning ? "Dí máy quét vào QR code..." : "Tìm mã vé, khách hàng, phim..."}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#dc2626] focus:ring-2 focus:ring-red-100 transition-all"
+              onBlur={() => { if (scanning && !search) setScanning(false); }}
+              className={`w-full pl-9 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all ${
+                scanning
+                  ? "border-[#dc2626] focus:ring-red-200 bg-red-50"
+                  : "border-slate-200 focus:border-[#dc2626] focus:ring-red-100"
+              }`}
             />
           </div>
           <div className="relative" ref={filterRef}>
@@ -443,6 +495,13 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
         </table>
         )}
       </div>
+
+      {showScanner && (
+        <QrScannerModal
+          onScanned={handleScanned}
+          onClose={() => { setShowScanner(false); setScanning(false); }}
+        />
+      )}
     </div>
   );
 };

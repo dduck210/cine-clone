@@ -16,6 +16,15 @@ import {
   Ticket,
 } from "lucide-react";
 
+// Always use Vietnam timezone (UTC+7) for date strings, regardless of system timezone
+const toVNDateStr = (d = new Date()) => {
+  const vn = new Date(+d + 7 * 60 * 60 * 1000);
+  return vn.toISOString().split("T")[0];
+};
+const vnDay = (d = new Date()) => new Date(+d + 7 * 60 * 60 * 1000).getUTCDay();
+const vnDate = (d = new Date()) => new Date(+d + 7 * 60 * 60 * 1000).getUTCDate();
+const vnMonth = (d = new Date()) => new Date(+d + 7 * 60 * 60 * 1000).getUTCMonth();
+
 const MovieDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -24,9 +33,9 @@ const MovieDetailPage = () => {
   const [cinemaList, setCinemaList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedShowtime, setSelectedShowtime] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [selectedDate, setSelectedDate] = useState(() => toVNDateStr());
   const showtimeSectionRef = useRef(null);
-  const isMonday = new Date().getDay() === 1;
+  const isMonday = vnDay() === 1;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -122,8 +131,8 @@ const MovieDetailPage = () => {
   const genreNames = Array.isArray(movie.genre)
     ? movie.genre.map((g) => (typeof g === "object" ? g.name : g))
     : movie.genre
-    ? [movie.genre]
-    : [];
+      ? [movie.genre]
+      : [];
 
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900">
@@ -168,15 +177,20 @@ const MovieDetailPage = () => {
               <div className="space-y-5">
                 {movie.duration && (
                   <div>
-                    <span className="font-bold text-gray-900 block text-sm mb-1">Thời lượng</span>
+                    <span className="font-bold text-gray-900 block text-sm mb-1">
+                      Thời lượng
+                    </span>
                     <div className="flex items-center gap-2 text-gray-600 text-sm">
-                      <Clock size={16} className="text-[#dc2626]" /> {movie.duration} phút
+                      <Clock size={16} className="text-[#dc2626]" />{" "}
+                      {movie.duration} phút
                     </div>
                   </div>
                 )}
                 {movie.releaseDate && (
                   <div>
-                    <span className="font-bold text-gray-900 block text-sm mb-1">Ngày phát hành</span>
+                    <span className="font-bold text-gray-900 block text-sm mb-1">
+                      Ngày phát hành
+                    </span>
                     <div className="flex items-center gap-2 text-gray-600 text-sm">
                       <Calendar size={16} className="text-[#dc2626]" />{" "}
                       {new Date(movie.releaseDate).toLocaleDateString("vi-VN")}
@@ -185,9 +199,15 @@ const MovieDetailPage = () => {
                 )}
                 {movie.cast && (
                   <div>
-                    <span className="font-bold text-gray-900 block text-sm mb-1">Diễn viên</span>
+                    <span className="font-bold text-gray-900 block text-sm mb-1">
+                      Diễn viên
+                    </span>
                     <div className="flex items-start gap-2 text-gray-600 text-sm">
-                      <User size={16} className="text-[#dc2626] mt-0.5 flex-shrink-0" /> {movie.cast}
+                      <User
+                        size={16}
+                        className="text-[#dc2626] mt-0.5 flex-shrink-0"
+                      />{" "}
+                      {movie.cast}
                     </div>
                   </div>
                 )}
@@ -196,7 +216,9 @@ const MovieDetailPage = () => {
               <div className="space-y-5">
                 {genreNames.length > 0 && (
                   <div>
-                    <span className="font-bold text-gray-900 block text-sm mb-2">Thể loại</span>
+                    <span className="font-bold text-gray-900 block text-sm mb-2">
+                      Thể loại
+                    </span>
                     <div className="flex flex-wrap gap-2">
                       {genreNames.map((genre, index) => (
                         <span
@@ -211,9 +233,12 @@ const MovieDetailPage = () => {
                 )}
                 {movie.director && (
                   <div>
-                    <span className="font-bold text-gray-900 block text-sm mb-1">Đạo diễn</span>
+                    <span className="font-bold text-gray-900 block text-sm mb-1">
+                      Đạo diễn
+                    </span>
                     <div className="flex items-center gap-2 text-gray-600 text-sm">
-                      <Info size={16} className="text-[#dc2626]" /> {movie.director}
+                      <Info size={16} className="text-[#dc2626]" />{" "}
+                      {movie.director}
                     </div>
                   </div>
                 )}
@@ -222,18 +247,24 @@ const MovieDetailPage = () => {
 
             {isMonday && (
               <div className="mb-4 flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 px-4 py-2.5 rounded-xl text-sm font-bold">
-                🎉 Thứ Hai vàng — Giảm 20% giá vé hôm nay!
+                🎉 Golden Monday — Giảm 20% giá vé hôm nay!
               </div>
             )}
 
             {selectedShowtime ? (
               <Link
                 to={`/booking/${id}`}
-                state={{ selectedShowtime, movieTitle: movie.title, poster: movie.poster }}
+                state={{
+                  selectedShowtime,
+                  selectedDate,
+                  movieTitle: movie.title,
+                  poster: movie.poster,
+                }}
                 className="w-full"
               >
                 <button className="w-full bg-[#dc2626] hover:bg-red-700 text-white font-bold py-4 rounded-lg shadow-lg shadow-red-200 transition-all uppercase tracking-wider text-sm flex items-center justify-center gap-2">
-                  <Ticket size={20} /> Mua Vé Suất: {selectedShowtime.time} — {selectedShowtime.cinemaName}
+                  <Ticket size={20} /> Mua Vé Suất: {selectedShowtime.time} —{" "}
+                  {selectedShowtime.cinemaName}
                 </button>
               </Link>
             ) : (
@@ -261,12 +292,24 @@ const MovieDetailPage = () => {
           {/* Date picker */}
           <div className="flex gap-2 overflow-x-auto pb-2 mb-6">
             {Array.from({ length: 7 }).map((_, i) => {
-              const d = new Date();
-              d.setDate(d.getDate() + i);
-              const val = d.toISOString().split("T")[0];
-              const day = d.getDay();
-              const WEEKDAY = ["Chủ Nhật","Thứ 2","Thứ 3","Thứ 4","Thứ 5","Thứ 6","Thứ 7"];
-              const label = i === 0 ? "Hôm nay" : i === 1 ? "Ngày mai" : `${WEEKDAY[day]} ${d.getDate()}/${d.getMonth()+1}`;
+              const d = new Date(+new Date() + i * 24 * 60 * 60 * 1000);
+              const val = toVNDateStr(d);
+              const day = vnDay(d);
+              const WEEKDAY = [
+                "Chủ Nhật",
+                "Thứ 2",
+                "Thứ 3",
+                "Thứ 4",
+                "Thứ 5",
+                "Thứ 6",
+                "Thứ 7",
+              ];
+              const label =
+                i === 0
+                  ? "Hôm nay"
+                  : i === 1
+                    ? "Ngày mai"
+                    : `${WEEKDAY[day]} ${vnDate(d)}/${vnMonth(d) + 1}`;
               return (
                 <button
                   key={val}
@@ -283,87 +326,118 @@ const MovieDetailPage = () => {
             })}
           </div>
 
-          {cinemaList.map((c) => ({ ...c, showtimes: c.showtimes.filter((st) => new Date(st.date).toISOString().split("T")[0] === selectedDate) })).filter((c) => c.showtimes.length === 0).length === cinemaList.length && cinemaList.length > 0 ? (
+          {cinemaList
+            .map((c) => ({
+              ...c,
+              showtimes: c.showtimes.filter(
+                (st) => toVNDateStr(new Date(st.date)) === selectedDate,
+              ),
+            }))
+            .filter((c) => c.showtimes.length === 0).length ===
+            cinemaList.length && cinemaList.length > 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-              <p className="text-gray-400 font-bold">Không có suất chiếu nào trong ngày này.</p>
+              <p className="text-gray-400 font-bold">
+                Không có suất chiếu nào trong ngày này.
+              </p>
             </div>
           ) : cinemaList.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-100">
-              <p className="text-gray-400 font-bold">Hiện chưa có lịch chiếu cho phim này.</p>
+              <p className="text-gray-400 font-bold">
+                Hiện chưa có lịch chiếu cho phim này.
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
-              {cinemaList.map((cinema) => {
-                const filtered = cinema.showtimes.filter(
-                  (st) => new Date(st.date).toISOString().split("T")[0] === selectedDate
-                );
-                if (filtered.length === 0) return null;
-                return { ...cinema, showtimes: filtered };
-              }).filter(Boolean).map((cinema) => (
-                <div
-                  key={cinema.id}
-                  className={`border rounded-xl overflow-hidden transition-all bg-white ${
-                    cinema.isOpen ? "border-red-300 shadow-md" : "border-gray-200"
-                  }`}
-                >
+              {cinemaList
+                .map((cinema) => {
+                  const filtered = cinema.showtimes.filter(
+                    (st) => toVNDateStr(new Date(st.date)) === selectedDate,
+                  );
+                  if (filtered.length === 0) return null;
+                  return { ...cinema, showtimes: filtered };
+                })
+                .filter(Boolean)
+                .map((cinema) => (
                   <div
-                    className={`flex justify-between items-center p-5 cursor-pointer ${
-                      cinema.isOpen ? "bg-red-50" : "bg-white hover:bg-gray-50"
+                    key={cinema.id}
+                    className={`border rounded-xl overflow-hidden transition-all bg-white ${
+                      cinema.isOpen
+                        ? "border-red-300 shadow-md"
+                        : "border-gray-200"
                     }`}
-                    onClick={() => toggleCinema(cinema.id)}
                   >
-                    <div className="flex items-center gap-4">
-                      <div className={`p-2 rounded-full ${cinema.isOpen ? "bg-red-100 text-[#dc2626]" : "bg-gray-100 text-gray-400"}`}>
-                        <MapPin size={20} />
+                    <div
+                      className={`flex justify-between items-center p-5 cursor-pointer ${
+                        cinema.isOpen
+                          ? "bg-red-50"
+                          : "bg-white hover:bg-gray-50"
+                      }`}
+                      onClick={() => toggleCinema(cinema.id)}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div
+                          className={`p-2 rounded-full ${cinema.isOpen ? "bg-red-100 text-[#dc2626]" : "bg-gray-100 text-gray-400"}`}
+                        >
+                          <MapPin size={20} />
+                        </div>
+                        <div>
+                          <h3
+                            className={`font-bold text-lg ${cinema.isOpen ? "text-[#dc2626]" : "text-gray-800"}`}
+                          >
+                            {cinema.name}
+                          </h3>
+                          <p className="text-gray-500 text-xs mt-0.5">
+                            {cinema.address}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className={`font-bold text-lg ${cinema.isOpen ? "text-[#dc2626]" : "text-gray-800"}`}>
-                          {cinema.name}
-                        </h3>
-                        <p className="text-gray-500 text-xs mt-0.5">{cinema.address}</p>
+                      <div className="text-gray-400">
+                        {cinema.isOpen ? (
+                          <ChevronUp size={20} />
+                        ) : (
+                          <ChevronDown size={20} />
+                        )}
                       </div>
                     </div>
-                    <div className="text-gray-400">
-                      {cinema.isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                    </div>
-                  </div>
 
-                  {cinema.isOpen && (
-                    <div className="p-5 pt-0 bg-red-50/30 border-t border-red-100">
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-4">
-                        2D Phụ Đề
-                      </p>
-                      <div className="flex flex-wrap gap-3 animate-fade-in">
-                        {cinema.showtimes.map((showtime) => {
-                          const isSelected = selectedShowtime?.showtimeId === showtime._id;
-                          return (
-                            <button
-                              key={showtime._id}
-                              onClick={() => handleSelectTime(showtime, cinema)}
-                              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all border ${
-                                isSelected
-                                  ? "bg-[#dc2626] text-white border-[#dc2626] shadow-lg scale-105"
-                                  : "bg-white text-gray-700 border-gray-300 hover:border-red-500 hover:text-[#dc2626] hover:shadow"
-                              }`}
-                            >
-                              {showtime.startTime}
-                              {showtime.availableSeats !== undefined && (
-                                <span className="ml-2 text-xs opacity-70">
-                                  ({showtime.availableSeats} ghế)
-                                </span>
-                              )}
-                            </button>
-                          );
-                        })}
+                    {cinema.isOpen && (
+                      <div className="p-5 pt-0 bg-red-50/30 border-t border-red-100">
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-4">
+                          2D Phụ Đề
+                        </p>
+                        <div className="flex flex-wrap gap-3 animate-fade-in">
+                          {cinema.showtimes.map((showtime) => {
+                            const isSelected =
+                              selectedShowtime?.showtimeId === showtime._id;
+                            return (
+                              <button
+                                key={showtime._id}
+                                onClick={() =>
+                                  handleSelectTime(showtime, cinema)
+                                }
+                                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all border ${
+                                  isSelected
+                                    ? "bg-[#dc2626] text-white border-[#dc2626] shadow-lg scale-105"
+                                    : "bg-white text-gray-700 border-gray-300 hover:border-red-500 hover:text-[#dc2626] hover:shadow"
+                                }`}
+                              >
+                                {showtime.startTime}
+                                {showtime.availableSeats !== undefined && (
+                                  <span className="ml-2 text-xs opacity-70">
+                                    ({showtime.availableSeats} ghế)
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              ))}
+                    )}
+                  </div>
+                ))}
             </div>
           )}
         </div>
-
       </main>
       <Footer />
     </div>

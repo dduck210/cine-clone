@@ -197,6 +197,7 @@ const DashboardView = ({ stats, extStats, loading }) => (
 const Dashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "dashboard";
+  const bookingParam = searchParams.get("booking");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const adminUser = JSON.parse(localStorage.getItem("currentUser") || "null");
@@ -298,6 +299,16 @@ const Dashboard = () => {
       .catch(() => toast.error("Không tải được đơn hàng"))
       .finally(() => setOrdersLoading(false));
   }, [activeTab]);
+
+  // Auto-open order detail modal when ?booking=BKXXX is in URL
+  useEffect(() => {
+    if (!bookingParam || ordersLoading || !orders.length) return;
+    const found = orders.find((o) => o.orderId === bookingParam);
+    if (found) {
+      setSelectedOrder(found);
+      setIsOrderModalOpen(true);
+    }
+  }, [bookingParam, orders, ordersLoading]);
 
   // Fetch users
   useEffect(() => {

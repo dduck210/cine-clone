@@ -116,6 +116,11 @@ const LoginPage = () => {
                   </button>
                 </div>
                 <FieldError msg={errors.password} />
+                <div className="mt-2 text-right">
+                  <Link to="/forgot-password" className="text-sm text-gray-400 hover:text-[#dc2626] transition-colors font-medium">
+                    Quên mật khẩu?
+                  </Link>
+                </div>
               </div>
 
               <button

@@ -5,6 +5,7 @@ import {
   Link,
   useNavigate,
 } from "react-router-dom";
+import { QRCodeSVG } from "qrcode.react";
 import Navbar from "../../components/common/Navbar";
 import Footer from "../../components/common/Footer";
 import {
@@ -357,46 +358,35 @@ const PaymentSuccessPage = () => {
             )}
           </div>
 
-          {/* === BARCODE === */}
+          {/* === QR CODE (CGV/Lotte style — show immediately after paid) === */}
           <div
-            className="relative z-10 border-t-2 border-dashed border-gray-300 px-5 py-4 flex flex-col items-center"
+            className="relative z-10 border-t-2 border-dashed border-gray-300 px-5 py-4 flex flex-col items-center gap-2"
             style={{ background: "transparent" }}
           >
-            {isTicketIssued ? (
-              <>
-                <div
-                  className="flex gap-[2px] items-stretch mb-2 w-full px-2 justify-center"
-                  style={{ height: "64px" }}
-                >
-                  {[
-                    2, 3, 1, 4, 2, 1, 3, 2, 1, 2, 4, 1, 2, 3, 1, 1, 4, 2, 3, 1,
-                    2, 3, 1, 4, 2, 1, 3, 1, 2, 4, 1, 2, 3, 2, 1, 4, 2, 1, 3, 2,
-                    1, 2, 4, 1, 2, 3, 1, 1,
-                  ].map((w, i) => (
-                    <div
-                      key={i}
-                      className="bg-gray-900 flex-shrink-0"
-                      style={{ width: `${w}px` }}
-                    />
-                  ))}
-                </div>
-                <p className="font-mono text-[11px] text-gray-600 tracking-[0.28em] uppercase mt-1 font-bold">
-                  {bookingCode}
-                </p>
-              </>
-            ) : isPendingCash ? (
+            {isPendingCash ? (
               <div className="flex flex-col items-center gap-2 py-1">
                 <Clock className="w-8 h-8 text-amber-400" />
                 <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wide text-center">
-                  Thanh toán tại quầy trước giờ chiếu
+                  Xuất trình mã này tại quầy để thanh toán
                 </p>
+                <p className="font-mono text-[11px] text-gray-600 tracking-[0.2em] font-bold">{bookingCode}</p>
               </div>
+            ) : bookingCode ? (
+              <>
+                <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black">Quét mã để xác thực vé</p>
+                <QRCodeSVG
+                  value={bookingCode}
+                  size={100}
+                  bgColor="transparent"
+                  fgColor="#111827"
+                  level="M"
+                />
+                <p className="font-mono font-bold text-gray-600 text-[11px] tracking-[0.28em] uppercase">{bookingCode}</p>
+              </>
             ) : (
               <div className="flex flex-col items-center gap-2 py-1">
                 <Ticket className="w-8 h-8 text-gray-300" />
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide text-center">
-                  Barcode xuất hiện sau khi nhân viên xác nhận vé
-                </p>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide text-center">Đang tải thông tin vé...</p>
               </div>
             )}
           </div>

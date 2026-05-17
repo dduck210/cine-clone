@@ -7,16 +7,21 @@ import { MapPin, Phone, ChevronLeft, Film, Clock, Ticket, Star } from "lucide-re
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&q=80";
 
+const toVNDateStr = (d = new Date()) => {
+  const vn = new Date(+d + 7 * 60 * 60 * 1000);
+  return vn.toISOString().split("T")[0];
+};
+const vnDay = (d = new Date()) => new Date(+d + 7 * 60 * 60 * 1000).getUTCDay();
+const vnDate = (d = new Date()) => new Date(+d + 7 * 60 * 60 * 1000).getUTCDate();
+const vnMonth = (d = new Date()) => new Date(+d + 7 * 60 * 60 * 1000).getUTCMonth();
+
 const CinemaDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [cinema, setCinema] = useState(null);
   const [movieGroups, setMovieGroups] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const today = new Date();
-    return today.toISOString().split("T")[0];
-  });
+  const [selectedDate, setSelectedDate] = useState(() => toVNDateStr());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -61,6 +66,7 @@ const CinemaDetailPage = () => {
           address: cinema?.address || "",
           price: showtime.price,
         },
+        selectedDate,
         movieTitle: movie.title,
         poster: movie.poster,
       },
@@ -71,22 +77,23 @@ const CinemaDetailPage = () => {
     ...g,
     showtimes: g.showtimes.filter((st) => {
       if (!selectedDate) return true;
-      const stDate = new Date(st.date).toISOString().split("T")[0];
-      return stDate === selectedDate;
+      return toVNDateStr(new Date(st.date)) === selectedDate;
     }),
   })).filter((g) => g.showtimes.length > 0);
 
   const dateOptions = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
+  const WEEKDAY = ["CN","Hai","Ba","Tư","Năm","Sáu","Bảy"];
+  const WEEKDAY_FULL = ["Chủ Nhật","Thứ 2","Thứ 3","Thứ 4","Thứ 5","Thứ 6","Thứ 7"];
+  for (let i = 0; i < 8; i++) {
+    const d = new Date(+new Date() + i * 24 * 60 * 60 * 1000);
+    const val = toVNDateStr(d);
+    const day = vnDay(d);
     dateOptions.push({
-      value: d.toISOString().split("T")[0],
+      value: val,
       label: (() => {
-        if (i === 0) return "Hôm nay";
-        if (i === 1) return "Ngày mai";
-        const WEEKDAY = ["Chủ Nhật","Thứ 2","Thứ 3","Thứ 4","Thứ 5","Thứ 6","Thứ 7"];
-        return `${WEEKDAY[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}`;
+        if (i === 0) return `Hôm nay (${WEEKDAY[day]})`;
+        if (i === 1) return `Ngày mai (${WEEKDAY[day]})`;
+        return `${WEEKDAY_FULL[day]} ${vnDate(d)}/${vnMonth(d)+1}`;
       })(),
     });
   }

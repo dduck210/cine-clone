@@ -11,6 +11,7 @@ import MyTicketsPage from "./pages/Ticket/MyTicketsPage";
 import Dashboard from "./pages/Admin/Dashboard";
 import LoginPage from "./pages/Auth/LoginPage";
 import RegisterPage from "./pages/Auth/RegisterPage";
+import ForgotPasswordPage from "./pages/Auth/ForgotPasswordPage";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import MoviesPage from "./pages/MoviesPage";
 import CinemasPage from "./pages/CinemasPage";
@@ -69,6 +70,7 @@ function App() {
         <Route path="/cookies" element={<StaticPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
         {/* Yêu cầu đăng nhập */}
         <Route path="/booking/:id" element={<PrivateRoute><BookingPage /></PrivateRoute>} />
