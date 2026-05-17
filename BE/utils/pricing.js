@@ -24,8 +24,9 @@ function getTimeSlot(startTime) {
 }
 
 function getDayTypeFromDate(date) {
-    const d = new Date(date);
-    const day = d.getDay(); // 0=Sun, 6=Sat
+    // Use UTC+7 (Vietnam) to determine day type regardless of server timezone
+    const vnDate = new Date(new Date(date).getTime() + 7 * 60 * 60 * 1000);
+    const day = vnDate.getUTCDay(); // 0=Sun, 6=Sat in VN local time
     if (day === 0 || day === 6) return 'weekend';
     return 'weekday';
 }
