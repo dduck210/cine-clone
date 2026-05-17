@@ -1,7 +1,9 @@
 import React, { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Play, Calendar, Star, Ticket, X, RotateCw } from "lucide-react";
 
 const Hero = () => {
+  const navigate = useNavigate();
   const [isTrailerOpen, setIsTrailerOpen] = useState(false);
   const trailerVideoId = "AkNl8ZSQW9w";
   const modalRef = useRef(null);
@@ -73,7 +75,10 @@ const Hero = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4 pt-4 w-full sm:w-auto">
-              <button className="w-full sm:w-auto h-[56px] flex items-center justify-center gap-3 bg-red-600 hover:bg-red-700 text-white font-sans font-extrabold px-10 rounded-2xl shadow-lg transition-all active:scale-95 text-sm md:text-base whitespace-nowrap">
+              <button
+                onClick={() => navigate("/movies")}
+                className="w-full sm:w-auto h-[56px] flex items-center justify-center gap-3 bg-red-600 hover:bg-red-700 text-white font-sans font-extrabold px-10 rounded-2xl shadow-lg transition-all active:scale-95 text-sm md:text-base whitespace-nowrap"
+              >
                 <Ticket size={20} className="shrink-0" />
                 <span>ĐẶT VÉ NGAY</span>
               </button>

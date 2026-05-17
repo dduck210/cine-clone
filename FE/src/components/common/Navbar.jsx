@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, User, LogOut, History, Menu, X, ChevronDown, LayoutDashboard, Ticket } from "lucide-react";
+import { User, LogOut, Menu, X, ChevronDown, LayoutDashboard, Ticket } from "lucide-react";
 import AuthModal from "../auth/AuthModal";
 
 const Navbar = () => {
@@ -10,9 +10,7 @@ const Navbar = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-
   const [currentUser, setCurrentUser] = useState(() => {
     const savedUser = localStorage.getItem("currentUser");
     return savedUser ? JSON.parse(savedUser) : null;
@@ -112,27 +110,6 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            <form
-              className="hidden sm:flex items-center bg-gray-100 rounded-full px-4 py-2 w-32 lg:w-64 border border-transparent focus-within:border-[#dc2626] focus-within:bg-white transition-all"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (searchQuery.trim()) {
-                  navigate(`/movies?q=${encodeURIComponent(searchQuery.trim())}`);
-                  setSearchQuery("");
-                  setIsMobileMenuOpen(false);
-                }
-              }}
-            >
-              <Search size={16} className="text-gray-400 flex-shrink-0" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Tìm kiếm phim..."
-                className="bg-transparent border-none outline-none text-xs ml-2 w-full text-gray-700 placeholder-gray-400 font-bold"
-              />
-            </form>
-
             {currentUser ? (
               <div className="relative">
                 <button
@@ -258,28 +235,6 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
-            <div className="pt-2">
-              <form
-                className="flex items-center bg-gray-100 rounded-xl px-4 py-3 w-full border border-gray-200"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (searchQuery.trim()) {
-                    navigate(`/movies?q=${encodeURIComponent(searchQuery.trim())}`);
-                    setSearchQuery("");
-                    setIsMobileMenuOpen(false);
-                  }
-                }}
-              >
-                <Search size={18} className="text-gray-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Tìm kiếm phim..."
-                  className="bg-transparent border-none outline-none text-sm ml-2 w-full font-bold"
-                />
-              </form>
-            </div>
           </div>
         </div>
       </nav>

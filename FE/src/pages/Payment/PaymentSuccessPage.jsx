@@ -58,6 +58,7 @@ const PaymentSuccessPage = () => {
         bookingCode: s.orderId,
         movieTitle: s.movieTitle,
         cinemaName: s.cinemaName,
+        roomName: s.roomName || "",
         showTime: s.showTime,
         showDate: s.showDate,
         selectedSeats: s.selectedSeats,
@@ -102,7 +103,7 @@ const PaymentSuccessPage = () => {
 
   if (!ticketData) return null;
 
-  const { bookingId, bookingCode, movieTitle, cinemaName, showTime, showDate, selectedSeats, finalTotalPrice, poster, combos = [] } = ticketData;
+  const { bookingId, bookingCode, movieTitle, cinemaName, roomName, showTime, showDate, selectedSeats, finalTotalPrice, poster, combos = [] } = ticketData;
 
   const showPdfButton = isTicketIssued;
 
@@ -203,6 +204,7 @@ const PaymentSuccessPage = () => {
               <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-2xl">
                 <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Cinema</p>
                 <p className="text-[15px] font-black text-slate-800 uppercase leading-none">{cinemaName}</p>
+                {roomName && <p className="text-[11px] text-slate-400 font-bold mt-0.5">{roomName}</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-2xl">

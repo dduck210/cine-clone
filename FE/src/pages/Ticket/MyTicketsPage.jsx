@@ -61,11 +61,11 @@ const MyTicketsPage = () => {
       state: {
         movieTitle: movie.title || "Phim",
         cinemaName: cinema.name || "5Cine",
+        roomName: showtime.room?.name || "",
         showTime: showtime.startTime || "",
         showDate: showtime.date ? new Date(showtime.date).toLocaleDateString("vi-VN") : "",
         showAddress: cinema.address || "",
         selectedSeats: booking.seatNumbers || [],
-        combos: [],
         finalTotalPrice: booking.totalPrice,
         poster: movie.poster || "",
         orderId: booking.bookingCode,
@@ -155,6 +155,7 @@ const MyTicketsPage = () => {
               const showtime = booking.showtime || {};
               const movie = showtime.movie || {};
               const cinema = showtime.cinema || {};
+              const room = showtime.room?.name || "";
               const date = showtime.date ? new Date(showtime.date).toLocaleDateString("vi-VN") : "";
               const bStatus = BOOKING_STATUS[booking.status] || BOOKING_STATUS.cancelled;
               const tStatus = booking.status === "paid" ? (TICKET_STATUS[booking.ticketStatus] || TICKET_STATUS.not_printed) : null;
@@ -217,7 +218,7 @@ const MyTicketsPage = () => {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-600 mb-3">
                         <div className="flex items-center gap-2">
                           <MapPin size={14} className="text-red-600 shrink-0" />
-                          <span className="truncate">{cinema.name || "5Cine"}</span>
+                          <span className="truncate">{cinema.name || "5Cine"}{room ? ` — ${room}` : ""}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Ticket size={14} className="text-red-600 shrink-0" />

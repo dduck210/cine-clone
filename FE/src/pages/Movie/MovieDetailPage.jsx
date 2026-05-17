@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "../../components/common/Navbar";
 import Footer from "../../components/common/Footer";
@@ -22,6 +22,9 @@ const MovieDetailPage = () => {
   const [cinemaList, setCinemaList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedShowtime, setSelectedShowtime] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const showtimeSectionRef = useRef(null);
+  const isMonday = new Date().getDay() === 1;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -214,6 +217,12 @@ const MovieDetailPage = () => {
               </div>
             </div>
 
+            {isMonday && (
+              <div className="mb-4 flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 px-4 py-2.5 rounded-xl text-sm font-bold">
+                🎉 Thứ Hai vàng — Giảm 20% giá vé hôm nay!
+              </div>
+            )}
+
             {selectedShowtime ? (
               <Link
                 to={`/booking/${id}`}
@@ -226,27 +235,67 @@ const MovieDetailPage = () => {
               </Link>
             ) : (
               <button
-                disabled
-                className="w-full bg-gray-200 text-gray-400 font-bold py-4 rounded-lg cursor-not-allowed uppercase tracking-wider text-sm flex items-center justify-center gap-2 border border-gray-200"
+                onClick={() => {
+                  if (showtimeSectionRef.current) {
+                    const top = showtimeSectionRef.current.getBoundingClientRect().top + window.scrollY - 90;
+                    window.scrollTo({ top, behavior: "smooth" });
+                  }
+                }}
+                className="w-full bg-[#dc2626] hover:bg-red-700 text-white font-bold py-4 rounded-lg shadow-lg shadow-red-200 transition-all uppercase tracking-wider text-sm flex items-center justify-center gap-2"
               >
-                <Ticket size={20} /> Vui lòng chọn lịch chiếu bên dưới
+                <Ticket size={20} /> Đặt vé ngay
               </button>
             )}
           </div>
         </div>
 
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 border-l-4 border-[#dc2626] pl-3">
+        <div ref={showtimeSectionRef}>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4 border-l-4 border-[#dc2626] pl-3">
             Lịch Chiếu Phim
           </h2>
 
-          {cinemaList.length === 0 ? (
+          {/* Date picker */}
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-6">
+            {Array.from({ length: 7 }).map((_, i) => {
+              const d = new Date();
+              d.setDate(d.getDate() + i);
+              const val = d.toISOString().split("T")[0];
+              const day = d.getDay();
+              const WEEKDAY = ["Chủ Nhật","Thứ 2","Thứ 3","Thứ 4","Thứ 5","Thứ 6","Thứ 7"];
+              const label = i === 0 ? "Hôm nay" : i === 1 ? "Ngày mai" : `${WEEKDAY[day]} ${d.getDate()}/${d.getMonth()+1}`;
+              return (
+                <button
+                  key={val}
+                  onClick={() => setSelectedDate(val)}
+                  className={`flex-shrink-0 px-4 py-2 rounded-xl font-bold text-sm transition-all border ${
+                    selectedDate === val
+                      ? "bg-[#dc2626] text-white border-[#dc2626] shadow-md"
+                      : "bg-white text-gray-600 border-gray-200 hover:border-red-400 hover:text-red-600"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          {cinemaList.map((c) => ({ ...c, showtimes: c.showtimes.filter((st) => new Date(st.date).toISOString().split("T")[0] === selectedDate) })).filter((c) => c.showtimes.length === 0).length === cinemaList.length && cinemaList.length > 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+              <p className="text-gray-400 font-bold">Không có suất chiếu nào trong ngày này.</p>
+            </div>
+          ) : cinemaList.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-100">
               <p className="text-gray-400 font-bold">Hiện chưa có lịch chiếu cho phim này.</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {cinemaList.map((cinema) => (
+              {cinemaList.map((cinema) => {
+                const filtered = cinema.showtimes.filter(
+                  (st) => new Date(st.date).toISOString().split("T")[0] === selectedDate
+                );
+                if (filtered.length === 0) return null;
+                return { ...cinema, showtimes: filtered };
+              }).filter(Boolean).map((cinema) => (
                 <div
                   key={cinema.id}
                   className={`border rounded-xl overflow-hidden transition-all bg-white ${
@@ -310,6 +359,7 @@ const MovieDetailPage = () => {
             </div>
           )}
         </div>
+
       </main>
       <Footer />
     </div>

@@ -82,7 +82,12 @@ const CinemaDetailPage = () => {
     d.setDate(d.getDate() + i);
     dateOptions.push({
       value: d.toISOString().split("T")[0],
-      label: i === 0 ? "Hôm nay" : i === 1 ? "Ngày mai" : d.toLocaleDateString("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit" }),
+      label: (() => {
+        if (i === 0) return "Hôm nay";
+        if (i === 1) return "Ngày mai";
+        const WEEKDAY = ["Chủ Nhật","Thứ 2","Thứ 3","Thứ 4","Thứ 5","Thứ 6","Thứ 7"];
+        return `${WEEKDAY[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}`;
+      })(),
     });
   }
 
