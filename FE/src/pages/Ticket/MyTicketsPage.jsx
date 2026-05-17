@@ -53,15 +53,24 @@ const MyTicketsPage = () => {
     ? bookings
     : bookings.filter((b) => b.status === activeTab);
 
-  const handleViewDetail = (booking) => {
+  const handleViewDetail = async (booking) => {
     const showtime = booking.showtime || {};
     const movie = showtime.movie || {};
     const cinema = showtime.cinema || {};
-    navigate("/payment-success", {
+
+    let roomName = showtime.room?.name || "";
+    if (!roomName && showtime._id) {
+      try {
+        const res = await axiosInstance.get(`/showtimes/${showtime._id}`);
+        roomName = res.data?.data?.room?.name || "";
+      } catch {}
+    }
+
+    navigate("/ticket-detail", {
       state: {
         movieTitle: movie.title || "Phim",
         cinemaName: cinema.name || "5Cine",
-        roomName: showtime.room?.name || "",
+        roomName,
         showTime: showtime.startTime || "",
         showDate: showtime.date ? new Date(showtime.date).toLocaleDateString("vi-VN") : "",
         showAddress: cinema.address || "",

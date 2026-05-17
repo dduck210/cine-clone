@@ -74,6 +74,7 @@ function App() {
         <Route path="/booking/:id" element={<PrivateRoute><BookingPage /></PrivateRoute>} />
         <Route path="/payment" element={<PrivateRoute><PaymentPage /></PrivateRoute>} />
         <Route path="/payment-success" element={<PrivateRoute><PaymentSuccessPage /></PrivateRoute>} />
+        <Route path="/ticket-detail" element={<PrivateRoute><PaymentSuccessPage /></PrivateRoute>} />
         <Route path="/my-tickets" element={<PrivateRoute><MyTicketsPage /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
 

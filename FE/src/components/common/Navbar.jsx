@@ -2,12 +2,10 @@ import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { User, LogOut, Menu, X, ChevronDown, LayoutDashboard, Ticket } from "lucide-react";
-import AuthModal from "../auth/AuthModal";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -23,14 +21,6 @@ const Navbar = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  const handleLoginSuccess = (user) => {
-    setCurrentUser(user);
-    localStorage.setItem("currentUser", JSON.stringify(user));
-    setIsDropdownOpen(false);
-    setIsAuthModalOpen(false);
-    if (user.role === "admin") navigate("/admin");
-  };
 
   const handleLogout = () => {
     setIsDropdownOpen(false);
@@ -208,7 +198,7 @@ const Navbar = () => {
               </div>
             ) : (
               <button
-                onClick={() => setIsAuthModalOpen(true)}
+                onClick={() => navigate("/login")}
                 className="flex items-center gap-2 text-gray-700 font-bold hover:text-[#dc2626] p-2 rounded-lg transition-all active:scale-95"
               >
                 <User size={22} />
@@ -238,12 +228,6 @@ const Navbar = () => {
           </div>
         </div>
       </nav>
-
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onLoginSuccess={handleLoginSuccess}
-      />
 
       {/* Overlay */}
       {(isDropdownOpen || isMobileMenuOpen) && (

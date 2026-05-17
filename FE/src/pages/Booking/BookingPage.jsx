@@ -77,6 +77,7 @@ const BookingPage = () => {
   const { id } = useParams();
   const location = useLocation();
   const { selectedShowtime, movieTitle, poster } = location.state || {};
+  const roomName = selectedShowtime?.roomName || "";
 
   const showtimeId = selectedShowtime?.showtimeId;
   const cinemaName = selectedShowtime?.cinemaName || "5Cine";
@@ -478,6 +479,7 @@ const BookingPage = () => {
                           selectedSeats,
                           combos,
                           finalTotalPrice,
+                          roomName,
                           seatMap: Object.fromEntries(
                             selectedSeats.map((sn) => [sn, { type: seatMap[sn]?.type, price: seatMap[sn]?.price }])
                           ),

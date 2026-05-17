@@ -1,8 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { useLocation, useSearchParams, Link, useNavigate } from "react-router-dom";
+import {
+  useLocation,
+  useSearchParams,
+  Link,
+  useNavigate,
+} from "react-router-dom";
 import Navbar from "../../components/common/Navbar";
 import Footer from "../../components/common/Footer";
-import { CheckCircle, Home, Ticket, ArrowLeft, Crown, XCircle, Clock, Download } from "lucide-react";
+import {
+  CheckCircle,
+  Home,
+  Ticket,
+  ArrowLeft,
+  Crown,
+  XCircle,
+  Clock,
+  Download,
+} from "lucide-react";
 import axiosInstance from "../../api/axiosConfig";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -36,20 +50,28 @@ const PaymentSuccessPage = () => {
       const resultCode = searchParams.get("resultCode");
 
       if (resultCode !== "0") {
-        setError(searchParams.get("message") || "Thanh toán thất bại hoặc bị hủy.");
+        setError(
+          searchParams.get("message") || "Thanh toán thất bại hoặc bị hủy.",
+        );
         return;
       }
 
       // Gọi backend để verify chữ ký và lấy thông tin vé
       setLoading(true);
       const params = {};
-      searchParams.forEach((v, k) => { params[k] = v; });
+      searchParams.forEach((v, k) => {
+        params[k] = v;
+      });
 
-      axiosInstance.post("/payments/momo/confirm", params)
+      axiosInstance
+        .post("/payments/momo/confirm", params)
         .then((res) => setTicketData(res.data))
-        .catch((err) => setError(err.response?.data?.message || "Xác nhận thanh toán thất bại"))
+        .catch((err) =>
+          setError(
+            err.response?.data?.message || "Xác nhận thanh toán thất bại",
+          ),
+        )
         .finally(() => setLoading(false));
-
     } else if (location.state) {
       // Luồng tiền mặt/QR/history — dữ liệu có sẵn trong state
       const s = location.state;
@@ -76,7 +98,9 @@ const PaymentSuccessPage = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#AE2070] border-t-transparent" />
-        <p className="text-slate-500 font-medium">Đang xác nhận thanh toán MoMo...</p>
+        <p className="text-slate-500 font-medium">
+          Đang xác nhận thanh toán MoMo...
+        </p>
       </div>
     );
   }
@@ -90,10 +114,14 @@ const PaymentSuccessPage = () => {
           <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-200">
             <XCircle className="w-10 h-10 text-red-600" strokeWidth={2.5} />
           </div>
-          <h1 className="text-2xl font-black text-gray-900 mb-2 uppercase">Thanh toán thất bại</h1>
+          <h1 className="text-2xl font-black text-gray-900 mb-2 uppercase">
+            Thanh toán thất bại
+          </h1>
           <p className="text-gray-500 mb-8">{error}</p>
-          <button onClick={() => navigate("/")}
-            className="px-8 py-3 bg-[#dc2626] text-white font-bold rounded-xl hover:bg-red-700 transition-all">
+          <button
+            onClick={() => navigate("/")}
+            className="px-8 py-3 bg-[#dc2626] text-white font-bold rounded-xl hover:bg-red-700 transition-all"
+          >
             Về trang chủ
           </button>
         </main>
@@ -103,7 +131,19 @@ const PaymentSuccessPage = () => {
 
   if (!ticketData) return null;
 
-  const { bookingId, bookingCode, movieTitle, cinemaName, roomName, showTime, showDate, selectedSeats, finalTotalPrice, poster, combos = [] } = ticketData;
+  const {
+    bookingId,
+    bookingCode,
+    movieTitle,
+    cinemaName,
+    roomName,
+    showTime,
+    showDate,
+    selectedSeats,
+    finalTotalPrice,
+    poster,
+    combos = [],
+  } = ticketData;
 
   const showPdfButton = isTicketIssued;
 
@@ -111,7 +151,9 @@ const PaymentSuccessPage = () => {
     if (!bookingId) return;
     setDownloadingPdf(true);
     try {
-      const response = await axiosInstance.get(`/tickets/${bookingId}/pdf`, { responseType: "blob" });
+      const response = await axiosInstance.get(`/tickets/${bookingId}/pdf`, {
+        responseType: "blob",
+      });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
@@ -141,7 +183,9 @@ const PaymentSuccessPage = () => {
               </h1>
               <p className="text-gray-500 font-medium">
                 Mã đơn hàng:{" "}
-                <span className="font-mono font-black text-red-600 bg-red-50 px-2 py-0.5 rounded">{bookingCode}</span>
+                <span className="font-mono font-black text-red-600 bg-red-50 px-2 py-0.5 rounded">
+                  {bookingCode}
+                </span>
               </p>
               {!isTicketIssued && bookingStatus === "paid" && (
                 <div className="mt-3 inline-flex items-center gap-2 bg-orange-50 border border-orange-200 text-orange-700 px-4 py-2 rounded-full text-sm font-bold">
@@ -154,151 +198,241 @@ const PaymentSuccessPage = () => {
               <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6 border border-amber-200">
                 <Clock className="w-10 h-10 text-amber-600" strokeWidth={2.5} />
               </div>
-              <h1 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">Đặt vé thành công!</h1>
+              <h1 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">
+                Đặt vé thành công!
+              </h1>
               <p className="text-gray-500 font-medium">
                 Mã đơn hàng:{" "}
-                <span className="font-mono font-black text-red-600 bg-red-50 px-2 py-0.5 rounded">{bookingCode || "—"}</span>
+                <span className="font-mono font-black text-red-600 bg-red-50 px-2 py-0.5 rounded">
+                  {bookingCode || "—"}
+                </span>
               </p>
               <div className="mt-3 inline-flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 px-4 py-2 rounded-full text-sm font-bold">
-                <Clock size={16} /> Vui lòng đến quầy rạp thanh toán trước giờ chiếu
+                <Clock size={16} /> Vui lòng đến quầy rạp thanh toán trước giờ
+                chiếu
               </div>
             </>
           ) : (
             <>
               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-200">
-                <CheckCircle className="w-10 h-10 text-green-600" strokeWidth={2.5} />
+                <CheckCircle
+                  className="w-10 h-10 text-green-600"
+                  strokeWidth={2.5}
+                />
               </div>
-              <h1 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">Thanh toán thành công!</h1>
+              <h1 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">
+                Thanh toán thành công!
+              </h1>
               <p className="text-gray-500 font-medium">
                 Mã đơn hàng:{" "}
-                <span className="font-mono font-black text-red-600 bg-red-50 px-2 py-0.5 rounded">{bookingCode || "—"}</span>
+                <span className="font-mono font-black text-red-600 bg-red-50 px-2 py-0.5 rounded">
+                  {bookingCode || "—"}
+                </span>
               </p>
-              <p className="text-gray-400 text-sm mt-2">Vé điện tử sẽ hiển thị sau khi nhân viên rạp xác nhận.</p>
+              <p className="text-gray-400 text-sm mt-2">
+                Vé điện tử sẽ hiển thị sau khi nhân viên rạp xác nhận.
+              </p>
             </>
           )}
         </div>
 
-        {/* Ticket card */}
-        <div className="bg-white mx-auto w-full max-w-[400px] rounded-[32px] shadow-2xl overflow-hidden border border-gray-100">
-          <div className="bg-slate-900 p-6 relative overflow-hidden">
-            <div className="absolute -right-10 -top-10 opacity-10">
-              <Crown size={120} className="text-[#d4af37]" />
-            </div>
-            <div className="relative z-10 text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Crown size={14} className="text-[#d4af37]" />
-                <p className="text-[#d4af37] text-[10px] font-black tracking-[0.4em] uppercase">V.I.P Admission</p>
-              </div>
-              <h2 className="text-[22px] font-black text-white leading-tight uppercase tracking-tight">{movieTitle}</h2>
-              <div className="mt-3 inline-block px-3 py-1 border border-[#d4af37]/30 bg-[#d4af37]/10 rounded-full text-[#d4af37] text-[10px] font-black tracking-widest uppercase">
-                2D Phụ Đề
-              </div>
-            </div>
+        {/* Ticket card — CGV paper thermal style */}
+        <div
+          className="mx-auto w-full max-w-[360px] rounded-xl shadow-2xl overflow-hidden font-mono"
+          style={{
+            border: "1px solid #e5e0d5",
+            backgroundColor: "#fdf8f0",
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='100'%3E%3Ctext x='0' y='60' font-family='monospace' font-size='14' font-weight='900' letter-spacing='2' fill='%23000' opacity='0.20' transform='rotate(-28 90 50)'%3E5CINE%20TICKET%3C/text%3E%3C/svg%3E")`,
+            backgroundSize: "180px 100px",
+          }}
+        >
+          {/* === HEADER: Tiêu đề vé === */}
+          <div
+            className="px-5 pt-5 pb-4 border-b border-dashed border-gray-300 text-center"
+            style={{ background: "transparent" }}
+          >
+            <p className="text-[13px] font-black tracking-[0.3em] text-gray-700 uppercase">
+              THẺ VÀO PHÒNG CHIẾU PHIM
+            </p>
           </div>
 
-          <div className="p-6 pb-4 space-y-5 bg-white relative">
-            <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
-              style={{ backgroundImage: "radial-gradient(#000 1px, transparent 1px)", backgroundSize: "12px 12px" }} />
+          {/* === CINEMA INFO === */}
+          <div
+            className="relative z-10 px-5 py-4 border-b border-dashed border-gray-300 space-y-0.5"
+            style={{ background: "transparent" }}
+          >
+            <p className="font-black text-[14px] text-gray-900 uppercase">
+              {cinemaName}
+            </p>
+            {roomName && (
+              <p className="text-[11px] font-bold text-gray-500 uppercase">
+                {roomName}
+              </p>
+            )}
+            <p className="text-[10px] text-gray-400 pt-1">
+              Mã ĐH: {bookingCode || "—"}
+            </p>
+            <p className="text-[10px] text-gray-400">
+              {showDate} — {showTime}
+            </p>
+          </div>
 
-            <div className="relative z-10 space-y-3">
-              <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-2xl">
-                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Cinema</p>
-                <p className="text-[15px] font-black text-slate-800 uppercase leading-none">{cinemaName}</p>
-                {roomName && <p className="text-[11px] text-slate-400 font-bold mt-0.5">{roomName}</p>}
+          {/* === TORN EDGE DIVIDER === */}
+          <div
+            className="relative z-10 h-5 flex items-center"
+            style={{ background: "transparent" }}
+          >
+            <div
+              className="absolute -left-3 w-6 h-6 rounded-full bg-gray-100 shadow-inner"
+              style={{ border: "1px solid #e5e0d5" }}
+            />
+            <div
+              className="absolute -right-3 w-6 h-6 rounded-full bg-gray-100 shadow-inner"
+              style={{ border: "1px solid #e5e0d5" }}
+            />
+            <div className="w-full mx-4 border-t-2 border-dashed border-gray-300" />
+          </div>
+
+          {/* === MOVIE + SEAT INFO === */}
+          <div
+            className="relative z-10 px-5 pt-3 pb-4"
+            style={{ background: "transparent" }}
+          >
+            <p className="text-[18px] font-black text-gray-900 uppercase leading-tight mb-3">
+              {movieTitle}
+            </p>
+
+            <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 text-[11px]">
+              <div>
+                <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-0.5">
+                  Suất chiếu
+                </p>
+                <p className="font-black text-gray-800">{showTime}</p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-2xl">
-                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Date</p>
-                  <p className="text-[14px] font-black text-slate-800">{showDate}</p>
-                </div>
-                <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-right">
-                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Time</p>
-                  <p className="text-[14px] font-black text-slate-800">{showTime}</p>
-                </div>
+              <div>
+                <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-0.5">
+                  Ngày chiếu
+                </p>
+                <p className="font-black text-gray-800">{showDate}</p>
               </div>
-              <div className="p-4 bg-red-50/50 border border-red-100 rounded-2xl flex justify-between items-center">
+              {roomName && (
                 <div>
-                  <p className="text-[10px] text-red-400 font-black uppercase tracking-widest mb-1">Seat(s)</p>
-                  <p className="text-[24px] font-black text-[#dc2626] tracking-tighter leading-none">
-                    {Array.isArray(selectedSeats) ? selectedSeats.join(", ") : selectedSeats}
+                  <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-0.5">
+                    Phòng
+                  </p>
+                  <p className="font-black text-gray-800 uppercase">
+                    {roomName}
                   </p>
                 </div>
-              </div>
-              {combos.length > 0 && (
-                <div className="p-3.5 bg-orange-50/60 border border-orange-100 rounded-2xl">
-                  <p className="text-[10px] text-orange-500 font-black uppercase tracking-widest mb-2">F&B / Combo</p>
-                  <div className="space-y-1.5">
-                    {combos.map((c, i) => (
-                      <div key={i} className="flex justify-between items-center">
-                        <span className="text-[13px] font-semibold text-slate-700">{c.name} <span className="text-orange-500">×{c.quantity}</span></span>
-                        <span className="text-[13px] font-black text-slate-800">{(c.price * c.quantity).toLocaleString()}đ</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               )}
+              <div>
+                <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-0.5">
+                  Ghế
+                </p>
+                <p className="font-black text-[#dc2626] text-[16px] leading-none">
+                  {Array.isArray(selectedSeats)
+                    ? selectedSeats.join(", ")
+                    : selectedSeats}
+                </p>
+              </div>
             </div>
 
-            <div className="mt-4 pt-4 flex flex-col items-center border-t border-dashed border-slate-100">
-              {isTicketIssued ? (
-                <div className="flex gap-5 items-center w-full px-2 justify-center">
-                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${bookingCode || "5CINE"}`}
-                    alt="QR Code" className="w-[70px] h-[70px] mix-blend-multiply shrink-0" />
-                  <div className="flex flex-col items-center">
-                    <div className="h-7 flex gap-[2.5px] opacity-80">
-                      {[2, 4, 1, 3, 2, 1, 1, 3, 4, 2, 1, 2, 3, 1, 1].map((w, i) => (
-                        <div key={i} className="bg-slate-900 h-full" style={{ width: `${w}px` }} />
-                      ))}
-                    </div>
-                    <p className="font-mono font-black text-slate-500 text-[11px] mt-2 tracking-widest uppercase">{bookingCode}</p>
+            {combos.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-dashed border-gray-200 space-y-1.5">
+                <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-1">
+                  F&B / Combo
+                </p>
+                {combos.map((c, i) => (
+                  <div key={i} className="flex justify-between text-[11px]">
+                    <span className="text-gray-600">
+                      {c.name}{" "}
+                      <span className="text-gray-400">×{c.quantity}</span>
+                    </span>
+                    <span className="font-black text-gray-800">
+                      {(c.price * c.quantity).toLocaleString()}đ
+                    </span>
                   </div>
-                </div>
-              ) : isPendingCash ? (
-                <div className="flex flex-col items-center gap-2 py-2 px-4 w-full">
-                  <div className="w-[70px] h-[70px] rounded-xl bg-amber-50 border-2 border-dashed border-amber-300 flex items-center justify-center shrink-0">
-                    <Clock className="w-8 h-8 text-amber-400" />
-                  </div>
-                  <p className="text-[11px] font-bold text-amber-500 text-center tracking-wide uppercase">
-                    QR xuất hiện sau khi thanh toán tại quầy
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-2 py-2 px-4 w-full">
-                  <div className="w-[70px] h-[70px] rounded-xl bg-slate-50 border-2 border-dashed border-slate-300 flex items-center justify-center shrink-0">
-                    <Ticket className="w-8 h-8 text-slate-400" />
-                  </div>
-                  <p className="text-[11px] font-bold text-slate-400 text-center tracking-wide uppercase">
-                    QR xuất hiện sau khi nhân viên xác nhận vé
-                  </p>
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="bg-slate-900 relative p-5">
-            <div className="absolute top-0 left-0 w-full h-[6px] bg-[radial-gradient(circle,transparent_3px,#0f172a_3px)] bg-[length:14px_12px] -mt-[6px]" />
-            <div className="flex justify-between items-end">
-              <span className="text-[11px] font-black text-[#d4af37] uppercase tracking-widest">{isCash ? "Tổng tiền (chưa thanh toán)" : "Total Paid"}</span>
-              <span className="text-[20px] font-black text-white">{finalTotalPrice?.toLocaleString()} ₫</span>
-            </div>
+          {/* === BARCODE === */}
+          <div
+            className="relative z-10 border-t-2 border-dashed border-gray-300 px-5 py-4 flex flex-col items-center"
+            style={{ background: "transparent" }}
+          >
+            {isTicketIssued ? (
+              <>
+                <div
+                  className="flex gap-[2px] items-stretch mb-2 w-full px-2 justify-center"
+                  style={{ height: "64px" }}
+                >
+                  {[
+                    2, 3, 1, 4, 2, 1, 3, 2, 1, 2, 4, 1, 2, 3, 1, 1, 4, 2, 3, 1,
+                    2, 3, 1, 4, 2, 1, 3, 1, 2, 4, 1, 2, 3, 2, 1, 4, 2, 1, 3, 2,
+                    1, 2, 4, 1, 2, 3, 1, 1,
+                  ].map((w, i) => (
+                    <div
+                      key={i}
+                      className="bg-gray-900 flex-shrink-0"
+                      style={{ width: `${w}px` }}
+                    />
+                  ))}
+                </div>
+                <p className="font-mono text-[11px] text-gray-600 tracking-[0.28em] uppercase mt-1 font-bold">
+                  {bookingCode}
+                </p>
+              </>
+            ) : isPendingCash ? (
+              <div className="flex flex-col items-center gap-2 py-1">
+                <Clock className="w-8 h-8 text-amber-400" />
+                <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wide text-center">
+                  Thanh toán tại quầy trước giờ chiếu
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2 py-1">
+                <Ticket className="w-8 h-8 text-gray-300" />
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide text-center">
+                  Barcode xuất hiện sau khi nhân viên xác nhận vé
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* === TOTAL === */}
+          <div className="relative z-10 px-5 py-3 flex justify-between items-center bg-gray-900">
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              {isCash ? "Tổng tiền (chưa TT)" : "Total Paid"}
+            </span>
+            <span className="font-mono font-black text-white text-[18px]">
+              {finalTotalPrice?.toLocaleString()} ₫
+            </span>
           </div>
         </div>
 
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 mt-12 justify-center px-4 flex-wrap">
           {isHistoryMode ? (
-            <button onClick={() => navigate("/my-tickets")}
-              className="w-full sm:w-auto px-10 py-3.5 bg-white border-2 border-slate-200 rounded-2xl font-black text-slate-700 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 uppercase text-sm tracking-widest">
+            <button
+              onClick={() => navigate("/my-tickets")}
+              className="w-full sm:w-auto px-10 py-3.5 bg-white border-2 border-slate-200 rounded-2xl font-black text-slate-700 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 uppercase text-sm tracking-widest"
+            >
               <ArrowLeft size={18} strokeWidth={3} /> Quay lại danh sách
             </button>
           ) : (
             <>
-              <button onClick={() => navigate("/")}
-                className="w-full sm:w-auto px-10 py-3.5 bg-white border-2 border-slate-200 rounded-2xl font-black text-slate-700 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 uppercase text-sm tracking-widest">
+              <button
+                onClick={() => navigate("/")}
+                className="w-full sm:w-auto px-10 py-3.5 bg-white border-2 border-slate-200 rounded-2xl font-black text-slate-700 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 uppercase text-sm tracking-widest"
+              >
                 <Home size={18} strokeWidth={3} /> Về trang chủ
               </button>
-              <button onClick={() => navigate("/my-tickets")}
-                className="w-full sm:w-auto px-10 py-3.5 bg-[#dc2626] rounded-2xl font-black text-white hover:bg-red-700 shadow-xl shadow-red-200 transition-all flex items-center justify-center gap-2 uppercase text-sm tracking-widest">
+              <button
+                onClick={() => navigate("/my-tickets")}
+                className="w-full sm:w-auto px-10 py-3.5 bg-[#dc2626] rounded-2xl font-black text-white hover:bg-red-700 shadow-xl shadow-red-200 transition-all flex items-center justify-center gap-2 uppercase text-sm tracking-widest"
+              >
                 <Ticket size={18} strokeWidth={3} /> Xem vé của tôi
               </button>
             </>

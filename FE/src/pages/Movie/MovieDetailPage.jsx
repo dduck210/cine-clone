@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import Navbar from "../../components/common/Navbar";
 import Footer from "../../components/common/Footer";
 import axiosInstance from "../../api/axiosConfig";
@@ -17,6 +18,7 @@ import {
 
 const MovieDetailPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [movie, setMovie] = useState(null);
   const [cinemaList, setCinemaList] = useState([]);
@@ -84,6 +86,7 @@ const MovieDetailPage = () => {
       cinemaName: cinema.name,
       address: cinema.address,
       price: showtime.price,
+      roomName: showtime.room?.name || "",
     });
   };
 
@@ -236,10 +239,11 @@ const MovieDetailPage = () => {
             ) : (
               <button
                 onClick={() => {
-                  if (showtimeSectionRef.current) {
-                    const top = showtimeSectionRef.current.getBoundingClientRect().top + window.scrollY - 90;
-                    window.scrollTo({ top, behavior: "smooth" });
+                  if (!localStorage.getItem("token")) {
+                    navigate("/login");
+                    return;
                   }
+                  toast("Vui lòng chọn suất chiếu bên dưới", { icon: "👇" });
                 }}
                 className="w-full bg-[#dc2626] hover:bg-red-700 text-white font-bold py-4 rounded-lg shadow-lg shadow-red-200 transition-all uppercase tracking-wider text-sm flex items-center justify-center gap-2"
               >

@@ -76,7 +76,13 @@ const Hero = () => {
 
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4 pt-4 w-full sm:w-auto">
               <button
-                onClick={() => navigate("/movies")}
+                onClick={() => {
+                  if (!localStorage.getItem("token")) {
+                    navigate("/login");
+                    return;
+                  }
+                  navigate("/movies");
+                }}
                 className="w-full sm:w-auto h-[56px] flex items-center justify-center gap-3 bg-red-600 hover:bg-red-700 text-white font-sans font-extrabold px-10 rounded-2xl shadow-lg transition-all active:scale-95 text-sm md:text-base whitespace-nowrap"
               >
                 <Ticket size={20} className="shrink-0" />

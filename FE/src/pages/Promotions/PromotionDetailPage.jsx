@@ -108,12 +108,18 @@ const PromotionDetailPage = () => {
 
           {/* CTA */}
           <div className="mt-10 flex justify-center">
-            <Link
-              to="/movies"
+            <button
+              onClick={() => {
+                if (!localStorage.getItem("token")) {
+                  navigate("/login");
+                  return;
+                }
+                navigate("/movies");
+              }}
               className="bg-[#dc2626] hover:bg-red-700 text-white font-bold px-8 py-4 rounded-xl shadow-lg shadow-red-200 transition-all hover:-translate-y-1"
             >
               Đặt vé ngay để áp dụng ưu đãi →
-            </Link>
+            </button>
           </div>
 
           {/* Related */}
