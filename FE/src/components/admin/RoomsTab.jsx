@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Plus, X, Save, Grid, Eye, Settings, AlertTriangle, Zap, Calendar, Ticket } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { Plus, X, Save, Grid, Eye, Settings, AlertTriangle, Zap, Calendar, Ticket, Power } from "lucide-react";
 import axiosInstance from "../../api/axiosConfig";
 import toast from "react-hot-toast";
 
@@ -17,6 +17,25 @@ const SEAT_TYPES = [
 ];
 
 const typeColor = (type) => SEAT_TYPES.find((t) => t.value === type)?.color || "bg-slate-200";
+const CINEMA_STATUS_META = {
+  active: {
+    label: "Dang hoat dong",
+    badgeClass: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    dotClass: "bg-emerald-500 animate-pulse",
+  },
+  incident: {
+    label: "Su co",
+    badgeClass: "bg-amber-50 text-amber-700 border-amber-200",
+    dotClass: "bg-amber-500",
+  },
+  inactive: {
+    label: "Ngung hoat dong",
+    badgeClass: "bg-slate-100 text-slate-600 border-slate-200",
+    dotClass: "bg-slate-400",
+  },
+};
+
+const getCinemaStatusMeta = (status) => CINEMA_STATUS_META[status] || CINEMA_STATUS_META.active;
 
 // Generate default matrix matching seed logic:
 // rooms with 6+ rows: last row = couple, second-to-last = VIP, rest = normal
@@ -358,12 +377,30 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
   );
 };
 
-const EmergencyCloseModal = ({ cinemaId, cinemaName, onClose, onDone }) => {
+const EmergencyCloseModal = ({ cinemaId, cinemaName, rooms = [], onClose, onDone, onCinemaUpdated }) => {
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [confirmed, setConfirmed] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [selectedRoomIds, setSelectedRoomIds] = useState([]);
+
+  const loadPreview = useCallback(async (roomIds = []) => {
+    setLoading(true);
+    setFetchError(null);
+    try {
+      const res = await axiosInstance.get(`/admin/emergency-close/${cinemaId}/preview`, {
+        params: roomIds.length > 0 ? { roomIds: roomIds.join(",") } : {},
+      });
+      setPreview(res.data);
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Loi ket noi";
+      setFetchError(msg);
+      toast.error(`Khong tai duoc du lieu: ${msg}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [cinemaId]);
 
   useEffect(() => {
     setLoading(true);
@@ -378,11 +415,32 @@ const EmergencyCloseModal = ({ cinemaId, cinemaName, onClose, onDone }) => {
       .finally(() => setLoading(false));
   }, [cinemaId]);
 
+  /* eslint-disable react-hooks/exhaustive-deps */
+  // Sync preview with the currently selected emergency-close scope.
+  useEffect(() => {
+    loadPreview(selectedRoomIds);
+  }, [selectedRoomIds]);
+  /* eslint-enable react-hooks/exhaustive-deps */
+
+  const toggleRoomSelection = (roomId) => {
+    setConfirmed(false);
+    setSelectedRoomIds((prev) =>
+      prev.includes(roomId) ? prev.filter((id) => id !== roomId) : [...prev, roomId]
+    );
+  };
+
+  const selectedScopeLabel = selectedRoomIds.length > 0
+    ? `${selectedRoomIds.length} phong duoc chon`
+    : "Toan rap";
+
   const handleClose = async () => {
     setClosing(true);
     try {
-      const res = await axiosInstance.post(`/admin/emergency-close/${cinemaId}`);
+      const res = await axiosInstance.post(`/admin/emergency-close/${cinemaId}`, {
+        roomIds: selectedRoomIds,
+      });
       toast.success(`Đã hủy ${res.data.cancelledShowtimes} suất · Hoàn tiền ${res.data.refundedBookings} đơn`);
+      if (res.data.cinema) onCinemaUpdated?.(res.data.cinema);
       onDone();
       onClose();
     } catch (err) {
@@ -420,7 +478,7 @@ const EmergencyCloseModal = ({ cinemaId, cinemaName, onClose, onDone }) => {
               <p className="text-red-700 font-bold text-sm mb-1">Không thể tải dữ liệu</p>
               <p className="text-red-500 text-xs font-mono">{fetchError}</p>
               <button
-                onClick={() => { setLoading(true); setFetchError(null); axiosInstance.get(`/admin/emergency-close/${cinemaId}/preview`).then((r) => setPreview(r.data)).catch((e) => setFetchError(e.response?.data?.message || e.message)).finally(() => setLoading(false)); }}
+                onClick={() => loadPreview(selectedRoomIds)}
                 className="mt-3 px-4 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700"
               >
                 Thử lại
@@ -428,6 +486,42 @@ const EmergencyCloseModal = ({ cinemaId, cinemaName, onClose, onDone }) => {
             </div>
           ) : (
             <>
+              <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">Pham vi xu ly</p>
+                    <p className="text-xs text-slate-500">
+                      Chon 1 hoac nhieu phong neu chi muon huy cac suat lien quan. De trong se ap dung cho toan rap.
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-600">
+                    {selectedScopeLabel}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setConfirmed(false); setSelectedRoomIds([]); }}
+                    className={`rounded-lg border px-3 py-2 text-xs font-bold transition-all ${selectedRoomIds.length === 0 ? "border-red-200 bg-red-50 text-red-600" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}
+                  >
+                    Toan rap
+                  </button>
+                  {rooms.map((room) => {
+                    const selected = selectedRoomIds.includes(room._id);
+                    return (
+                      <button
+                        key={room._id}
+                        type="button"
+                        onClick={() => toggleRoomSelection(room._id)}
+                        className={`rounded-lg border px-3 py-2 text-xs font-bold transition-all ${selected ? "border-amber-200 bg-amber-50 text-amber-700" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}
+                      >
+                        {room.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Impact summary */}
               <div className="grid grid-cols-3 gap-3">
                 {[
@@ -469,14 +563,14 @@ const EmergencyCloseModal = ({ cinemaId, cinemaName, onClose, onDone }) => {
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
                 <AlertTriangle size={18} className="text-amber-500 shrink-0 mt-0.5" />
                 <p className="text-sm text-amber-800 font-medium leading-relaxed">
-                  Thao tác này <strong>không thể hoàn tác</strong>. Tất cả suất chiếu sắp tới sẽ bị hủy và các đơn đã thanh toán sẽ được hoàn tiền tự động.
+                  Thao tác này <strong>không thể hoàn tác</strong>. {selectedRoomIds.length > 0 ? "Các suất chiếu trong những phòng đã chọn" : "Tất cả suất chiếu sắp tới"} sẽ bị hủy và các đơn đã thanh toán sẽ được hoàn tiền tự động.
                 </p>
               </div>
 
               <label className="flex items-center gap-3 cursor-pointer select-none">
                 <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)}
                   className="w-4 h-4 accent-red-600 cursor-pointer" />
-                <span className="text-sm font-semibold text-slate-700">Tôi hiểu và xác nhận đóng rạp khẩn cấp</span>
+                <span className="text-sm font-semibold text-slate-700">Tôi hiểu và xác nhận xử lý {selectedRoomIds.length > 0 ? "các phòng đã chọn" : "toàn rạp"} trong tình huống khẩn cấp</span>
               </label>
             </>
           )}
@@ -491,7 +585,7 @@ const EmergencyCloseModal = ({ cinemaId, cinemaName, onClose, onDone }) => {
             disabled={!confirmed || closing || loading || !!fetchError || preview?.totalShowtimes === 0}
             className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm flex items-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-red-200"
           >
-            {closing ? <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" /> Đang xử lý...</> : <><Zap size={16} /> Xác nhận đóng rạp</>}
+            {closing ? <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" /> Đang xử lý...</> : <><Zap size={16} /> {selectedRoomIds.length > 0 ? "Xác nhận xử lý phòng" : "Xác nhận đóng rạp"}</>}
           </button>
         </div>
       </div>
@@ -500,7 +594,7 @@ const EmergencyCloseModal = ({ cinemaId, cinemaName, onClose, onDone }) => {
 };
 
 // Main Rooms Manager tab
-export const RoomsManager = ({ cinemas }) => {
+export const RoomsManager = ({ cinemas, onCinemaUpdated }) => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedCinema, setSelectedCinema] = useState("");
@@ -508,21 +602,44 @@ export const RoomsManager = ({ cinemas }) => {
   const [editRoom, setEditRoom] = useState(null);
   const [detailRoom, setDetailRoom] = useState(null);
   const [showEmergency, setShowEmergency] = useState(false);
+  const [restoringCinema, setRestoringCinema] = useState(false);
+  const [restoringRoomId, setRestoringRoomId] = useState("");
 
   const loadRooms = async (cinemaId) => {
-    if (!cinemaId) { setRooms([]); return; }
+    if (!cinemaId) { setRooms([]); return []; }
     setLoading(true);
     try {
       const res = await axiosInstance.get(`/admin/cinemas/${cinemaId}/rooms`);
       setRooms(res.data);
+      return res.data;
     } catch {
       setRooms([]);
+      return [];
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { loadRooms(selectedCinema); }, [selectedCinema]);
+  const updateRoomStatus = async (roomId, status) => {
+    try {
+      const res = await axiosInstance.patch(`/admin/rooms/${roomId}/status`, { status });
+      return res.data;
+    } catch (err) {
+      const rawMessage = typeof err.response?.data === "string"
+        ? err.response.data
+        : err.response?.data?.message || "";
+      const shouldFallback = err.response?.status === 404 || rawMessage.includes("Cannot PATCH");
+
+      if (!shouldFallback) throw err;
+
+      const fallbackRes = await axiosInstance.put(`/admin/rooms/${roomId}`, { status });
+      return {
+        room: fallbackRes.data,
+        cinema: null,
+        remainingMaintenanceRooms: null,
+      };
+    }
+  };
 
   const handleOpenEdit = (room) => {
     setEditRoom(room);
@@ -533,6 +650,104 @@ export const RoomsManager = ({ cinemas }) => {
     setEditRoom(null);
     setShowModal(true);
   };
+
+  const handleRestoreCinema = async () => {
+    if (!selectedCinema || !selectedCinemaData || restoringCinema) return;
+
+    setRestoringCinema(true);
+    try {
+      const maintenanceRooms = rooms.filter((room) => room.status === "maintenance");
+      let restoredRooms = 0;
+
+      for (const room of maintenanceRooms) {
+        await updateRoomStatus(room._id, "active");
+        restoredRooms++;
+      }
+
+      const cinemaRes = await axiosInstance.patch(`/admin/cinemas/${selectedCinema}/status`, {
+        status: "active",
+      });
+
+      onCinemaUpdated?.(cinemaRes.data);
+      setRooms((prev) =>
+        prev.map((room) => (room.status === "maintenance" ? { ...room, status: "active" } : room))
+      );
+
+      const refreshedRooms = await loadRooms(selectedCinema);
+      const remainingMaintenanceRooms = refreshedRooms.filter((room) => room.status === "maintenance").length;
+
+      if (remainingMaintenanceRooms > 0) {
+        toast.error(`Vẫn còn ${remainingMaintenanceRooms} phòng đang bảo trì. Hãy thử khôi phục từng phòng.`);
+        return;
+      }
+
+      if (restoredRooms > 0) {
+        toast.success(
+          selectedCinemaData?.status !== "active"
+            ? `Đã mở lại rạp và khôi phục ${restoredRooms} phòng!`
+            : `Đã khôi phục ${restoredRooms} phòng!`
+        );
+      } else {
+        toast.success(selectedCinemaData?.status !== "active" ? "Đã mở lại rạp!" : "Đã đồng bộ trạng thái phòng!");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Không thể mở lại rạp");
+    } finally {
+      setRestoringCinema(false);
+    }
+  };
+
+  const handleRestoreRoom = async (room) => {
+    if (!room?._id || restoringRoomId === room._id) return;
+
+    setRestoringRoomId(room._id);
+    try {
+      const res = await updateRoomStatus(room._id, "active");
+
+      setRooms((prev) =>
+        prev.map((item) => (item._id === room._id ? { ...item, status: "active" } : item))
+      );
+
+      if (detailRoom?._id === room._id) {
+        setDetailRoom((prev) => (prev ? { ...prev, status: "active" } : prev));
+      }
+
+      const refreshedRooms = await loadRooms(selectedCinema);
+      const remainingMaintenanceRooms = typeof res?.remainingMaintenanceRooms === "number"
+        ? res.remainingMaintenanceRooms
+        : refreshedRooms.filter((item) => item.status === "maintenance").length;
+
+      if (res?.cinema) {
+        onCinemaUpdated?.(res.cinema);
+      } else if (remainingMaintenanceRooms === 0) {
+        const cinemaRes = await axiosInstance.patch(`/admin/cinemas/${selectedCinema}/status`, {
+          status: "active",
+        });
+        onCinemaUpdated?.(cinemaRes.data);
+      }
+
+      if (remainingMaintenanceRooms > 0) {
+        toast.success(`Đã khôi phục phòng ${room.name}. Còn ${remainingMaintenanceRooms} phòng bảo trì.`);
+      } else {
+        toast.success(`Đã khôi phục phòng ${room.name}. Rạp đã sẵn sàng hoạt động bình thường.`);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Không thể khôi phục phòng");
+    } finally {
+      setRestoringRoomId("");
+    }
+  };
+
+  const selectedCinemaData = cinemas.find((cinema) => cinema._id === selectedCinema) || null;
+  const selectedCinemaStatus = getCinemaStatusMeta(selectedCinemaData?.status);
+  const maintenanceRoomsCount = rooms.filter((room) => room.status === "maintenance").length;
+  const canRestoreRooms = maintenanceRoomsCount > 0;
+  const restoreButtonLabel = selectedCinemaData?.status !== "active" ? "Mở lại rạp" : "Khôi phục phòng";
+
+  useEffect(() => {
+    if (!selectedCinema) return;
+    loadRooms(selectedCinema);
+  }, [selectedCinema, selectedCinemaData?.status]);
 
   return (
     <div className="space-y-6">
@@ -546,6 +761,15 @@ export const RoomsManager = ({ cinemas }) => {
             <button onClick={() => setShowEmergency(true)}
               className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-all shadow-md shadow-amber-200 shrink-0 text-sm">
               <Zap size={16} /> Sự cố rạp
+            </button>
+          )}
+          {selectedCinema && (selectedCinemaData?.status !== "active" || canRestoreRooms) && (
+            <button
+              onClick={handleRestoreCinema}
+              disabled={restoringCinema || !!restoringRoomId}
+              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white rounded-xl font-bold transition-all shadow-md shadow-emerald-200 shrink-0 text-sm disabled:cursor-not-allowed"
+            >
+              <Power size={16} /> {restoringCinema ? "Đang khôi phục..." : restoreButtonLabel}
             </button>
           )}
           <button onClick={handleOpenCreate}
@@ -562,6 +786,27 @@ export const RoomsManager = ({ cinemas }) => {
           <option value="">-- Chọn rạp --</option>
           {cinemas.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
         </select>
+        {selectedCinemaData && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+            <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold ${selectedCinemaStatus.badgeClass}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${selectedCinemaStatus.dotClass}`} />
+              {selectedCinemaStatus.label}
+            </span>
+            {selectedCinemaData.status !== "active" && (
+              <span className="text-xs text-emerald-600 font-semibold">
+                Sau khi xử lý xong, bấm "Mở lại rạp" để khôi phục trạng thái hoạt động và các phòng đang bảo trì.
+              </span>
+            )}
+            {selectedCinemaData.status === "active" && canRestoreRooms && (
+              <span className="text-xs text-emerald-600 font-semibold">
+                Rạp đang hoạt động nhưng còn {maintenanceRoomsCount} phòng bảo trì. Bấm "Khôi phục phòng" để mở lại các phòng này.
+              </span>
+            )}
+            <span className="text-xs text-slate-500">
+              Dùng "Sự cố rạp" nếu cần hủy nhanh các suất theo toàn rạp hoặc theo từng phòng.
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -623,6 +868,16 @@ export const RoomsManager = ({ cinemas }) => {
                       </td>
                       <td className="p-4 pr-6 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-1 justify-end">
+                          {room.status === "maintenance" && (
+                            <button
+                              onClick={() => handleRestoreRoom(room)}
+                              disabled={restoringRoomId === room._id || restoringCinema}
+                              className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                              title={restoringRoomId === room._id ? "Đang khôi phục phòng" : "Khôi phục phòng"}
+                            >
+                              <Power size={16} />
+                            </button>
+                          )}
                           <button onClick={() => setDetailRoom(room)}
                             className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                             title="Xem chi tiết phòng">
@@ -665,8 +920,10 @@ export const RoomsManager = ({ cinemas }) => {
         <EmergencyCloseModal
           cinemaId={selectedCinema}
           cinemaName={cinemas.find((c) => c._id === selectedCinema)?.name || "Rạp"}
+          rooms={rooms}
           onClose={() => setShowEmergency(false)}
           onDone={() => loadRooms(selectedCinema)}
+          onCinemaUpdated={onCinemaUpdated}
         />
       )}
     </div>

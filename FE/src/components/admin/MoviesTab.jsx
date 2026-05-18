@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import {
   X,
   Eye,
+  Search,
   ChevronDown,
   Save,
   Filter,
@@ -330,6 +331,8 @@ export const MoviesManager = ({
   handleDeleteClick,
 }) => {
   const [filterStatus, setFilterStatus] = useState("");
+  const [search, setSearch] = useState("");
+  const [filterGenre, setFilterGenre] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [detailMovie, setDetailMovie] = useState(null);
   const filterRef = useRef(null);
@@ -343,9 +346,22 @@ export const MoviesManager = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredMovies = filterStatus
-    ? movies.filter((m) => m.status === filterStatus)
-    : movies;
+  const getGenreText = (movie) => Array.isArray(movie.genre)
+    ? movie.genre.map((g) => (typeof g === "object" ? g.name : g)).join(", ")
+    : movie.genre || "";
+
+  const genreOptions = [...new Set(movies.flatMap((m) => getGenreText(m)
+    .split(",")
+    .map((g) => g.trim())
+    .filter(Boolean)))].sort();
+
+  const filteredMovies = movies.filter((m) => {
+    const genreText = getGenreText(m);
+    const matchStatus = !filterStatus || m.status === filterStatus;
+    const matchSearch = !search.trim() || m.title?.toLowerCase().includes(search.trim().toLowerCase());
+    const matchGenre = !filterGenre || genreText.toLowerCase().split(",").map((g) => g.trim()).includes(filterGenre.toLowerCase());
+    return matchStatus && matchSearch && matchGenre;
+  });
 
   const filterOptions = [
     { value: "", label: "Tất cả" },
@@ -365,7 +381,24 @@ export const MoviesManager = ({
           Quản lý toàn bộ danh sách phim
         </p>
       </div>
-      <div className="flex gap-2 w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <div className="relative flex-1 sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tìm theo tên phim..."
+            className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#dc2626] focus:ring-2 focus:ring-red-100"
+          />
+        </div>
+        <select
+          value={filterGenre}
+          onChange={(e) => setFilterGenre(e.target.value)}
+          className="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 outline-none focus:border-[#dc2626]"
+        >
+          <option value="">Tất cả thể loại</option>
+          {genreOptions.map((genre) => <option key={genre} value={genre}>{genre}</option>)}
+        </select>
         <div className="relative" ref={filterRef}>
           <button
             onClick={() => setShowFilter((v) => !v)}

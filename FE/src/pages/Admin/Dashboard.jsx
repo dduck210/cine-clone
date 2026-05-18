@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
+import { io } from "socket.io-client";
 import toast, { Toaster } from "react-hot-toast";
 import Sidebar from "../../components/admin/Sidebar";
 import axiosInstance from "../../api/axiosConfig";
 import {
   Bell, DollarSign, Ticket, Clock, AlertTriangle, Menu, X, ExternalLink,
-  Popcorn, RefreshCw, TrendingUp, Trophy,
+  Popcorn, RefreshCw, TrendingUp, Trophy, MapPin,
 } from "lucide-react";
 import { OrdersManager, OrderDetailModal } from "../../components/admin/OrdersTab";
 import { MoviesManager, MovieModal } from "../../components/admin/MoviesTab";
@@ -21,22 +22,46 @@ const toastConfig = {
   },
 };
 
-const StatCard = ({ icon: Icon, label, value, sub, color }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_-3px_rgba(220,38,38,0.1)] border border-slate-100 hover:shadow-lg transition-all duration-300 group">
-    <div className="flex justify-between items-start mb-4">
-      <div className={`p-3 rounded-2xl ${color}`}>
-        <Icon size={24} />
+const CINEMA_STATUS_META = {
+  active: {
+    label: "Dang hoat dong",
+    badgeClass: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    buttonClass: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  },
+  incident: {
+    label: "Su co",
+    badgeClass: "bg-amber-50 text-amber-700 border-amber-200",
+    buttonClass: "border-amber-200 bg-amber-50 text-amber-700",
+  },
+  inactive: {
+    label: "Ngung hoat dong",
+    badgeClass: "bg-slate-100 text-slate-600 border-slate-200",
+    buttonClass: "border-slate-200 bg-slate-100 text-slate-700",
+  },
+};
+
+const getCinemaStatusMeta = (status) => CINEMA_STATUS_META[status] || CINEMA_STATUS_META.active;
+
+const StatCard = ({ icon, label, value, sub, color }) => {
+  const Icon = icon;
+
+  return (
+    <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_-3px_rgba(220,38,38,0.1)] border border-slate-100 hover:shadow-lg transition-all duration-300 group">
+      <div className="flex justify-between items-start mb-4">
+        <div className={`p-3 rounded-2xl ${color}`}>
+          <Icon size={24} />
+        </div>
       </div>
+      <p className="text-slate-500 text-sm font-semibold uppercase tracking-wider">{label}</p>
+      <h3 className="text-3xl font-extrabold text-slate-800 mt-1 group-hover:text-[#dc2626] transition-colors">{value}</h3>
+      <p className="text-xs text-slate-400 mt-2 font-medium">{sub}</p>
     </div>
-    <p className="text-slate-500 text-sm font-semibold uppercase tracking-wider">{label}</p>
-    <h3 className="text-3xl font-extrabold text-slate-800 mt-1 group-hover:text-[#dc2626] transition-colors">{value}</h3>
-    <p className="text-xs text-slate-400 mt-2 font-medium">{sub}</p>
-  </div>
-);
+  );
+};
 
 const TIME_SLOT_LABEL = { morning: "Sáng (trước 12h)", evening: "Chiều (12-18h)", night: "Tối/Khuya (sau 18h)" };
 
-const DashboardView = ({ stats, extStats, loading }) => (
+const DashboardView = ({ stats, extStats, loading, cinemas, updatingCinemaId, onCinemaStatusChange }) => (
   <div className="space-y-6">
     {/* Main stats */}
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -191,6 +216,64 @@ const DashboardView = ({ stats, extStats, loading }) => (
         </div>
       </div>
     )}
+
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+        <div>
+          <h3 className="font-bold text-slate-800 flex items-center gap-2">
+            <MapPin size={18} className="text-[#dc2626]" /> Trang thai rap
+          </h3>
+          <p className="text-sm text-slate-500">Chuyen nhanh giua hoat dong, su co va tam dung khai thac</p>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs font-bold">
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">{cinemas.filter((c) => c.status === "active").length} hoat dong</span>
+          <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">{cinemas.filter((c) => c.status === "incident").length} su co</span>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">{cinemas.filter((c) => c.status === "inactive").length} tam dung</span>
+        </div>
+      </div>
+
+      {cinemas.length === 0 ? (
+        <p className="text-sm text-slate-400 italic">Chua co du lieu rap.</p>
+      ) : (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          {cinemas.map((cinema) => {
+            const statusMeta = getCinemaStatusMeta(cinema.status);
+            const isUpdating = updatingCinemaId === cinema._id;
+
+            return (
+              <div key={cinema._id} className="rounded-2xl border border-slate-200 p-4 bg-slate-50/70">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div>
+                    <p className="font-bold text-slate-800">{cinema.name}</p>
+                    <p className="text-xs text-slate-500 mt-1">{cinema.address || cinema.location}</p>
+                  </div>
+                  <span className={`inline-flex shrink-0 rounded-full border px-3 py-1 text-[11px] font-bold ${statusMeta.badgeClass}`}>
+                    {statusMeta.label}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {["active", "incident", "inactive"].map((status) => {
+                    const optionMeta = getCinemaStatusMeta(status);
+                    const active = cinema.status === status;
+                    return (
+                      <button
+                        key={status}
+                        type="button"
+                        disabled={isUpdating || active}
+                        onClick={() => onCinemaStatusChange(cinema._id, status)}
+                        className={`rounded-lg border px-3 py-2 text-xs font-bold transition-all disabled:cursor-not-allowed disabled:opacity-70 ${active ? optionMeta.buttonClass : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}
+                      >
+                        {isUpdating && !active ? "Dang cap nhat..." : optionMeta.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   </div>
 );
 
@@ -214,7 +297,10 @@ const Dashboard = () => {
   const [showtimes, setShowtimes] = useState([]);
   const [showtimesLoading, setShowtimesLoading] = useState(false);
   const [cinemas, setCinemas] = useState([]);
+  const [updatingCinemaId, setUpdatingCinemaId] = useState("");
   const [isShowtimeModalOpen, setIsShowtimeModalOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentMovie, setCurrentMovie] = useState(null);
@@ -222,6 +308,18 @@ const Dashboard = () => {
   const [movieToDelete, setMovieToDelete] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (adminUser?.role !== "admin") return;
+    const socketUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/api\/?$/, "");
+    const socket = io(socketUrl, { transports: ["websocket"] });
+    socket.emit("admin:join");
+    socket.on("admin:notification", (item) => {
+      setNotifications((prev) => [item, ...prev].slice(0, 20));
+      toast(item.message || item.title || "Thông báo mới", { icon: "🔔" });
+    });
+    return () => socket.disconnect();
+  }, [adminUser?.role]);
 
   // Fetch stats
   useEffect(() => {
@@ -255,6 +353,34 @@ const Dashboard = () => {
     }).catch(() => {}).finally(() => setStatsLoading(false));
   }, [activeTab]);
 
+  const upsertCinema = (updatedCinema) => {
+    if (!updatedCinema?._id) return;
+    setCinemas((prev) => {
+      const exists = prev.some((cinema) => cinema._id === updatedCinema._id);
+      if (!exists) return [updatedCinema, ...prev];
+      return prev.map((cinema) => cinema._id === updatedCinema._id ? { ...cinema, ...updatedCinema } : cinema);
+    });
+  };
+
+  const handleCinemaStatusChange = async (cinemaId, status) => {
+    setUpdatingCinemaId(cinemaId);
+    try {
+      const res = await axiosInstance.patch(`/admin/cinemas/${cinemaId}/status`, { status });
+      upsertCinema(res.data);
+      if (status === "active" && res.data?.restoredRooms > 0) {
+        toast.success(`Da mo lai rap va khoi phuc ${res.data.restoredRooms} phong!`);
+      } else if (status === "active") {
+        toast.success("Da mo lai rap!");
+      } else {
+        toast.success("Da cap nhat trang thai rap!");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Khong the cap nhat trang thai rap");
+    } finally {
+      setUpdatingCinemaId("");
+    }
+  };
+
   // Fetch movies
   useEffect(() => {
     if (activeTab !== "movies") return;
@@ -279,6 +405,7 @@ const Dashboard = () => {
             _raw: booking,
             orderId: booking.bookingCode || booking._id,
             customerName: booking.user?.name || "Khách hàng",
+            customerEmail: booking.user?.email || "",
             phone: booking.user?.phone || "",
             bookingTime: new Date(booking.createdAt).toLocaleString("vi-VN"),
             movieTitle: movie.title || "Phim",
@@ -320,9 +447,9 @@ const Dashboard = () => {
       .finally(() => setUsersLoading(false));
   }, [activeTab]);
 
-  // Fetch cinemas when needed (showtimes or rooms tabs)
+  // Fetch cinemas when needed (dashboard, showtimes or rooms tabs)
   useEffect(() => {
-    if (activeTab !== "rooms" || cinemas.length > 0) return;
+    if (!["dashboard", "showtimes", "rooms"].includes(activeTab) || cinemas.length > 0) return;
     axiosInstance.get("/admin/cinemas").then((res) => setCinemas(res.data)).catch(() => {});
   }, [activeTab, cinemas.length]);
 
@@ -501,10 +628,38 @@ const Dashboard = () => {
               <ExternalLink size={15} />
               <span className="hidden sm:inline">Trang người dùng</span>
             </Link>
-            <button className="p-2.5 bg-white border border-slate-100 rounded-xl text-slate-500 hover:text-[#dc2626] hover:shadow-md transition-all relative">
-              <Bell size={20} />
-              <span className="absolute top-2 right-2.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white" />
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications((v) => !v)}
+                className="p-2.5 bg-white border border-slate-100 rounded-xl text-slate-500 hover:text-[#dc2626] hover:shadow-md transition-all relative"
+                title="Thông báo"
+              >
+                <Bell size={20} />
+                {notifications.length > 0 && (
+                  <span className="absolute top-2 right-2.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white" />
+                )}
+              </button>
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-slate-100 font-bold text-sm text-slate-700">
+                    Thông báo realtime
+                  </div>
+                  <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                    {notifications.length === 0 ? (
+                      <div className="p-4 text-sm text-slate-400 italic">Chưa có thông báo mới</div>
+                    ) : notifications.map((item) => (
+                      <div key={item.id} className="p-4 hover:bg-slate-50">
+                        <p className="font-bold text-sm text-slate-800">{item.title || "Thông báo"}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{item.message}</p>
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          {new Date(item.createdAt).toLocaleString("vi-VN")}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 bg-[#dc2626] rounded-xl text-white flex items-center justify-center font-bold shadow-lg shadow-red-200 text-sm">
                 {adminUser?.name?.charAt(0).toUpperCase() || "A"}
@@ -517,7 +672,16 @@ const Dashboard = () => {
         <div className="flex-1 overflow-y-auto p-4 md:p-8">
           <Toaster {...toastConfig} />
           <div className="pb-10">
-            {activeTab === "dashboard" && <DashboardView stats={stats} extStats={extStats} loading={statsLoading} />}
+            {activeTab === "dashboard" && (
+              <DashboardView
+                stats={stats}
+                extStats={extStats}
+                loading={statsLoading}
+                cinemas={cinemas}
+                updatingCinemaId={updatingCinemaId}
+                onCinemaStatusChange={handleCinemaStatusChange}
+              />
+            )}
             {activeTab === "movies" && (
               moviesLoading ? (
                 <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-4 border-red-600 border-t-transparent" /></div>
@@ -542,7 +706,10 @@ const Dashboard = () => {
               />
             )}
             {activeTab === "rooms" && (
-              <RoomsManager cinemas={cinemas.length > 0 ? cinemas : []} />
+              <RoomsManager
+                cinemas={cinemas.length > 0 ? cinemas : []}
+                onCinemaUpdated={upsertCinema}
+              />
             )}
             {activeTab === "orders" && (
               <OrdersManager orders={orders} loading={ordersLoading} onViewTicket={handleViewTicket} onConfirm={handleConfirmOrder} onPrint={handlePrintTicket} />
