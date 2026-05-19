@@ -109,7 +109,11 @@ const PaymentPage = () => {
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
     if (user)
-      setCustomerInfo((p) => ({ ...p, name: user.name || "", email: user.email || "" }));
+      setCustomerInfo((p) => ({
+        ...p,
+        name: user.name || "",
+        email: user.email || "",
+      }));
   }, []);
 
   const validateForm = () => {
@@ -397,12 +401,17 @@ const PaymentPage = () => {
                     value={customerInfo.email}
                     className={`w-full bg-slate-50 border rounded-xl pl-12 pr-4 py-4 outline-none transition-all font-semibold ${errors.email ? "border-red-500 ring-4 ring-red-50" : "border-slate-200 focus:border-[#dc2626] focus:ring-4 focus:ring-red-50"}`}
                     onChange={(e) => {
-                      setCustomerInfo({ ...customerInfo, email: e.target.value });
+                      setCustomerInfo({
+                        ...customerInfo,
+                        email: e.target.value,
+                      });
                       if (errors.email) setErrors({ ...errors, email: "" });
                     }}
                   />
                   {errors.email && (
-                    <p className="text-red-500 text-xs mt-1.5 font-bold ml-1">{errors.email}</p>
+                    <p className="text-red-500 text-xs mt-1.5 font-bold ml-1">
+                      {errors.email}
+                    </p>
                   )}
                 </div>
               </div>
