@@ -71,7 +71,11 @@ router.post('/', protect, async (req, res) => {
         // Calculate total: seat prices + extra items
         const seatTotal = availableSeats.reduce((sum, s) => sum + s.price, 0);
         const extraTotal = extraItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-        const totalPrice = seatTotal + extraTotal;
+        const rawTotal = seatTotal + extraTotal;
+        // Monday 20% discount — use UTC+7 (Vietnam) day to avoid server-timezone shift
+        const vnDate = new Date(new Date(showtime.date).getTime() + 7 * 60 * 60 * 1000);
+        const isMonday = vnDate.getUTCDay() === 1;
+        const totalPrice = isMonday ? Math.round(rawTotal * 0.8) : rawTotal;
 
         const expiresAt = new Date(Date.now() + HOLD_MINUTES * 60 * 1000);
 
@@ -103,7 +107,7 @@ router.post('/', protect, async (req, res) => {
 router.get('/user/all', protect, async (req, res) => {
     try {
         const bookings = await Booking.find({ user: req.user._id })
-            .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }] })
+            .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }, { path: 'room', select: 'name' }] })
             .populate('seats')
             .populate('paymentId', 'method status')
             .sort({ createdAt: -1 });

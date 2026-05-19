@@ -8,46 +8,18 @@ const Booking = require('../models/Booking');
 const Payment = require('../models/Payment');
 const { protect, admin } = require('../middleware/auth');
 const { getTimeSlot, getDayTypeFromDate, calcEndTime, calcPriceConfig } = require('../utils/pricing');
-const { sendShowtimeCancelledEmail, sendRefundEmail } = require('../services/email-service');
-const { getStartOfToday, getLocalDayRange, isUpcomingShowtime } = require('../utils/showtime-availability');
-
-async function markPaymentsRefunded(bookingIds = []) {
-    if (!bookingIds.length) return [];
-
-    const payments = await Payment.find({
-        booking: { $in: bookingIds },
-        status: 'success',
-    });
-
-    if (!payments.length) return [];
-
-    const refundDate = new Date();
-
-    await Promise.all(
-        payments.map((payment) => {
-            payment.status = 'refunded';
-            payment.refundAmount = payment.amount;
-            payment.refundDate = refundDate;
-            return payment.save();
-        })
-    );
-
-    return [...new Set(payments.map((payment) => payment.booking.toString()))];
-}
 
 // Get all showtimes with filters
 router.get('/', async (req, res) => {
     try {
         const { movieId, cinemaId, date } = req.query;
-        const today = getStartOfToday();
-        const filter = { status: 'active', date: { $gte: today } };
+        const filter = { status: 'active' };
         if (movieId) filter.movie = movieId;
         if (cinemaId) filter.cinema = cinemaId;
         if (date) {
-            const { start: startDate, end: endDate } = getLocalDayRange(date);
-            if (startDate < today) {
-                return res.json([]);
-            }
+            const startDate = new Date(date);
+            const endDate = new Date(startDate);
+            endDate.setDate(endDate.getDate() + 1);
             filter.date = { $gte: startDate, $lt: endDate };
         }
         const showtimes = await Showtime.find(filter)
@@ -55,7 +27,7 @@ router.get('/', async (req, res) => {
             .populate('cinema')
             .populate('room')
             .sort({ date: 1, startTime: 1 });
-        res.json(showtimes.filter((showtime) => isUpcomingShowtime(showtime)));
+        res.json(showtimes);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -69,10 +41,6 @@ router.get('/:id', async (req, res) => {
             .populate('cinema')
             .populate('room');
         if (!showtime) return res.status(404).json({ message: 'Showtime not found' });
-
-        if (showtime.status !== 'active' || !isUpcomingShowtime(showtime)) {
-            return res.status(400).json({ message: 'Showtime is not available' });
-        }
 
         const seats = await Seat.find({ showtime: req.params.id }).sort({ row: 1, col: 1 });
         res.json({ data: showtime, seats });
@@ -99,14 +67,6 @@ router.post('/', protect, admin, async (req, res) => {
             ]);
             if (!room) { errors.push({ date, startTime, error: 'Room not found' }); continue; }
             if (!movie) { errors.push({ date, startTime, error: 'Movie not found' }); continue; }
-            if (String(room.cinema) !== String(cinemaId)) {
-                errors.push({ date, startTime, error: 'Room does not belong to selected cinema' });
-                continue;
-            }
-            if (room.status !== 'active') {
-                errors.push({ date, startTime, error: 'Room is under maintenance' });
-                continue;
-            }
 
             const timeSlot = getTimeSlot(startTime);
             const dayType = dayTypeOverride || getDayTypeFromDate(date);
@@ -251,7 +211,7 @@ router.put('/:id/cancel', protect, admin, async (req, res) => {
         const bookings = await Booking.find({
             showtime: showtime._id,
             status: { $in: ['pending', 'paid'] },
-        }).populate('user', 'name email');
+        });
 
         const bookingIds = bookings.map(b => b._id);
         const seatIds = bookings.flatMap(b => b.seats);
@@ -265,15 +225,11 @@ router.put('/:id/cancel', protect, admin, async (req, res) => {
         // Mark confirmed payments as refunded
         const confirmedBookingIds = bookings.filter(b => b.status === 'paid').map(b => b._id);
         if (confirmedBookingIds.length > 0) {
-            const refundedBookingIds = await markPaymentsRefunded(confirmedBookingIds);
-            if (refundedBookingIds.length > 0) {
-                await Booking.updateMany({ _id: { $in: refundedBookingIds } }, { status: 'refunded' });
-            }
-        }
-
-        for (const booking of bookings) {
-            sendShowtimeCancelledEmail(booking).catch(() => {});
-            if (booking.status === 'paid') sendRefundEmail(booking).catch(() => {});
+            await Payment.updateMany(
+                { booking: { $in: confirmedBookingIds }, status: 'success' },
+                { $set: { status: 'refunded', refundDate: new Date() } }
+            );
+            await Booking.updateMany({ _id: { $in: confirmedBookingIds } }, { status: 'refunded' });
         }
 
         res.json({

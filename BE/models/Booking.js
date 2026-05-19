@@ -19,7 +19,6 @@ const bookingSchema = new mongoose.Schema({
     paymentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Payment' },
     bookingCode: { type: String, unique: true },
     expiresAt: { type: Date }, // 5-minute seat hold expiry
-    reminder24hSentAt: { type: Date },
     extraItems: [{ // F&B combos
         name: String,
         quantity: Number,

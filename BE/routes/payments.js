@@ -4,8 +4,6 @@ const Payment = require('../models/Payment');
 const Booking = require('../models/Booking');
 const Seat = require('../models/Seat');
 const { protect } = require('../middleware/auth');
-const { emitAdminNotification } = require('../services/notification-service');
-const { sendPaymentSuccessEmail, sendRefundEmail } = require('../services/email-service');
 
 // Create payment
 router.post('/', protect, async (req, res) => {
@@ -36,17 +34,6 @@ router.post('/', protect, async (req, res) => {
             await Seat.updateMany({ _id: { $in: booking.seats } }, { status: 'booked' });
         }
         await booking.save();
-
-        if (!isCash) {
-            emitAdminNotification('booking_paid', {
-                title: 'Thanh toán thành công',
-                message: `Đơn ${booking.bookingCode || booking._id} đã được thanh toán`,
-                bookingId: booking._id,
-                bookingCode: booking.bookingCode,
-                amount: booking.totalPrice,
-            });
-            sendPaymentSuccessEmail(booking).catch(() => {});
-        }
 
         res.status(201).json(payment);
     } catch (error) {
@@ -85,7 +72,6 @@ router.post('/:id/refund', protect, async (req, res) => {
 
         booking.status = 'refunded';
         await booking.save();
-        sendRefundEmail(booking).catch(() => {});
 
         // Release seats back to available
         await Seat.updateMany(

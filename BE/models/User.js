@@ -8,6 +8,8 @@ const userSchema = new mongoose.Schema({
     phone: { type: String, default: '' },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     profileHistory: [{ change: String, date: Date }],
+    resetOtp: { type: String, default: null },
+    resetOtpExpiry: { type: Date, default: null },
 }, { timestamps: true });
 
 // Hash password before saving

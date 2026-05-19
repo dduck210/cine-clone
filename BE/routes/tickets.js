@@ -1,76 +1,205 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
-const QRCode = require('qrcode');
-const PDFDocument = require('pdfkit');
-const Booking = require('../models/Booking');
-const User = require('../models/User');
-const { verifyTicketPdfToken } = require('../utils/ticket-access');
-
 const router = express.Router();
+const PDFDocument = require('pdfkit');
+const QRCode = require('qrcode');
+const Booking = require('../models/Booking');
+const { protect } = require('../middleware/auth');
 
-async function getOptionalUser(req) {
-    if (!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) {
-        return null;
-    }
+// Design tokens — mirrors electronic ticket UI
+const DARK  = '#0f172a';
+const WHITE = '#ffffff';
+const RED   = '#dc2626';
+const GOLD  = '#d4af37';
+const S50   = '#f8fafc';
+const S200  = '#e2e8f0';
+const S400  = '#94a3b8';
+const S600  = '#475569';
+const R50   = '#fef2f2';
+const R200  = '#fecaca';
 
-    try {
-        const token = req.headers.authorization.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        return await User.findById(decoded.id).select('-password');
-    } catch (error) {
-        return null;
+function dashedLine(doc, x1, y, x2, color) {
+    const dash = 5, gap = 4;
+    doc.save().strokeColor(color || S400).lineWidth(0.7);
+    for (let x = x1; x < x2; x += dash + gap) {
+        doc.moveTo(x, y).lineTo(Math.min(x + dash, x2), y).stroke();
     }
+    doc.restore();
 }
 
 // Generate ticket PDF
-router.get('/:bookingId/pdf', async (req, res) => {
+router.get('/:bookingId/pdf', protect, async (req, res) => {
     try {
         const booking = await Booking.findById(req.params.bookingId)
-            .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }, { path: 'room' }] })
+            .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }, { path: 'room', select: 'name' }] })
             .populate('user');
 
         if (!booking) return res.status(404).json({ message: 'Booking not found' });
         if (booking.status !== 'paid') return res.status(400).json({ message: 'Booking not paid yet' });
+        if (booking.ticketStatus !== 'printed') return res.status(403).json({ message: 'Vé chưa được xuất. Vui lòng chờ nhân viên rạp xác nhận.' });
 
-        const requestUser = await getOptionalUser(req);
-        const hasUserAccess = requestUser && (
-            requestUser.role === 'admin' ||
-            requestUser._id.toString() === booking.user?._id?.toString()
-        );
-        const hasTokenAccess = verifyTicketPdfToken(req.query.token, booking);
+        const { seatNumbers, totalPrice, bookingCode, extraItems = [] } = booking;
+        const showtime = booking.showtime || {};
+        const movie    = showtime.movie   || {};
+        const cinema   = showtime.cinema  || {};
+        const roomName = showtime.room?.name || '';
+        const showDate = showtime.date ? new Date(showtime.date).toLocaleDateString('vi-VN') : '';
+        const showTime = showtime.startTime || '';
+        const combos   = extraItems.filter(c => c.quantity > 0);
 
-        if (!hasUserAccess && !hasTokenAccess) {
-            return res.status(401).json({ message: 'Not authorized to access this ticket PDF' });
-        }
+        // QR code encodes admin URL for quick staff scanning
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const qrUrl = `${frontendUrl}/admin?tab=orders&booking=${bookingCode}`;
+        const qrBuffer = await QRCode.toBuffer(qrUrl, { type: 'png', width: 120, margin: 1 });
 
-        const qrCode = await QRCode.toDataURL(JSON.stringify({
-            bookingCode: booking.bookingCode,
-            bookingId: booking._id,
-            movie: booking.showtime?.movie?.title || '',
-            seats: booking.seatNumbers || [],
-        }));
+        const W        = 400;
+        const PAD      = 20;
+        const HEADER_H = 112;
+        const FOOTER_H = 54;
+        const SEP_H    = 22;
+        const QR_SIZE  = 82;
 
-        const doc = new PDFDocument();
+        // Dynamically calculate body height
+        const COMBO_H = combos.length > 0 ? 16 + combos.length * 20 + 8 : 0;
+        const BODY_H  = 18 + 62 + 62 + 72 + COMBO_H + QR_SIZE + 18;
+        const H       = HEADER_H + SEP_H + BODY_H + SEP_H + FOOTER_H;
+
+        const doc = new PDFDocument({ size: [W, H], margin: 0 });
+
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=ticket-${booking.bookingCode}.pdf`);
-
+        res.setHeader('Content-Disposition', `attachment; filename=ticket-${bookingCode}.pdf`);
         doc.pipe(res);
-        doc.fontSize(20).text('Cinema Ticket', 100, 50);
-        doc.fontSize(12).text(`Booking Code: ${booking.bookingCode}`, 100, 100);
-        doc.text(`Movie: ${booking.showtime?.movie?.title || ''}`, 100, 130);
-        doc.text(`Cinema: ${booking.showtime?.cinema?.name || ''}`, 100, 160);
-        doc.text(`Room: ${booking.showtime?.room?.name || ''}`, 100, 190);
-        doc.text(`Date: ${booking.showtime?.date ? new Date(booking.showtime.date).toLocaleDateString('vi-VN') : ''}`, 100, 220);
-        doc.text(`Time: ${booking.showtime?.startTime || ''}`, 100, 250);
-        doc.text(`Seats: ${(booking.seatNumbers || []).join(', ')}`, 100, 280);
-        doc.text(`Total: ${booking.totalPrice.toLocaleString()}d`, 100, 310);
 
-        if (booking.ticketStatus !== 'printed') {
-            doc.fillColor('orange').text('Status: Waiting for cinema staff confirmation', 100, 340);
-            doc.fillColor('black');
+        // ── HEADER (dark) ────────────────────────────────────
+        doc.rect(0, 0, W, HEADER_H).fill(DARK);
+
+        // Decorative gold glow (top-right)
+        doc.save().fillColor(GOLD).fillOpacity(0.08)
+           .circle(W - 5, 5, 74).fill()
+           .restore();
+
+        let y = 20;
+
+        doc.font('Helvetica-Bold').fontSize(8).fillColor(GOLD)
+           .text('* V.I.P ADMISSION', PAD, y, { characterSpacing: 2.5, lineBreak: false });
+        y += 17;
+
+        const titleText = (movie.title || 'MOVIE').toUpperCase();
+        doc.font('Helvetica-Bold').fontSize(18).fillColor(WHITE)
+           .text(titleText, PAD, y, { width: W - PAD * 2 });
+        y += doc.heightOfString(titleText, { width: W - PAD * 2, fontSize: 18 }) + 8;
+
+        // Room / format badge
+        const badgeText = (roomName || '2D').toUpperCase();
+        doc.save().fillColor(GOLD).fillOpacity(0.12)
+           .rect(PAD, y, badgeText.length * 7 + 16, 18).fill()
+           .restore();
+        doc.font('Helvetica-Bold').fontSize(8).fillColor(GOLD)
+           .text(badgeText, PAD + 8, y + 5, { characterSpacing: 1.5, lineBreak: false });
+
+        // ── SEPARATOR 1 (header → body) ──────────────────────
+        const sep1Y = HEADER_H;
+        // Filled white zone with dark edge circles (torn-ticket look)
+        doc.rect(0, sep1Y, W, SEP_H).fill(WHITE);
+        doc.circle(-2, sep1Y + SEP_H / 2, SEP_H / 2 + 2).fill(DARK);
+        doc.circle(W + 2, sep1Y + SEP_H / 2, SEP_H / 2 + 2).fill(DARK);
+        dashedLine(doc, SEP_H + 4, sep1Y + SEP_H / 2, W - SEP_H - 4);
+
+        // ── BODY (white) ──────────────────────────────────────
+        const bodyY = HEADER_H + SEP_H;
+        doc.rect(0, bodyY, W, BODY_H).fill(WHITE);
+
+        y = bodyY + 18;
+
+        // Cinema card
+        doc.fillColor(S50).rect(PAD, y, W - PAD * 2, 50).fill();
+        doc.strokeColor(S200).lineWidth(0.7).rect(PAD, y, W - PAD * 2, 50).stroke();
+        doc.font('Helvetica-Bold').fontSize(8).fillColor(S400)
+           .text('CINEMA', PAD + 10, y + 8, { characterSpacing: 2, lineBreak: false });
+        doc.font('Helvetica-Bold').fontSize(13).fillColor(DARK)
+           .text((cinema.name || 'CINEMA').toUpperCase(), PAD + 10, y + 24, { lineBreak: false });
+        y += 62;
+
+        // Date + Time (2-column grid)
+        const colW  = (W - PAD * 2 - 10) / 2;
+        const col2X = PAD + colW + 10;
+
+        doc.fillColor(S50).rect(PAD, y, colW, 50).fill();
+        doc.strokeColor(S200).lineWidth(0.7).rect(PAD, y, colW, 50).stroke();
+        doc.font('Helvetica-Bold').fontSize(8).fillColor(S400)
+           .text('DATE', PAD + 10, y + 8, { characterSpacing: 2, lineBreak: false });
+        doc.font('Helvetica-Bold').fontSize(13).fillColor(DARK)
+           .text(showDate, PAD + 10, y + 24, { lineBreak: false });
+
+        doc.fillColor(S50).rect(col2X, y, colW, 50).fill();
+        doc.strokeColor(S200).lineWidth(0.7).rect(col2X, y, colW, 50).stroke();
+        doc.font('Helvetica-Bold').fontSize(8).fillColor(S400)
+           .text('TIME', col2X + 10, y + 8, { characterSpacing: 2, lineBreak: false });
+        doc.font('Helvetica-Bold').fontSize(13).fillColor(DARK)
+           .text(showTime, col2X + 10, y + 24, { lineBreak: false });
+        y += 62;
+
+        // Seats card (red accent)
+        doc.fillColor(R50).rect(PAD, y, W - PAD * 2, 60).fill();
+        doc.strokeColor(R200).lineWidth(0.7).rect(PAD, y, W - PAD * 2, 60).stroke();
+        doc.font('Helvetica-Bold').fontSize(8).fillColor(RED)
+           .text('SEAT(S)', PAD + 10, y + 8, { characterSpacing: 2, lineBreak: false });
+        doc.font('Helvetica-Bold').fontSize(22).fillColor(RED)
+           .text(seatNumbers.join(', '), PAD + 10, y + 24, { lineBreak: false });
+        y += 72;
+
+        // F&B / Combos
+        if (combos.length > 0) {
+            doc.font('Helvetica-Bold').fontSize(8).fillColor(S400)
+               .text('F&B / COMBO', PAD, y, { characterSpacing: 2, lineBreak: false });
+            y += 16;
+            combos.forEach(c => {
+                doc.font('Helvetica').fontSize(10).fillColor(DARK)
+                   .text(`${c.name} × ${c.quantity}`, PAD, y, { lineBreak: false });
+                doc.font('Helvetica-Bold').fontSize(10).fillColor(DARK)
+                   .text(`${(c.price * c.quantity).toLocaleString()}đ`, W - PAD - 64, y, { width: 64, align: 'right', lineBreak: false });
+                y += 20;
+            });
+            y += 8;
         }
 
-        doc.image(qrCode, 100, 380, { width: 150 });
+        // QR code + decorative barcode (side by side)
+        doc.image(qrBuffer, PAD, y, { width: QR_SIZE, height: QR_SIZE });
+
+        const bars = [2,3,1,4,2,1,3,2,1,2,4,1,2,3,1,1,4,2,3,1,2,3,1,4,2,1,3,1,2,4,1,2];
+        const barcodeX    = PAD + QR_SIZE + 14;
+        const barcodeW    = W - PAD - barcodeX;
+        const totalBW     = bars.reduce((s, w) => s + w + 2, 0);
+        const scale       = barcodeW / totalBW;
+        const bH          = 44;
+        let bx            = barcodeX;
+
+        doc.save().fillOpacity(0.75);
+        bars.forEach(w => {
+            doc.rect(bx, y + (QR_SIZE - bH) / 2, w * scale, bH).fill(DARK);
+            bx += (w + 2) * scale;
+        });
+        doc.restore();
+
+        doc.font('Helvetica-Bold').fontSize(8).fillColor(S600)
+           .text(bookingCode, barcodeX, y + QR_SIZE - 14,
+               { width: barcodeW, align: 'center', characterSpacing: 1.2, lineBreak: false });
+
+        // ── SEPARATOR 2 (body → footer) ──────────────────────
+        const sep2Y = bodyY + BODY_H;
+        doc.rect(0, sep2Y, W, SEP_H).fill(DARK);
+        doc.circle(-2, sep2Y + SEP_H / 2, SEP_H / 2 + 2).fill(WHITE);
+        doc.circle(W + 2, sep2Y + SEP_H / 2, SEP_H / 2 + 2).fill(WHITE);
+        dashedLine(doc, SEP_H + 4, sep2Y + SEP_H / 2, W - SEP_H - 4, S400);
+
+        // ── FOOTER (dark) ─────────────────────────────────────
+        const footerY = sep2Y + SEP_H;
+        doc.rect(0, footerY, W, FOOTER_H).fill(DARK);
+        doc.font('Helvetica-Bold').fontSize(11).fillColor(GOLD)
+           .text('TOTAL PAID', PAD, footerY + 20, { characterSpacing: 1.5, lineBreak: false });
+        doc.font('Helvetica-Bold').fontSize(18).fillColor(WHITE)
+           .text(`${totalPrice.toLocaleString()} ₫`, 0, footerY + 19,
+               { width: W - PAD, align: 'right', lineBreak: false });
+
         doc.end();
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -78,7 +207,7 @@ router.get('/:bookingId/pdf', async (req, res) => {
 });
 
 // Send ticket via email (placeholder)
-router.post('/:bookingId/email', async (req, res) => {
+router.post('/:bookingId/email', protect, async (req, res) => {
     try {
         const booking = await Booking.findById(req.params.bookingId)
             .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }] })

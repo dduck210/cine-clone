@@ -5,8 +5,6 @@ const Booking = require('../models/Booking');
 const Payment = require('../models/Payment');
 const Seat = require('../models/Seat');
 const { protect } = require('../middleware/auth');
-const { emitAdminNotification } = require('../services/notification-service');
-const { sendPaymentSuccessEmail } = require('../services/email-service');
 
 const PARTNER_CODE = process.env.MOMO_PARTNER_CODE || 'MOMO';
 const ACCESS_KEY   = process.env.MOMO_ACCESS_KEY   || 'F8BBA842ECF85';
@@ -156,14 +154,6 @@ async function processSuccessfulPayment(bookingId, transactionId, amount) {
     await booking.save();
 
     await Seat.updateMany({ _id: { $in: booking.seats } }, { status: 'booked' });
-    emitAdminNotification('booking_paid', {
-        title: 'Thanh toán MoMo thành công',
-        message: `Đơn ${booking.bookingCode || booking._id} đã được thanh toán`,
-        bookingId: booking._id,
-        bookingCode: booking.bookingCode,
-        amount,
-    });
-    sendPaymentSuccessEmail(booking).catch(() => {});
 }
 
 module.exports = router;

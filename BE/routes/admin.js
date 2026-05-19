@@ -8,33 +8,6 @@ const User = require('../models/User');
 const Payment = require('../models/Payment');
 const Seat = require('../models/Seat');
 const { protect, admin } = require('../middleware/auth');
-const { emitAdminNotification } = require('../services/notification-service');
-const { sendShowtimeCancelledEmail, sendRefundEmail, sendPaymentSuccessEmail } = require('../services/email-service');
-const { getStartOfToday, isUpcomingShowtime } = require('../utils/showtime-availability');
-
-async function markPaymentsRefunded(bookingIds = []) {
-    if (!bookingIds.length) return [];
-
-    const payments = await Payment.find({
-        booking: { $in: bookingIds },
-        status: 'success',
-    });
-
-    if (!payments.length) return [];
-
-    const refundDate = new Date();
-
-    await Promise.all(
-        payments.map((payment) => {
-            payment.status = 'refunded';
-            payment.refundAmount = payment.amount;
-            payment.refundDate = refundDate;
-            return payment.save();
-        })
-    );
-
-    return [...new Set(payments.map((payment) => payment.booking.toString()))];
-}
 
 // ─── Cinema & Room Management ───────────────────────────────────────────────
 
@@ -67,53 +40,17 @@ router.put('/cinemas/:id', protect, admin, async (req, res) => {
     }
 });
 
-router.patch('/cinemas/:id/status', protect, admin, async (req, res) => {
-    try {
-        const { status } = req.body;
-        if (!['active', 'incident', 'inactive'].includes(status)) {
-            return res.status(400).json({ message: 'Invalid cinema status' });
-        }
-
-        const cinema = await Cinema.findById(req.params.id);
-        if (!cinema) return res.status(404).json({ message: 'Cinema not found' });
-
-        cinema.status = status;
-        await cinema.save();
-
-        let restoredRooms = 0;
-        if (status === 'active') {
-            const roomResult = await CinemaRoom.updateMany(
-                { cinema: cinema._id, status: 'maintenance' },
-                { status: 'active' }
-            );
-            restoredRooms = roomResult.modifiedCount || 0;
-        }
-
-        res.json({
-            ...cinema.toObject(),
-            restoredRooms,
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
 // Preview: how many upcoming showtimes + bookings would be affected
 router.get('/emergency-close/:id/preview', protect, admin, async (req, res) => {
     try {
-        const today = getStartOfToday();
-        const roomIds = String(req.query.roomIds || '').split(',').map((id) => id.trim()).filter(Boolean);
-        const filter = {
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        console.log(`[Emergency Close] cinemaId=${req.params.id} today=${today.toISOString()}`);
+        const showtimes = await Showtime.find({
             cinema: req.params.id,
             status: 'active',
             date: { $gte: today },
-        };
-        if (roomIds.length > 0) filter.room = { $in: roomIds };
-        const showtimes = (await Showtime.find(filter)
-            .populate('movie', 'title')
-            .populate('room', 'name')
-            .sort({ date: 1, startTime: 1 }))
-            .filter((showtime) => isUpcomingShowtime(showtime));
+        }).populate('movie', 'title').populate('room', 'name').sort({ date: 1, startTime: 1 });
+        console.log(`[Emergency Close] found ${showtimes.length} showtimes`);
 
         const preview = await Promise.all(showtimes.map(async (st) => {
             const bookings = await Booking.find({ showtime: st._id, status: { $in: ['pending', 'paid'] } });
@@ -142,17 +79,12 @@ router.get('/emergency-close/:id/preview', protect, admin, async (req, res) => {
 // Execute: cancel all upcoming showtimes + bulk refund for a cinema
 router.post('/emergency-close/:id', protect, admin, async (req, res) => {
     try {
-        const roomIds = Array.isArray(req.body.roomIds)
-            ? req.body.roomIds.map((id) => String(id).trim()).filter(Boolean)
-            : [];
-        const today = getStartOfToday();
-        const filter = {
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const showtimes = await Showtime.find({
             cinema: req.params.id,
             status: 'active',
             date: { $gte: today },
-        };
-        if (Array.isArray(roomIds) && roomIds.length > 0) filter.room = { $in: roomIds };
-        const showtimes = (await Showtime.find(filter)).filter((showtime) => isUpcomingShowtime(showtime));
+        });
 
         let cancelledShowtimes = 0, cancelledBookings = 0, refundedBookings = 0;
 
@@ -161,7 +93,7 @@ router.post('/emergency-close/:id', protect, admin, async (req, res) => {
             await st.save();
             cancelledShowtimes++;
 
-            const bookings = await Booking.find({ showtime: st._id, status: { $in: ['pending', 'paid'] } }).populate('user', 'name email');
+            const bookings = await Booking.find({ showtime: st._id, status: { $in: ['pending', 'paid'] } });
             const bookingIds = bookings.map(b => b._id);
             const seatIds = bookings.flatMap(b => b.seats);
 
@@ -171,40 +103,16 @@ router.post('/emergency-close/:id', protect, admin, async (req, res) => {
 
             const paidIds = bookings.filter(b => b.status === 'paid').map(b => b._id);
             if (paidIds.length > 0) {
-                const refundedBookingIds = await markPaymentsRefunded(paidIds);
-                if (refundedBookingIds.length > 0) {
-                    await Booking.updateMany({ _id: { $in: refundedBookingIds } }, { status: 'refunded' });
-                    refundedBookings += refundedBookingIds.length;
-                }
-            }
-
-            for (const booking of bookings) {
-                sendShowtimeCancelledEmail(booking).catch(() => {});
-                if (booking.status === 'paid') sendRefundEmail(booking).catch(() => {});
+                await Payment.updateMany(
+                    { booking: { $in: paidIds }, status: 'success' },
+                    { $set: { status: 'refunded', refundDate: new Date() } }
+                );
+                await Booking.updateMany({ _id: { $in: paidIds } }, { status: 'refunded' });
+                refundedBookings += paidIds.length;
             }
         }
 
-        if (roomIds.length > 0) {
-            await CinemaRoom.updateMany(
-                { _id: { $in: roomIds }, cinema: req.params.id },
-                { status: 'maintenance' }
-            );
-        }
-
-        const cinema = await Cinema.findByIdAndUpdate(
-            req.params.id,
-            { status: roomIds.length > 0 ? 'incident' : 'inactive' },
-            { new: true }
-        );
-
-        res.json({
-            message: 'Cinema emergency closed',
-            cancelledShowtimes,
-            cancelledBookings,
-            refundedBookings,
-            cinema,
-            affectedRoomIds: roomIds,
-        });
+        res.json({ message: 'Cinema emergency closed', cancelledShowtimes, cancelledBookings, refundedBookings });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -212,13 +120,12 @@ router.post('/emergency-close/:id', protect, admin, async (req, res) => {
 
 router.get('/rooms/:id/showtimes', protect, admin, async (req, res) => {
     try {
-        const today = getStartOfToday();
-        const showtimes = (await Showtime.find({
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const showtimes = await Showtime.find({
             room: req.params.id,
             date: { $gte: today },
             status: 'active',
-        }).populate('movie', 'title').sort({ date: 1, startTime: 1 }))
-            .filter((showtime) => isUpcomingShowtime(showtime));
+        }).populate('movie', 'title').sort({ date: 1, startTime: 1 });
         res.json(showtimes);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -275,51 +182,6 @@ router.put('/rooms/:id', protect, admin, async (req, res) => {
     }
 });
 
-router.patch('/rooms/:id/status', protect, admin, async (req, res) => {
-    try {
-        const { status } = req.body;
-        if (!['active', 'maintenance'].includes(status)) {
-            return res.status(400).json({ message: 'Invalid room status' });
-        }
-
-        const room = await CinemaRoom.findById(req.params.id);
-        if (!room) return res.status(404).json({ message: 'Room not found' });
-
-        room.status = status;
-        await room.save();
-
-        const remainingMaintenanceRooms = await CinemaRoom.countDocuments({
-            cinema: room.cinema,
-            status: 'maintenance',
-        });
-
-        let cinema = null;
-        if (status === 'active' && remainingMaintenanceRooms === 0) {
-            cinema = await Cinema.findByIdAndUpdate(
-                room.cinema,
-                { status: 'active' },
-                { new: true }
-            );
-        } else if (status === 'maintenance') {
-            cinema = await Cinema.findByIdAndUpdate(
-                room.cinema,
-                { status: 'incident' },
-                { new: true }
-            );
-        } else {
-            cinema = await Cinema.findById(room.cinema);
-        }
-
-        res.json({
-            room,
-            cinema,
-            remainingMaintenanceRooms,
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
 // Mark ticket as printed (admin scans/issues physical ticket)
 router.put('/bookings/:id/print', protect, admin, async (req, res) => {
     try {
@@ -328,12 +190,6 @@ router.put('/bookings/:id/print', protect, admin, async (req, res) => {
         if (booking.status !== 'paid') return res.status(400).json({ message: 'Only paid bookings can be printed' });
         booking.ticketStatus = 'printed';
         await booking.save();
-        emitAdminNotification('ticket_printed', {
-            title: 'Vé đã được quét/in',
-            message: `Mã vé ${booking.bookingCode || booking._id} đã chuyển sang đã in`,
-            bookingId: booking._id,
-            bookingCode: booking.bookingCode,
-        });
         res.json({ message: 'Ticket marked as printed', booking });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -361,7 +217,7 @@ router.put('/seats/:id/lock', protect, admin, async (req, res) => {
 router.get('/bookings', protect, admin, async (req, res) => {
     try {
         const bookings = await Booking.find({})
-            .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }, { path: 'room' }] })
+            .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }] })
             .populate('user', 'name email phone')
             .populate('paymentId', 'method status')
             .sort({ createdAt: -1 });
@@ -386,15 +242,6 @@ router.put('/bookings/:id/confirm', protect, admin, async (req, res) => {
         }
         await Seat.updateMany({ _id: { $in: booking.seats } }, { status: 'booked' });
 
-        emitAdminNotification('booking_paid', {
-            title: 'Thanh toán thành công',
-            message: `Đơn ${booking.bookingCode || booking._id} đã được thanh toán`,
-            bookingId: booking._id,
-            bookingCode: booking.bookingCode,
-            amount: booking.totalPrice,
-        });
-
-        sendPaymentSuccessEmail(booking).catch(() => {});
         res.json({ message: 'Payment confirmed', booking });
     } catch (error) {
         res.status(500).json({ message: error.message });
