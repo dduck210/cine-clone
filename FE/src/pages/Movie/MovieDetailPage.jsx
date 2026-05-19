@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import Navbar from "../../components/common/Navbar";
 import Footer from "../../components/common/Footer";
+import ReviewSection from "../../components/movie/ReviewSection";
 import axiosInstance from "../../api/axiosConfig";
 import {
   Star,
@@ -437,6 +438,9 @@ const MovieDetailPage = () => {
                 ))}
             </div>
           )}
+        </div>
+        <div className="max-w-6xl mx-auto px-4 pb-12">
+          <ReviewSection movieId={id} />
         </div>
       </main>
       <Footer />
