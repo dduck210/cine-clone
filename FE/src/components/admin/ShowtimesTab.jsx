@@ -130,7 +130,9 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
   const [dateTo, setDateTo] = useState("");
   const [selectedDays, setSelectedDays] = useState([1, 2, 3, 4, 5, 6, 0]);
   const [bulkErrors, setBulkErrors] = useState({});
+  const selectedMovie = watch("movieId");
   const selectedCinema = watch("cinemaId");
+  const selectedRoom = watch("roomId");
 
   useEffect(() => {
     if (!selectedCinema) { setRooms([]); return; }
@@ -229,8 +231,8 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Rạp chiếu <span className="text-red-500">*</span></label>
             <div className="relative">
-              <select {...register("cinemaId", { required: "Vui lòng chọn rạp" })} className={selectClass}>
-                <option value="">-- Chọn rạp --</option>
+              <select {...register("cinemaId", { required: "Vui lòng chọn rạp" })} className={`${selectClass} ${!selectedMovie ? "opacity-50 cursor-not-allowed" : ""}`} disabled={!selectedMovie}>
+                <option value="">{!selectedMovie ? "Chọn phim trước" : "-- Chọn rạp --"}</option>
                 {cinemas.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
               </select>
               <ChevronDown className="absolute right-4 top-3.5 text-slate-400 pointer-events-none" size={18} />
@@ -256,7 +258,7 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
           </div>
 
           {bulkMode ? (
-            <div className="space-y-4">
+            <div className={`space-y-4 ${!selectedRoom ? "opacity-50 pointer-events-none" : ""}`}>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Từ ngày <span className="text-red-500">*</span></label>
@@ -299,8 +301,7 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              {/* Ngày chiếu */}
+            <div className={`grid grid-cols-1 sm:grid-cols-2 gap-5 ${!selectedRoom ? "opacity-50 pointer-events-none" : ""}`}>
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Ngày chiếu <span className="text-red-500">*</span></label>
                 <input
@@ -308,17 +309,17 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
                   {...register("date", { required: "Chọn ngày chiếu" })}
                   min={new Date().toISOString().split("T")[0]}
                   className={inputClass}
+                  disabled={!selectedRoom}
                 />
                 {errors.date && <ErrorMsg msg={errors.date.message} />}
               </div>
-
-              {/* Giờ chiếu */}
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Giờ bắt đầu <span className="text-red-500">*</span></label>
                 <input
                   type="time"
                   {...register("startTime", { required: "Chọn giờ chiếu" })}
                   className={inputClass}
+                  disabled={!selectedRoom}
                 />
                 {errors.startTime && <ErrorMsg msg={errors.startTime.message} />}
               </div>
@@ -326,23 +327,24 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
           )}
 
           {/* Giá vé cơ bản */}
-          <div>
+          <div className={!selectedRoom ? "opacity-50 pointer-events-none" : ""}>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Giá vé cơ bản (VNĐ) <span className="text-red-500">*</span></label>
             <input
               type="number"
               {...register("basePrice", { required: "Nhập giá vé", min: { value: 1000, message: "Giá phải trên 1.000đ" } })}
               className={inputClass}
               placeholder="VD: 80000 (giá Thường, VIP × 1.5, Đôi × 2)"
+              disabled={!selectedRoom}
             />
             {errors.basePrice && <ErrorMsg msg={errors.basePrice.message} />}
             <p className="text-xs text-slate-400 mt-1">Giá tự động tính theo loại ghế × khung giờ × loại ngày</p>
           </div>
 
           {/* Loại ngày (tùy chọn) */}
-          <div>
+          <div className={!selectedRoom ? "opacity-50 pointer-events-none" : ""}>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Loại ngày</label>
             <div className="relative">
-              <select {...register("dayType")} className={selectClass}>
+              <select {...register("dayType")} className={selectClass} disabled={!selectedRoom}>
                 <option value="">-- Tự động theo ngày --</option>
                 <option value="weekday">Ngày thường (×1.0)</option>
                 <option value="weekend">Cuối tuần (×1.2)</option>
