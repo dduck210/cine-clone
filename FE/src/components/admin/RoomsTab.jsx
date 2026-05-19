@@ -652,6 +652,10 @@ export const RoomsManager = ({ cinemas }) => {
       const res = await axiosInstance.get(`/admin/cinemas/${cinemaId}/rooms`);
       setRooms(res.data);
       setSelectedRoomIds((prev) => prev.filter((id) => res.data.some((room) => room._id === id)));
+      // Derive cinema status from rooms: all active → active, otherwise → incident
+      if (res.data.length > 0) {
+        setCinemaStatus(res.data.every((r) => r.status === 'active') ? 'active' : 'incident');
+      }
     } catch {
       setRooms([]);
     } finally {

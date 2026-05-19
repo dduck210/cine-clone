@@ -257,17 +257,12 @@ router.patch('/cinemas/:id/status', protect, admin, async (req, res) => {
         });
 
         console.log('[admin] Cinema status change requested:', cinema._id.toString(), '->', status);
-        // Cascade room statuses:
-        // - 'inactive': full cinema shutdown → all rooms maintenance
-        // - 'active': reopen → all rooms active
-        // - 'incident': individual rooms are managed via emergency-close, do NOT cascade
-        if (status !== 'incident') {
-            try {
-                const roomStatus = status === 'active' ? 'active' : 'maintenance';
-                await CinemaRoom.updateMany({ cinema: cinema._id }, { status: roomStatus });
-            } catch (err) {
-                console.error('Failed to update room statuses for cinema:', cinema._id, err.message);
-            }
+        // Cascade to all rooms: active → all rooms active, incident → all rooms maintenance
+        try {
+            const roomStatus = status === 'active' ? 'active' : 'maintenance';
+            await CinemaRoom.updateMany({ cinema: cinema._id }, { status: roomStatus });
+        } catch (err) {
+            console.error('Failed to update room statuses for cinema:', cinema._id, err.message);
         }
 
         res.json(cinema);
