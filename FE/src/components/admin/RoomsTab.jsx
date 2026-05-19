@@ -369,11 +369,6 @@ const CINEMA_STATUS_META = {
     badge: "bg-amber-50 text-amber-700 border-amber-200",
     description: "Rạp đang có sự cố cần xử lý.",
   },
-  inactive: {
-    label: "Tạm ngưng",
-    badge: "bg-slate-100 text-slate-600 border-slate-200",
-    description: "Rạp đang tạm ngưng khai thác.",
-  },
 };
 
 const EmergencyCloseModal = ({ cinemaId, cinemaName, selectedRooms, onClose, onDone }) => {
