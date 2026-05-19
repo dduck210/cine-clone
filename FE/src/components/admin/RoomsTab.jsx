@@ -703,7 +703,11 @@ export const RoomsManager = ({ cinemas }) => {
     try {
       await axiosInstance.patch(`/admin/cinemas/${selectedCinema}/status`, { status });
       setCinemaStatus(status);
-      toast.success("Đã cập nhật trạng thái rạp");
+      const msg = status === "active"
+        ? "Đã mở lại rạp · Tất cả phòng đã hoạt động"
+        : "Đã cập nhật trạng thái rạp";
+      toast.success(msg);
+      loadRooms(selectedCinema);
     } catch (err) {
       toast.error(err.response?.data?.message || "Không thể cập nhật trạng thái rạp");
     }
