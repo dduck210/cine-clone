@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import axiosInstance from "../../api/axiosConfig";
 
 const StarRating = ({ value, onChange, readonly = false }) => (
-  <div className="flex gap-1">
+  <div className="flex gap-0.5">
     {[1, 2, 3, 4, 5].map((star) => (
       <button
         key={star}
@@ -14,7 +14,7 @@ const StarRating = ({ value, onChange, readonly = false }) => (
         className={readonly ? "cursor-default" : "cursor-pointer hover:scale-110 transition-transform"}
       >
         <Star
-          size={readonly ? 16 : 24}
+          size={readonly ? 15 : 22}
           className={star <= value ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}
         />
       </button>
@@ -54,8 +54,8 @@ const ReviewSection = ({ movieId }) => {
       setCanReview(res.data.canReview);
       setHasReviewed(res.data.hasReviewed);
       setMyReviewId(res.data.reviewId || null);
-    } catch {
-      // silent
+    } catch (err) {
+      console.error("can-review error:", err.response?.status, err.response?.data);
     }
   };
 
@@ -97,19 +97,20 @@ const ReviewSection = ({ movieId }) => {
 
   return (
     <div className="mt-10">
-      <h2 className="text-xl font-bold text-white mb-6">
+      <h2 className="text-2xl font-bold text-gray-900 mb-6 border-l-4 border-[#dc2626] pl-3">
         Đánh giá phim
         {avgRating && (
-          <span className="ml-3 text-base font-semibold text-yellow-400">
-            ★ {avgRating} <span className="text-gray-400 font-normal">({reviews.length} đánh giá)</span>
+          <span className="ml-3 text-base font-semibold text-yellow-500">
+            ★ {avgRating}
+            <span className="text-gray-400 font-normal ml-1">({reviews.length} đánh giá)</span>
           </span>
         )}
       </h2>
 
       {/* Review form */}
       {token && canReview && !hasReviewed && (
-        <form onSubmit={handleSubmit} className="bg-gray-800 rounded-2xl p-5 mb-6 border border-gray-700">
-          <p className="text-white font-semibold mb-3">Viết đánh giá của bạn</p>
+        <form onSubmit={handleSubmit} className="bg-gray-50 rounded-xl border border-gray-200 p-5 mb-6">
+          <p className="text-gray-800 font-semibold mb-3 text-sm">Viết đánh giá của bạn</p>
           <div className="mb-3">
             <StarRating value={rating} onChange={setRating} />
           </div>
@@ -119,14 +120,14 @@ const ReviewSection = ({ movieId }) => {
             maxLength={500}
             rows={3}
             placeholder="Chia sẻ cảm nhận về bộ phim..."
-            className="w-full bg-gray-700 text-white rounded-xl px-4 py-3 text-sm outline-none resize-none border border-gray-600 focus:border-red-500 transition-colors placeholder-gray-400"
+            className="w-full bg-white text-gray-900 rounded-xl px-4 py-3 text-sm outline-none resize-none border border-gray-200 focus:border-[#dc2626] focus:ring-2 focus:ring-red-100 transition-colors placeholder-gray-400"
           />
           <div className="flex justify-between items-center mt-3">
             <span className="text-xs text-gray-400">{comment.length}/500</span>
             <button
               type="submit"
               disabled={submitting}
-              className="bg-[#dc2626] hover:bg-red-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
+              className="bg-[#dc2626] hover:bg-red-700 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm shadow-red-200 disabled:opacity-50"
             >
               {submitting ? "Đang gửi..." : "Gửi đánh giá"}
             </button>
@@ -135,41 +136,45 @@ const ReviewSection = ({ movieId }) => {
       )}
 
       {token && !canReview && !hasReviewed && (
-        <p className="text-gray-400 text-sm mb-6 bg-gray-800 rounded-xl px-4 py-3 border border-gray-700">
-          Chỉ người dùng đã mua vé mới có thể đánh giá phim này.
-        </p>
+        <div className="bg-gray-50 rounded-xl border border-dashed border-gray-200 px-4 py-3 mb-6">
+          <p className="text-gray-400 text-sm font-bold text-center">
+            Chỉ người dùng đã mua vé mới có thể đánh giá phim này.
+          </p>
+        </div>
       )}
 
       {!token && (
-        <p className="text-gray-400 text-sm mb-6 bg-gray-800 rounded-xl px-4 py-3 border border-gray-700">
-          <a href="/login" className="text-red-400 hover:underline">Đăng nhập</a> để xem và viết đánh giá.
-        </p>
+        <div className="bg-gray-50 rounded-xl border border-dashed border-gray-200 px-4 py-3 mb-6">
+          <p className="text-gray-400 text-sm font-bold text-center">
+            <a href="/login" className="text-[#dc2626] hover:underline">Đăng nhập</a> để xem và viết đánh giá.
+          </p>
+        </div>
       )}
 
       {/* Reviews list */}
       {reviews.length === 0 ? (
         <p className="text-gray-400 text-sm">Chưa có đánh giá nào.</p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {reviews.map((r) => (
-            <div key={r._id} className="bg-gray-800 rounded-2xl p-4 border border-gray-700">
+            <div key={r._id} className="bg-gray-50 rounded-xl border border-gray-100 p-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-white font-semibold text-sm">{r.user?.name || "Ẩn danh"}</p>
+                  <p className="text-gray-800 font-semibold text-sm mb-1">{r.user?.name || "Ẩn danh"}</p>
                   <StarRating value={r.rating} readonly />
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-gray-500 text-xs">
+                  <span className="text-gray-400 text-xs">
                     {new Date(r.createdAt).toLocaleDateString("vi-VN")}
                   </span>
                   {currentUser && r.user?._id === currentUser._id && (
-                    <button onClick={() => handleDelete(r._id)} className="text-gray-500 hover:text-red-400 transition-colors">
-                      <Trash2 size={15} />
+                    <button onClick={() => handleDelete(r._id)} className="text-gray-300 hover:text-red-500 transition-colors">
+                      <Trash2 size={14} />
                     </button>
                   )}
                 </div>
               </div>
-              <p className="text-gray-300 text-sm mt-2">{r.comment}</p>
+              <p className="text-gray-600 text-sm mt-2">{r.comment}</p>
             </div>
           ))}
         </div>
