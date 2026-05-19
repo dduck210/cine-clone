@@ -54,8 +54,8 @@ const ReviewSection = ({ movieId }) => {
       setCanReview(res.data.canReview);
       setHasReviewed(res.data.hasReviewed);
       setMyReviewId(res.data.reviewId || null);
-    } catch {
-      // silent
+    } catch (err) {
+      console.error("can-review error:", err.response?.status, err.response?.data);
     }
   };
 
