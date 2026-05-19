@@ -65,7 +65,7 @@ const DashboardView = ({ stats, extStats, loading }) => (
           const max = extStats.timeslots[0]?.bookings || 1;
           const BAR_MAX_PX = 110;
           const SHORT = { morning: "Sáng", evening: "Chiều", night: "Tối" };
-          const SUB   = { morning: "trước 12h", evening: "12–18h", night: "sau 18h" };
+          const SUB = { morning: "trước 12h", evening: "12–18h", night: "sau 18h" };
           const COLORS = { morning: "#f97316", evening: "#dc2626", night: "#991b1b" };
           return (
             <div>
@@ -129,7 +129,7 @@ const DashboardView = ({ stats, extStats, loading }) => (
       {loading || !extStats.topMovies.length ? (
         loading ? (
           <div className="space-y-3">
-            {[1,2,3,4,5].map(i => <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />)}
+            {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />)}
           </div>
         ) : (
           <p className="text-slate-400 text-sm italic">Chưa có dữ liệu</p>
@@ -340,7 +340,7 @@ const Dashboard = () => {
           if (incoming.type === 'showtime_expired' && activeTab === 'showtimes') {
             axiosInstance.get('/admin/showtimes')
               .then((r) => setShowtimes(r.data))
-              .catch(() => {});
+              .catch(() => { });
           }
         }
       } catch {
@@ -417,11 +417,11 @@ const Dashboard = () => {
   useEffect(() => {
     if (activeTab !== "movies") return;
     const timeoutId = window.setTimeout(() => {
-    setMoviesLoading(true);
-    axiosInstance.get("/movies")
-      .then((res) => setMovies(res.data))
-      .catch(() => toast.error("Không tải được danh sách phim"))
-      .finally(() => setMoviesLoading(false));
+      setMoviesLoading(true);
+      axiosInstance.get("/movies")
+        .then((res) => setMovies(res.data))
+        .catch(() => toast.error("Không tải được danh sách phim"))
+        .finally(() => setMoviesLoading(false));
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
@@ -431,37 +431,37 @@ const Dashboard = () => {
   useEffect(() => {
     if (activeTab !== "orders") return;
     const timeoutId = window.setTimeout(() => {
-    setOrdersLoading(true);
-    axiosInstance.get("/admin/bookings")
-      .then((res) => {
-        const transformed = res.data.map((booking) => {
-          const showtime = booking.showtime || {};
-          const movie = showtime.movie || {};
-          const cinema = showtime.cinema || {};
-          return {
-            _raw: booking,
-            orderId: booking.bookingCode || booking._id,
-            customerName: booking.user?.name || "Khách hàng",
-            customerEmail: booking.user?.email || "",
-            phone: booking.user?.phone || "",
-            bookingTime: new Date(booking.createdAt).toLocaleString("vi-VN"),
-            movieTitle: movie.title || "Phim",
-            cinemaName: cinema.name || "5Cine",
-            showDate: showtime.date ? new Date(showtime.date).toLocaleDateString("vi-VN") : "",
-            showTime: showtime.startTime || "",
-            selectedSeats: booking.seatNumbers || [],
-            finalTotalPrice: booking.totalPrice,
-            combos: booking.extraItems || [],
-            status: booking.status === "paid" ? "Đã thanh toán" : booking.status === "cancelled" ? "Đã hủy" : booking.status === "expired" ? "Hết hạn" : booking.status === "refunded" ? "Đã hoàn tiền" : "Chờ thanh toán",
-            ticketStatus: booking.ticketStatus || "not_printed",
-            paymentMethod: booking.paymentId?.method || "",
-            bookingRawId: booking._id,
-          };
-        });
-        setOrders(transformed);
-      })
-      .catch(() => toast.error("Không tải được đơn hàng"))
-      .finally(() => setOrdersLoading(false));
+      setOrdersLoading(true);
+      axiosInstance.get("/admin/bookings")
+        .then((res) => {
+          const transformed = res.data.map((booking) => {
+            const showtime = booking.showtime || {};
+            const movie = showtime.movie || {};
+            const cinema = showtime.cinema || {};
+            return {
+              _raw: booking,
+              orderId: booking.bookingCode || booking._id,
+              customerName: booking.user?.name || "Khách hàng",
+              customerEmail: booking.user?.email || "",
+              phone: booking.user?.phone || "",
+              bookingTime: new Date(booking.createdAt).toLocaleString("vi-VN"),
+              movieTitle: movie.title || "Phim",
+              cinemaName: cinema.name || "5Cine",
+              showDate: showtime.date ? new Date(showtime.date).toLocaleDateString("vi-VN") : "",
+              showTime: showtime.startTime || "",
+              selectedSeats: booking.seatNumbers || [],
+              finalTotalPrice: booking.totalPrice,
+              combos: booking.extraItems || [],
+              status: booking.status === "paid" ? "Đã thanh toán" : booking.status === "cancelled" ? "Đã hủy" : booking.status === "expired" ? "Hết hạn" : booking.status === "refunded" ? "Đã hoàn tiền" : "Chờ thanh toán",
+              ticketStatus: booking.ticketStatus || "not_printed",
+              paymentMethod: booking.paymentId?.method || "",
+              bookingRawId: booking._id,
+            };
+          });
+          setOrders(transformed);
+        })
+        .catch(() => toast.error("Không tải được đơn hàng"))
+        .finally(() => setOrdersLoading(false));
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
@@ -485,11 +485,11 @@ const Dashboard = () => {
   useEffect(() => {
     if (activeTab !== "users") return;
     const timeoutId = window.setTimeout(() => {
-    setUsersLoading(true);
-    axiosInstance.get("/admin/users")
-      .then((res) => setUsers(res.data))
-      .catch(() => toast.error("Không tải được danh sách thành viên"))
-      .finally(() => setUsersLoading(false));
+      setUsersLoading(true);
+      axiosInstance.get("/admin/users")
+        .then((res) => setUsers(res.data))
+        .catch(() => toast.error("Không tải được danh sách thành viên"))
+        .finally(() => setUsersLoading(false));
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
@@ -498,24 +498,24 @@ const Dashboard = () => {
   // Fetch cinemas when needed (showtimes or rooms tabs)
   useEffect(() => {
     if (activeTab !== "rooms" || cinemas.length > 0) return;
-    axiosInstance.get("/admin/cinemas").then((res) => setCinemas(res.data)).catch(() => {});
+    axiosInstance.get("/admin/cinemas").then((res) => setCinemas(res.data)).catch(() => { });
   }, [activeTab, cinemas.length]);
 
   // Fetch showtimes + cinemas + movies (dùng cho filter và modal)
   useEffect(() => {
     if (activeTab !== "showtimes") return;
     const timeoutId = window.setTimeout(() => {
-    setShowtimesLoading(true);
-    Promise.all([
-      axiosInstance.get("/admin/showtimes"),
-      axiosInstance.get("/admin/cinemas"),
-      axiosInstance.get("/movies"),
-    ]).then(([stRes, cinemasRes, moviesRes]) => {
-      setShowtimes(stRes.data);
-      setCinemas(cinemasRes.data);
-      setMovies(moviesRes.data);
-    }).catch(() => toast.error("Không tải được danh sách suất chiếu"))
-      .finally(() => setShowtimesLoading(false));
+      setShowtimesLoading(true);
+      Promise.all([
+        axiosInstance.get("/admin/showtimes"),
+        axiosInstance.get("/admin/cinemas"),
+        axiosInstance.get("/movies"),
+      ]).then(([stRes, cinemasRes, moviesRes]) => {
+        setShowtimes(stRes.data);
+        setCinemas(cinemasRes.data);
+        setMovies(moviesRes.data);
+      }).catch(() => toast.error("Không tải được danh sách suất chiếu"))
+        .finally(() => setShowtimesLoading(false));
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
@@ -750,9 +750,8 @@ const Dashboard = () => {
                               setShowNotifications(false);
                             }
                           }}
-                          className={`w-full text-left px-4 py-3 border-b border-slate-100 last:border-b-0 transition-colors ${
-                            item.data?.bookingCode ? "hover:bg-slate-50 cursor-pointer" : "cursor-default"
-                          } ${item.read ? "bg-white" : "bg-rose-50/50"}`}
+                          className={`w-full text-left px-4 py-3 border-b border-slate-100 last:border-b-0 transition-colors ${item.data?.bookingCode ? "hover:bg-slate-50 cursor-pointer" : "cursor-default"
+                            } ${item.read ? "bg-white" : "bg-rose-50/50"}`}
                         >
                           <div className="flex items-start gap-3">
                             <span className={`mt-1 w-2.5 h-2.5 rounded-full shrink-0 ${item.read ? "bg-slate-200" : "bg-rose-500"}`} />
@@ -800,7 +799,7 @@ const Dashboard = () => {
                 cinemas={cinemas}
                 onAddNew={() => {
                   if (movies.length === 0) {
-                    axiosInstance.get("/movies").then((r) => setMovies(r.data)).catch(() => {});
+                    axiosInstance.get("/movies").then((r) => setMovies(r.data)).catch(() => { });
                   }
                   setIsShowtimeModalOpen(true);
                 }}
