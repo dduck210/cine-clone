@@ -9,11 +9,11 @@ const { sendPaymentSuccessEmail } = require('../services/email-service');
 const notificationService = require('../services/notification-service');
 
 const PARTNER_CODE = process.env.MOMO_PARTNER_CODE || 'MOMO';
-const ACCESS_KEY   = process.env.MOMO_ACCESS_KEY   || 'F8BBA842ECF85';
-const SECRET_KEY   = process.env.MOMO_SECRET_KEY   || 'K951B6PE1waDMi640xX08PD3vg6EkVlz';
-const MOMO_API     = process.env.MOMO_API_URL       || 'https://test-payment.momo.vn/v2/gateway/api/create';
-const CLIENT_URL   = process.env.CLIENT_URL          || 'http://localhost:5173';
-const SERVER_URL   = process.env.SERVER_URL          || 'http://localhost:5000';
+const ACCESS_KEY = process.env.MOMO_ACCESS_KEY || 'F8BBA842ECF85';
+const SECRET_KEY = process.env.MOMO_SECRET_KEY || 'K951B6PE1waDMi640xX08PD3vg6EkVlz';
+const MOMO_API = process.env.MOMO_API_URL || 'https://test-payment.momo.vn/v2/gateway/api/create';
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:5000';
 
 const hmac = (data) => crypto.createHmac('sha256', SECRET_KEY).update(data).digest('hex');
 
@@ -25,14 +25,14 @@ router.post('/create', protect, async (req, res) => {
         if (!booking) return res.status(404).json({ message: 'Booking not found' });
         if (booking.status !== 'pending') return res.status(400).json({ message: 'Booking is not pending' });
 
-        const requestId   = PARTNER_CODE + Date.now();
-        const orderId     = requestId;
-        const amount      = booking.totalPrice.toString();
-        const orderInfo   = 'Thanh toan ve phim 5Cine';
+        const requestId = PARTNER_CODE + Date.now();
+        const orderId = requestId;
+        const amount = booking.totalPrice.toString();
+        const orderInfo = 'Thanh toan ve phim 5Cine';
         const redirectUrl = `${CLIENT_URL}/payment-success`;
-        const ipnUrl      = `${SERVER_URL}/api/payments/momo/ipn`;
+        const ipnUrl = `${SERVER_URL}/api/payments/momo/ipn`;
         const requestType = 'payWithATM';
-        const extraData   = Buffer.from(JSON.stringify({ bookingId: bookingId.toString() })).toString('base64');
+        const extraData = Buffer.from(JSON.stringify({ bookingId: bookingId.toString() })).toString('base64');
 
         const rawSignature = `accessKey=${ACCESS_KEY}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${PARTNER_CODE}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
         const signature = hmac(rawSignature);
@@ -70,7 +70,7 @@ router.post('/create', protect, async (req, res) => {
 // POST /api/payments/momo/ipn  — MoMo gọi khi có kết quả thanh toán
 router.post('/ipn', async (req, res) => {
     const { partnerCode, orderId, requestId, amount, orderInfo, orderType,
-            transId, resultCode, message, payType, responseTime, extraData, signature } = req.body;
+        transId, resultCode, message, payType, responseTime, extraData, signature } = req.body;
 
     const rawSignature = `accessKey=${ACCESS_KEY}&amount=${amount}&extraData=${extraData}&message=${message}&orderId=${orderId}&orderInfo=${orderInfo}&orderType=${orderType}&partnerCode=${partnerCode}&payType=${payType}&requestId=${requestId}&responseTime=${responseTime}&resultCode=${resultCode}&transId=${transId}`;
 
@@ -89,7 +89,7 @@ router.post('/ipn', async (req, res) => {
 // POST /api/payments/momo/confirm — Frontend gọi sau khi MoMo redirect về
 router.post('/confirm', protect, async (req, res) => {
     const { partnerCode, orderId, requestId, amount, orderInfo, orderType,
-            transId, resultCode, message, payType, responseTime, extraData, signature } = req.body;
+        transId, resultCode, message, payType, responseTime, extraData, signature } = req.body;
 
     const rawSignature = `accessKey=${ACCESS_KEY}&amount=${amount}&extraData=${extraData}&message=${message}&orderId=${orderId}&orderInfo=${orderInfo}&orderType=${orderType}&partnerCode=${partnerCode}&payType=${payType}&requestId=${requestId}&responseTime=${responseTime}&resultCode=${resultCode}&transId=${transId}`;
 
@@ -169,7 +169,12 @@ async function processSuccessfulPayment(bookingId, transactionId, amount) {
         })
         .populate('paymentId', 'method status');
 
-    await sendPaymentSuccessEmail(bookingContext, 'momo');
+    try {
+        const emailRes = await sendPaymentSuccessEmail(bookingContext, 'momo');
+        console.log('[email] sendPaymentSuccessEmail (momo) result:', emailRes);
+    } catch (err) {
+        console.error('[email] sendPaymentSuccessEmail (momo) error:', err?.message || err);
+    }
     notificationService.createNotification({
         type: 'payment_paid',
         title: 'Thanh toán MoMo thành công',
