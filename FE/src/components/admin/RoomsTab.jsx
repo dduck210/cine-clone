@@ -780,17 +780,6 @@ export const RoomsManager = ({ cinemas }) => {
             </div>
           </div>
 
-          <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div>
-              <p className="text-sm font-bold text-slate-700">Đóng khẩn cấp theo phòng</p>
-              <p className="text-xs text-slate-500 mt-1">
-                Chọn một hoặc nhiều phòng để preview các suất chiếu bị ảnh hưởng trước khi hủy.
-              </p>
-            </div>
-            <div className="text-sm font-medium text-slate-600">
-              {selectedRoomIds.length > 0 ? `Đã chọn ${selectedRoomIds.length} phòng` : "Chưa chọn phòng nào"}
-            </div>
-          </div>
         </div>
       )}
 
