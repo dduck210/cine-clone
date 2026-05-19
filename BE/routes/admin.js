@@ -257,8 +257,7 @@ router.patch('/cinemas/:id/status', protect, admin, async (req, res) => {
         });
 
         console.log('[admin] Cinema status change requested:', cinema._id.toString(), '->', status);
-        // Also update all rooms in this cinema to maintenance when cinema is not active,
-        // or restore them to active when cinema becomes active.
+        // Cascade to all rooms: active → all rooms active, incident → all rooms maintenance
         try {
             const roomStatus = status === 'active' ? 'active' : 'maintenance';
             await CinemaRoom.updateMany({ cinema: cinema._id }, { status: roomStatus });
@@ -266,7 +265,35 @@ router.patch('/cinemas/:id/status', protect, admin, async (req, res) => {
             console.error('Failed to update room statuses for cinema:', cinema._id, err.message);
         }
 
-        res.json(cinema);
+        // When setting to incident (maintenance), cancel all upcoming showtimes and refund
+        let cancelResult = null;
+        if (status === 'incident') {
+            await expireShowtimes();
+            const showtimes = await Showtime.find({
+                cinema: cinema._id,
+                status: 'active',
+                date: { $gte: getTodayFloor() },
+            });
+
+            if (showtimes.length > 0) {
+                cancelResult = await cancelShowtimesDbUpdates(showtimes, 'Rạp tạm thời bảo trì');
+
+                // Fire-and-forget background emails
+                (async () => {
+                    for (const paidId of cancelResult.paidBookingIds) {
+                        try {
+                            const bookingContext = await loadBookingContext(paidId);
+                            await sendShowtimeCancelledEmail(bookingContext, 'Rạp tạm thời bảo trì');
+                            await sendRefundEmail(bookingContext, 'Rạp tạm thời bảo trì');
+                        } catch (e) {
+                            console.error('Failed to send emails for booking', paidId, e.message);
+                        }
+                    }
+                })();
+            }
+        }
+
+        res.json({ ...cinema.toObject(), ...(cancelResult || {}) });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -406,6 +433,36 @@ router.post('/emergency-close/:id', protect, admin, async (req, res) => {
         })();
 
         res.json({ message: 'Cinema emergency closed', ...dbResult });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+router.post('/rooms/reopen', protect, admin, async (req, res) => {
+    try {
+        const { cinemaId, roomIds = [] } = req.body || {};
+        if (!cinemaId) return res.status(400).json({ message: 'Cinema ID is required' });
+        if (!Array.isArray(roomIds) || roomIds.length === 0) {
+            return res.status(400).json({ message: 'Select at least one room' });
+        }
+
+        await CinemaRoom.updateMany({ _id: { $in: roomIds } }, { status: 'active' });
+
+        // If all rooms in the cinema are now active, restore cinema status to active
+        const allRooms = await CinemaRoom.find({ cinema: cinemaId });
+        const cinemaRestored = allRooms.length > 0 && allRooms.every((r) => r.status === 'active');
+        if (cinemaRestored) {
+            await Cinema.findByIdAndUpdate(cinemaId, { status: 'active' });
+        }
+
+        notificationService.createNotification({
+            type: 'rooms_reopened',
+            title: 'Mở phòng chiếu',
+            message: `Đã mở ${roomIds.length} phòng${cinemaRestored ? ' · Rạp đã khôi phục hoạt động' : ''}`,
+            data: { cinemaId, roomIds, cinemaRestored },
+        });
+
+        res.json({ message: 'Rooms reopened', reopenedCount: roomIds.length, cinemaRestored });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
