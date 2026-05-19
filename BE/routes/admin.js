@@ -9,6 +9,7 @@ const Payment = require('../models/Payment');
 const Seat = require('../models/Seat');
 const { protect, admin } = require('../middleware/auth');
 const { expireShowtimes } = require('../jobs/expire-showtimes');
+const { isShowtimeExpired } = require('../utils/showtime-status');
 const {
     sendPaymentSuccessEmail,
     sendRefundEmail,
@@ -675,6 +676,14 @@ router.get('/showtimes', protect, admin, async (req, res) => {
             .populate('cinema', 'name')
             .populate('room', 'name')
             .sort({ date: -1, startTime: -1 });
+
+        await Promise.all(showtimes.map(async (showtime) => {
+            if (showtime.status === 'active' && isShowtimeExpired(showtime)) {
+                showtime.status = 'expired';
+                await showtime.save();
+            }
+        }));
+
         res.json(showtimes);
     } catch (error) {
         res.status(500).json({ message: error.message });

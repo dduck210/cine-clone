@@ -4,8 +4,9 @@ const { isShowtimeExpired } = require('../utils/showtime-status');
 
 async function expireShowtimes() {
     const activeShowtimes = await Showtime.find({ status: 'active' });
+    const now = new Date();
     const expiredIds = activeShowtimes
-        .filter((showtime) => isShowtimeExpired(showtime))
+        .filter((showtime) => isShowtimeExpired(showtime, now, false))
         .map((showtime) => showtime._id);
 
     if (expiredIds.length === 0) return 0;
@@ -19,7 +20,8 @@ async function expireShowtimes() {
 }
 
 function startExpireShowtimesJob() {
-    cron.schedule('*/15 * * * *', async () => {
+    // Run every minute to expire showtimes promptly
+    cron.schedule('* * * * *', async () => {
         try {
             const count = await expireShowtimes();
             if (count > 0) {

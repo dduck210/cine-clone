@@ -28,14 +28,14 @@ function getShowtimeDateTime(showtime, useEndTime = true) {
     return date;
 }
 
-function isShowtimeExpired(showtime, now = new Date()) {
+function isShowtimeExpired(showtime, now = new Date(), useEndTime = true) {
     if (!showtime) return false;
     if (showtime.status === 'cancelled' || showtime.status === 'expired') return showtime.status === 'expired';
 
-    const endDateTime = getShowtimeDateTime(showtime, true);
-    if (!endDateTime) return false;
+    const compareDateTime = getShowtimeDateTime(showtime, useEndTime);
+    if (!compareDateTime) return false;
 
-    return endDateTime < now;
+    return compareDateTime < now;
 }
 
 module.exports = {

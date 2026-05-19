@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import Sidebar from "../../components/admin/Sidebar";
@@ -229,7 +229,7 @@ const Dashboard = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const loadNotifications = async () => {
+  const loadNotifications = useCallback(async () => {
     try {
       const res = await axiosInstance.get("/admin/notifications");
       setNotifications(res.data.items || []);
@@ -237,7 +237,7 @@ const Dashboard = () => {
     } catch {
       // Keep the dashboard usable even if notification history fails to load.
     }
-  };
+  }, []);
 
   const buildNotificationStreamUrl = () => {
     const token = localStorage.getItem("token");
@@ -252,7 +252,7 @@ const Dashboard = () => {
     return `${window.location.origin}${relativeBase}/admin/notifications/stream?token=${encodeURIComponent(token)}`;
   };
 
-  const markNotificationsRead = async (ids = []) => {
+  const markNotificationsRead = useCallback(async (ids = []) => {
     if (ids.length === 0 && unreadCount === 0) return;
 
     setNotifications((prev) => prev.map((item) => (
@@ -269,7 +269,7 @@ const Dashboard = () => {
     } catch {
       loadNotifications();
     }
-  };
+  }, [unreadCount, loadNotifications]);
 
   const handleToggleNotifications = async () => {
     const nextOpen = !showNotifications;
@@ -288,17 +288,21 @@ const Dashboard = () => {
   }, [showNotifications]);
 
   useEffect(() => {
-    loadNotifications();
-  }, []);
+    const timeoutId = window.setTimeout(() => {
+      void loadNotifications();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [loadNotifications]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
-      loadNotifications();
+      void loadNotifications();
     }, 15000);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        loadNotifications();
+        void loadNotifications();
       }
     };
 
@@ -307,7 +311,7 @@ const Dashboard = () => {
       window.clearInterval(intervalId);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [loadNotifications]);
 
   useEffect(() => {
     const streamUrl = buildNotificationStreamUrl();
@@ -338,11 +342,11 @@ const Dashboard = () => {
       }
     };
     source.onerror = () => {
-      loadNotifications();
+      void loadNotifications();
     };
 
     return () => source.close();
-  }, []);
+  }, [loadNotifications, markNotificationsRead]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -358,48 +362,69 @@ const Dashboard = () => {
   // Fetch stats
   useEffect(() => {
     if (activeTab !== "dashboard") return;
-    setStatsLoading(true);
-    Promise.all([
-      axiosInstance.get("/admin/reports/revenue"),
-      axiosInstance.get("/admin/reports/bookings"),
-      axiosInstance.get("/admin/reports/combo-revenue"),
-      axiosInstance.get("/admin/reports/timeslots"),
-      axiosInstance.get("/admin/reports/refunds"),
-      axiosInstance.get("/admin/reports/top-movies"),
-    ]).then(([revenueRes, bookingsRes, comboRes, timeslotsRes, refundsRes, topMoviesRes]) => {
-      const byStatus = bookingsRes.data.reduce((acc, item) => {
-        acc[item._id] = item;
-        return acc;
-      }, {});
-      setStats({
-        totalRevenue: revenueRes.data.summary?.totalRevenue || 0,
-        totalBookings: revenueRes.data.summary?.totalBookings || 0,
-        pendingBookings: byStatus["pending"]?.count || 0,
-        expiredBookings: byStatus["expired"]?.count || 0,
-      });
-      setExtStats({
-        comboRevenue: comboRes.data.totalComboRevenue || 0,
-        comboItems: comboRes.data.items || [],
-        timeslots: timeslotsRes.data || [],
-        refunds: refundsRes.data || { totalRefunds: 0, totalRefundAmount: 0 },
-        topMovies: topMoviesRes.data || [],
-      });
-    }).catch(() => {}).finally(() => setStatsLoading(false));
+    let cancelled = false;
+    const timeoutId = window.setTimeout(async () => {
+      setStatsLoading(true);
+      try {
+        const [revenueRes, bookingsRes, comboRes, timeslotsRes, refundsRes, topMoviesRes] = await Promise.all([
+          axiosInstance.get("/admin/reports/revenue"),
+          axiosInstance.get("/admin/reports/bookings"),
+          axiosInstance.get("/admin/reports/combo-revenue"),
+          axiosInstance.get("/admin/reports/timeslots"),
+          axiosInstance.get("/admin/reports/refunds"),
+          axiosInstance.get("/admin/reports/top-movies"),
+        ]);
+        if (cancelled) return;
+
+        const byStatus = bookingsRes.data.reduce((acc, item) => {
+          acc[item._id] = item;
+          return acc;
+        }, {});
+
+        setStats({
+          totalRevenue: revenueRes.data.summary?.totalRevenue || 0,
+          totalBookings: revenueRes.data.summary?.totalBookings || 0,
+          pendingBookings: byStatus.pending?.count || 0,
+          expiredBookings: byStatus.expired?.count || 0,
+        });
+        setExtStats({
+          comboRevenue: comboRes.data.totalComboRevenue || 0,
+          comboItems: comboRes.data.items || [],
+          timeslots: timeslotsRes.data || [],
+          refunds: refundsRes.data || { totalRefunds: 0, totalRefundAmount: 0 },
+          topMovies: topMoviesRes.data || [],
+        });
+      } catch {
+        // Keep the last dashboard snapshot if the refresh fails.
+      } finally {
+        if (!cancelled) setStatsLoading(false);
+      }
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
   }, [activeTab]);
 
   // Fetch movies
   useEffect(() => {
     if (activeTab !== "movies") return;
+    const timeoutId = window.setTimeout(() => {
     setMoviesLoading(true);
     axiosInstance.get("/movies")
       .then((res) => setMovies(res.data))
       .catch(() => toast.error("Không tải được danh sách phim"))
       .finally(() => setMoviesLoading(false));
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [activeTab]);
 
   // Fetch orders
   useEffect(() => {
     if (activeTab !== "orders") return;
+    const timeoutId = window.setTimeout(() => {
     setOrdersLoading(true);
     axiosInstance.get("/admin/bookings")
       .then((res) => {
@@ -431,26 +456,37 @@ const Dashboard = () => {
       })
       .catch(() => toast.error("Không tải được đơn hàng"))
       .finally(() => setOrdersLoading(false));
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [activeTab]);
 
   // Auto-open order detail modal when ?booking=BKXXX is in URL
   useEffect(() => {
     if (!bookingParam || ordersLoading || !orders.length) return;
-    const found = orders.find((o) => o.orderId === bookingParam);
-    if (found) {
-      setSelectedOrder(found);
-      setIsOrderModalOpen(true);
-    }
+    const timeoutId = window.setTimeout(() => {
+      const found = orders.find((o) => o.orderId === bookingParam);
+      if (found) {
+        setSelectedOrder(found);
+        setIsOrderModalOpen(true);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [bookingParam, orders, ordersLoading]);
 
   // Fetch users
   useEffect(() => {
     if (activeTab !== "users") return;
+    const timeoutId = window.setTimeout(() => {
     setUsersLoading(true);
     axiosInstance.get("/admin/users")
       .then((res) => setUsers(res.data))
       .catch(() => toast.error("Không tải được danh sách thành viên"))
       .finally(() => setUsersLoading(false));
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [activeTab]);
 
   // Fetch cinemas when needed (showtimes or rooms tabs)
@@ -462,6 +498,7 @@ const Dashboard = () => {
   // Fetch showtimes + cinemas + movies (dùng cho filter và modal)
   useEffect(() => {
     if (activeTab !== "showtimes") return;
+    const timeoutId = window.setTimeout(() => {
     setShowtimesLoading(true);
     Promise.all([
       axiosInstance.get("/admin/showtimes"),
@@ -473,6 +510,31 @@ const Dashboard = () => {
       setMovies(moviesRes.data);
     }).catch(() => toast.error("Không tải được danh sách suất chiếu"))
       .finally(() => setShowtimesLoading(false));
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== "showtimes") return undefined;
+
+    const intervalId = window.setInterval(async () => {
+      try {
+        const [stRes, cinemasRes, moviesRes] = await Promise.all([
+          axiosInstance.get("/admin/showtimes"),
+          axiosInstance.get("/admin/cinemas"),
+          axiosInstance.get("/movies"),
+        ]);
+
+        setShowtimes(stRes.data);
+        setCinemas(cinemasRes.data);
+        setMovies(moviesRes.data);
+      } catch {
+        // Keep the current list visible if background refresh fails.
+      }
+    }, 60000);
+
+    return () => window.clearInterval(intervalId);
   }, [activeTab]);
 
   const handleTabChange = (tabId) => {
