@@ -8,8 +8,203 @@ const User = require('../models/User');
 const Payment = require('../models/Payment');
 const Seat = require('../models/Seat');
 const { protect, admin } = require('../middleware/auth');
+const { expireShowtimes } = require('../jobs/expire-showtimes');
+const {
+    sendPaymentSuccessEmail,
+    sendRefundEmail,
+    sendShowtimeCancelledEmail,
+} = require('../services/email-service');
+const notificationService = require('../services/notification-service');
 
-// ─── Cinema & Room Management ───────────────────────────────────────────────
+function countSeatsFromMatrix(seatMatrix = []) {
+    let totalSeats = 0;
+    for (const row of seatMatrix) {
+        for (const cell of row || []) {
+            if (cell && cell.type !== 'aisle') totalSeats++;
+        }
+    }
+    return totalSeats;
+}
+
+async function loadBookingContext(bookingId) {
+    return Booking.findById(bookingId)
+        .populate('user', 'name email phone')
+        .populate({
+            path: 'showtime',
+            populate: [
+                { path: 'movie', select: 'title poster' },
+                { path: 'cinema', select: 'name address' },
+                { path: 'room', select: 'name' },
+            ],
+        })
+        .populate('paymentId', 'method status');
+}
+
+function getTodayFloor() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+}
+
+async function buildEmergencyPreview(showtimes) {
+    const preview = await Promise.all(showtimes.map(async (showtime) => {
+        const bookings = await Booking.find({
+            showtime: showtime._id,
+            status: { $in: ['pending', 'paid'] },
+        });
+
+        return {
+            _id: showtime._id,
+            movieTitle: showtime.movie?.title || '—',
+            roomId: showtime.room?._id?.toString() || showtime.room?.toString() || '',
+            roomName: showtime.room?.name || '—',
+            date: showtime.date,
+            startTime: showtime.startTime,
+            totalBookings: bookings.length,
+            paidBookings: bookings.filter((booking) => booking.status === 'paid').length,
+        };
+    }));
+
+    return {
+        totalShowtimes: preview.length,
+        totalBookings: preview.reduce((sum, item) => sum + item.totalBookings, 0),
+        totalRefunds: preview.reduce((sum, item) => sum + item.paidBookings, 0),
+        showtimes: preview,
+    };
+}
+
+async function cancelShowtimesAndRefund(showtimes, reason) {
+    let cancelledShowtimes = 0;
+    let cancelledBookings = 0;
+    let refundedBookings = 0;
+
+    for (const showtime of showtimes) {
+        showtime.status = 'cancelled';
+        await showtime.save();
+        cancelledShowtimes++;
+
+        const bookings = await Booking.find({
+            showtime: showtime._id,
+            status: { $in: ['pending', 'paid'] },
+        });
+        const bookingIds = bookings.map((booking) => booking._id);
+        const seatIds = bookings.flatMap((booking) => booking.seats);
+
+        await Seat.updateMany(
+            { _id: { $in: seatIds } },
+            { status: 'available', bookedBy: null }
+        );
+        await Booking.updateMany(
+            { _id: { $in: bookingIds } },
+            { status: 'cancelled' }
+        );
+        cancelledBookings += bookings.length;
+
+        const paidIds = bookings
+            .filter((booking) => booking.status === 'paid')
+            .map((booking) => booking._id);
+
+        if (paidIds.length > 0) {
+            // Update payments and bookings first (fast DB ops)
+            await Payment.updateMany(
+                { booking: { $in: paidIds }, status: 'success' },
+                {
+                    $set: {
+                        status: 'refunded',
+                        refundDate: new Date(),
+                        refundAmount: 0,
+                    },
+                }
+            );
+            await Booking.updateMany(
+                { _id: { $in: paidIds } },
+                { status: 'refunded' }
+            );
+            refundedBookings += paidIds.length;
+
+            // Send notification emails in parallel to avoid long blocking loops
+            const emailPromises = [];
+            for (const paidId of paidIds) {
+                const p = loadBookingContext(paidId)
+                    .then((bookingContext) => Promise.allSettled([
+                        sendShowtimeCancelledEmail(bookingContext, reason),
+                        sendRefundEmail(bookingContext, reason || 'Suất chiếu bị hủy'),
+                    ])).catch((e) => console.error('Failed to prepare/send emails for booking', paidId, e.message));
+                emailPromises.push(p);
+            }
+            // wait for emails to be scheduled/attempted but don't fail the whole flow if they error
+            await Promise.allSettled(emailPromises);
+        }
+    }
+
+    if (cancelledShowtimes > 0) {
+        notificationService.createNotification({
+            type: 'showtime_cancelled',
+            title: 'Đóng khẩn cấp / hủy suất chiếu',
+            message: `Đã hủy ${cancelledShowtimes} suất chiếu, hoàn ${refundedBookings} đơn`,
+            data: {
+                cancelledShowtimes,
+                refundedBookings,
+            },
+        });
+    }
+
+    return {
+        cancelledShowtimes,
+        cancelledBookings,
+        refundedBookings,
+    };
+}
+
+// Faster variant: perform DB updates (cancel showtimes, free seats, mark bookings/payments)
+// and return counts + list of paid booking ids. Email sending/refund notifications
+// will be executed asynchronously by the caller to avoid long HTTP request times.
+async function cancelShowtimesDbUpdates(showtimes, reason) {
+    let cancelledShowtimes = 0;
+    let cancelledBookings = 0;
+    let refundedBookings = 0;
+    const paidBookingIds = [];
+
+    for (const showtime of showtimes) {
+        showtime.status = 'cancelled';
+        await showtime.save();
+        cancelledShowtimes++;
+
+        const bookings = await Booking.find({
+            showtime: showtime._id,
+            status: { $in: ['pending', 'paid'] },
+        });
+        const bookingIds = bookings.map((b) => b._id);
+        const seatIds = bookings.flatMap((b) => b.seats);
+
+        await Seat.updateMany({ _id: { $in: seatIds } }, { status: 'available', bookedBy: null });
+        await Booking.updateMany({ _id: { $in: bookingIds } }, { status: 'cancelled' });
+        cancelledBookings += bookings.length;
+
+        const paidIds = bookings.filter((b) => b.status === 'paid').map((b) => b._id);
+        if (paidIds.length > 0) {
+            // mark payments/bookings refunded
+            await Payment.updateMany(
+                { booking: { $in: paidIds }, status: 'success' },
+                { $set: { status: 'refunded', refundDate: new Date(), refundAmount: 0 } }
+            );
+            await Booking.updateMany({ _id: { $in: paidIds } }, { status: 'refunded' });
+            refundedBookings += paidIds.length;
+            paidBookingIds.push(...paidIds.map((id) => id.toString()));
+        }
+    }
+
+    if (cancelledShowtimes > 0) {
+        notificationService.createNotification({
+            type: 'showtime_cancelled',
+            title: 'Đóng khẩn cấp / hủy suất chiếu',
+            message: `Đã hủy ${cancelledShowtimes} suất chiếu, hoàn ${refundedBookings} đơn`,
+            data: { cancelledShowtimes, refundedBookings },
+        });
+    }
+
+    return { cancelledShowtimes, cancelledBookings, refundedBookings, paidBookingIds };
+}
 
 router.get('/cinemas', async (req, res) => {
     try {
@@ -40,79 +235,177 @@ router.put('/cinemas/:id', protect, admin, async (req, res) => {
     }
 });
 
-// Preview: how many upcoming showtimes + bookings would be affected
-router.get('/emergency-close/:id/preview', protect, admin, async (req, res) => {
+router.patch('/cinemas/:id/status', protect, admin, async (req, res) => {
     try {
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        console.log(`[Emergency Close] cinemaId=${req.params.id} today=${today.toISOString()}`);
-        const showtimes = await Showtime.find({
-            cinema: req.params.id,
-            status: 'active',
-            date: { $gte: today },
-        }).populate('movie', 'title').populate('room', 'name').sort({ date: 1, startTime: 1 });
-        console.log(`[Emergency Close] found ${showtimes.length} showtimes`);
+        const { status } = req.body;
+        if (!['active', 'incident', 'inactive'].includes(status)) {
+            return res.status(400).json({ message: 'Invalid cinema status' });
+        }
 
-        const preview = await Promise.all(showtimes.map(async (st) => {
-            const bookings = await Booking.find({ showtime: st._id, status: { $in: ['pending', 'paid'] } });
-            return {
-                _id: st._id,
-                movieTitle: st.movie?.title || '—',
-                roomName: st.room?.name || '—',
-                date: st.date,
-                startTime: st.startTime,
-                totalBookings: bookings.length,
-                paidBookings: bookings.filter(b => b.status === 'paid').length,
-            };
-        }));
+        const cinema = await Cinema.findByIdAndUpdate(
+            req.params.id,
+            { status },
+            { new: true }
+        );
+        if (!cinema) return res.status(404).json({ message: 'Cinema not found' });
+
+        notificationService.createNotification({
+            type: 'cinema_status',
+            title: 'Cập nhật trạng thái rạp',
+            message: `${cinema.name} chuyển sang trạng thái ${status}`,
+            data: { cinemaId: cinema._id.toString(), status },
+        });
+
+        console.log('[admin] Cinema status change requested:', cinema._id.toString(), '->', status);
+        // Also update all rooms in this cinema to maintenance when cinema is not active,
+        // or restore them to active when cinema becomes active.
+        try {
+            const roomStatus = status === 'active' ? 'active' : 'maintenance';
+            await CinemaRoom.updateMany({ cinema: cinema._id }, { status: roomStatus });
+        } catch (err) {
+            console.error('Failed to update room statuses for cinema:', cinema._id, err.message);
+        }
+
+        res.json(cinema);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+router.post('/emergency-close/rooms/preview', protect, admin, async (req, res) => {
+    try {
+        await expireShowtimes();
+        const { cinemaId, roomIds = [] } = req.body || {};
+        if (!cinemaId) return res.status(400).json({ message: 'Cinema ID is required' });
+        if (!Array.isArray(roomIds) || roomIds.length === 0) {
+            return res.status(400).json({ message: 'Select at least one room' });
+        }
+
+        const showtimes = await Showtime.find({
+            cinema: cinemaId,
+            room: { $in: roomIds },
+            status: 'active',
+            date: { $gte: getTodayFloor() },
+        })
+            .populate('movie', 'title')
+            .populate('room', 'name')
+            .sort({ date: 1, startTime: 1 });
+
+        res.json(await buildEmergencyPreview(showtimes));
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+router.post('/emergency-close/rooms', protect, admin, async (req, res) => {
+    try {
+        await expireShowtimes();
+        const { cinemaId, roomIds = [] } = req.body || {};
+        console.log('[admin] Emergency close rooms request for cinema:', cinemaId, 'rooms:', roomIds);
+        if (!cinemaId) return res.status(400).json({ message: 'Cinema ID is required' });
+        if (!Array.isArray(roomIds) || roomIds.length === 0) {
+            return res.status(400).json({ message: 'Select at least one room' });
+        }
+
+        const showtimes = await Showtime.find({
+            cinema: cinemaId,
+            room: { $in: roomIds },
+            status: 'active',
+            date: { $gte: getTodayFloor() },
+        });
+
+        await Cinema.findByIdAndUpdate(cinemaId, { status: 'incident' });
+        console.log('[admin] Cinema marked incident:', cinemaId);
+
+        // Mark the selected rooms as maintenance so UI shows correct status immediately
+        try {
+            await CinemaRoom.updateMany({ _id: { $in: roomIds } }, { status: 'maintenance' });
+        } catch (err) {
+            console.error('Failed to set selected rooms to maintenance:', err.message);
+        }
+
+        // Do DB updates now and return quickly; process emails/refunds in background.
+        console.log('[admin] Performing DB updates for showtimes count:', showtimes.length);
+        const dbResult = await cancelShowtimesDbUpdates(showtimes, 'Phòng chiếu gặp sự cố khẩn cấp');
+
+        console.log('[admin] DB updates done, scheduling background email tasks for paid bookings:', dbResult.paidBookingIds.length);
+        // Fire-and-forget async email/refund notifications
+        (async () => {
+            try {
+                for (const paidId of dbResult.paidBookingIds) {
+                    try {
+                        const bookingContext = await loadBookingContext(paidId);
+                        await sendShowtimeCancelledEmail(bookingContext, 'Phòng chiếu gặp sự cố khẩn cấp');
+                        await sendRefundEmail(bookingContext, 'Phòng chiếu gặp sự cố khẩn cấp');
+                    } catch (e) {
+                        console.error('Failed to send emails for booking', paidId, e.message);
+                    }
+                }
+            } catch (e) {
+                console.error('Background refund/email task failed', e.message);
+            }
+        })();
 
         res.json({
-            totalShowtimes: preview.length,
-            totalBookings: preview.reduce((s, p) => s + p.totalBookings, 0),
-            totalRefunds: preview.reduce((s, p) => s + p.paidBookings, 0),
-            showtimes: preview,
+            message: 'Selected rooms emergency closed',
+            roomIds,
+            ...dbResult,
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
-// Execute: cancel all upcoming showtimes + bulk refund for a cinema
-router.post('/emergency-close/:id', protect, admin, async (req, res) => {
+router.get('/emergency-close/:id/preview', protect, admin, async (req, res) => {
     try {
-        const today = new Date(); today.setHours(0, 0, 0, 0);
+        await expireShowtimes();
         const showtimes = await Showtime.find({
             cinema: req.params.id,
             status: 'active',
-            date: { $gte: today },
+            date: { $gte: getTodayFloor() },
+        })
+            .populate('movie', 'title')
+            .populate('room', 'name')
+            .sort({ date: 1, startTime: 1 });
+
+        res.json(await buildEmergencyPreview(showtimes));
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+router.post('/emergency-close/:id', protect, admin, async (req, res) => {
+    try {
+        await expireShowtimes();
+        const showtimes = await Showtime.find({
+            cinema: req.params.id,
+            status: 'active',
+            date: { $gte: getTodayFloor() },
         });
 
-        let cancelledShowtimes = 0, cancelledBookings = 0, refundedBookings = 0;
+        await Cinema.findByIdAndUpdate(req.params.id, { status: 'incident' });
 
-        for (const st of showtimes) {
-            st.status = 'cancelled';
-            await st.save();
-            cancelledShowtimes++;
+        // DB updates first
+        const dbResult = await cancelShowtimesDbUpdates(showtimes, 'Rạp gặp sự cố khẩn cấp');
 
-            const bookings = await Booking.find({ showtime: st._id, status: { $in: ['pending', 'paid'] } });
-            const bookingIds = bookings.map(b => b._id);
-            const seatIds = bookings.flatMap(b => b.seats);
-
-            await Seat.updateMany({ _id: { $in: seatIds } }, { status: 'available', bookedBy: null });
-            await Booking.updateMany({ _id: { $in: bookingIds } }, { status: 'cancelled' });
-            cancelledBookings += bookings.length;
-
-            const paidIds = bookings.filter(b => b.status === 'paid').map(b => b._id);
-            if (paidIds.length > 0) {
-                await Payment.updateMany(
-                    { booking: { $in: paidIds }, status: 'success' },
-                    { $set: { status: 'refunded', refundDate: new Date() } }
-                );
-                await Booking.updateMany({ _id: { $in: paidIds } }, { status: 'refunded' });
-                refundedBookings += paidIds.length;
+        // background email/refund notifications
+        (async () => {
+            try {
+                for (const paidId of dbResult.paidBookingIds) {
+                    try {
+                        const bookingContext = await loadBookingContext(paidId);
+                        await sendShowtimeCancelledEmail(bookingContext, 'Rạp gặp sự cố khẩn cấp');
+                        await sendRefundEmail(bookingContext, 'Rạp gặp sự cố khẩn cấp');
+                    } catch (e) {
+                        console.error('Failed to send emails for booking', paidId, e.message);
+                    }
+                }
+            } catch (e) {
+                console.error('Background refund/email task failed', e.message);
             }
-        }
+        })();
 
-        res.json({ message: 'Cinema emergency closed', cancelledShowtimes, cancelledBookings, refundedBookings });
+        res.json({ message: 'Cinema emergency closed', ...dbResult });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -120,19 +413,21 @@ router.post('/emergency-close/:id', protect, admin, async (req, res) => {
 
 router.get('/rooms/:id/showtimes', protect, admin, async (req, res) => {
     try {
-        const today = new Date(); today.setHours(0, 0, 0, 0);
+        await expireShowtimes();
         const showtimes = await Showtime.find({
             room: req.params.id,
-            date: { $gte: today },
-            status: 'active',
-        }).populate('movie', 'title').sort({ date: 1, startTime: 1 });
+            date: { $gte: getTodayFloor() },
+            status: { $in: ['active', 'expired'] },
+        })
+            .populate('movie', 'title')
+            .sort({ date: 1, startTime: 1 });
         res.json(showtimes);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
-router.get('/cinemas/:cinemaId/rooms', async (req, res) => {
+router.get('/cinemas/:cinemaId/rooms', protect, admin, async (req, res) => {
     try {
         const rooms = await CinemaRoom.find({ cinema: req.params.cinemaId });
         res.json(rooms);
@@ -143,7 +438,12 @@ router.get('/cinemas/:cinemaId/rooms', async (req, res) => {
 
 router.post('/rooms', protect, admin, async (req, res) => {
     try {
-        const room = new CinemaRoom(req.body);
+        const payload = { ...req.body };
+        payload.totalSeats = Array.isArray(payload.seatMatrix) && payload.seatMatrix.length > 0
+            ? countSeatsFromMatrix(payload.seatMatrix)
+            : Number(payload.rows) * Number(payload.cols);
+
+        const room = new CinemaRoom(payload);
         await room.save();
         res.status(201).json(room);
     } catch (error) {
@@ -151,7 +451,6 @@ router.post('/rooms', protect, admin, async (req, res) => {
     }
 });
 
-// Update room seat matrix (admin configures seat types per room)
 router.put('/rooms/:id', protect, admin, async (req, res) => {
     try {
         const room = await CinemaRoom.findById(req.params.id);
@@ -164,7 +463,6 @@ router.put('/rooms/:id', protect, admin, async (req, res) => {
         if (roomType) room.roomType = roomType;
         if (status) room.status = status;
         if (seatMatrix !== undefined) {
-            // Recalculate totalSeats from matrix (exclude aisles)
             let count = 0;
             for (const row of seatMatrix) {
                 for (const cell of row) {
@@ -182,21 +480,31 @@ router.put('/rooms/:id', protect, admin, async (req, res) => {
     }
 });
 
-// Mark ticket as printed (admin scans/issues physical ticket)
 router.put('/bookings/:id/print', protect, admin, async (req, res) => {
     try {
         const booking = await Booking.findById(req.params.id);
         if (!booking) return res.status(404).json({ message: 'Booking not found' });
         if (booking.status !== 'paid') return res.status(400).json({ message: 'Only paid bookings can be printed' });
+
         booking.ticketStatus = 'printed';
         await booking.save();
+
+        notificationService.createNotification({
+            type: 'ticket_printed',
+            title: 'Vé đã được xác nhận',
+            message: `Đơn ${booking.bookingCode} đã được đánh dấu in vé`,
+            data: {
+                bookingId: booking._id.toString(),
+                bookingCode: booking.bookingCode,
+            },
+        });
+
         res.json({ message: 'Ticket marked as printed', booking });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
-// Lock/unlock individual seat (maintenance)
 router.put('/seats/:id/lock', protect, admin, async (req, res) => {
     try {
         const { isLocked } = req.body;
@@ -212,12 +520,17 @@ router.put('/seats/:id/lock', protect, admin, async (req, res) => {
     }
 });
 
-// ─── Booking Management ─────────────────────────────────────────────────────
-
 router.get('/bookings', protect, admin, async (req, res) => {
     try {
         const bookings = await Booking.find({})
-            .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }] })
+            .populate({
+                path: 'showtime',
+                populate: [
+                    { path: 'movie' },
+                    { path: 'cinema' },
+                    { path: 'room', select: 'name' },
+                ],
+            })
             .populate('user', 'name email phone')
             .populate('paymentId', 'method status')
             .sort({ createdAt: -1 });
@@ -227,7 +540,6 @@ router.get('/bookings', protect, admin, async (req, res) => {
     }
 });
 
-// Confirm cash payment (admin)
 router.put('/bookings/:id/confirm', protect, admin, async (req, res) => {
     try {
         const booking = await Booking.findById(req.params.id);
@@ -238,17 +550,30 @@ router.put('/bookings/:id/confirm', protect, admin, async (req, res) => {
         await booking.save();
 
         if (booking.paymentId) {
-            await Payment.findByIdAndUpdate(booking.paymentId, { status: 'success', paymentDate: new Date() });
+            await Payment.findByIdAndUpdate(booking.paymentId, {
+                status: 'success',
+                paymentDate: new Date(),
+            });
         }
         await Seat.updateMany({ _id: { $in: booking.seats } }, { status: 'booked' });
+
+        const bookingContext = await loadBookingContext(booking._id);
+        await sendPaymentSuccessEmail(bookingContext, 'cash');
+        notificationService.createNotification({
+            type: 'payment_paid',
+            title: 'Thanh toán tại quầy thành công',
+            message: `${bookingContext?.user?.name || 'Khách hàng'} đã thanh toán đơn ${bookingContext?.bookingCode}`,
+            data: {
+                bookingId: bookingContext?._id?.toString(),
+                bookingCode: bookingContext?.bookingCode,
+            },
+        });
 
         res.json({ message: 'Payment confirmed', booking });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
-
-// ─── User Management ────────────────────────────────────────────────────────
 
 router.get('/users', protect, admin, async (req, res) => {
     try {
@@ -277,7 +602,7 @@ router.delete('/users/:id', protect, admin, async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
-        if (user.role === 'admin') return res.status(400).json({ message: 'Không thể xóa tài khoản admin' });
+        if (user.role === 'admin') return res.status(400).json({ message: 'Khong the xoa tai khoan admin' });
         await user.deleteOne();
         res.json({ message: 'User deleted' });
     } catch (error) {
@@ -285,10 +610,9 @@ router.delete('/users/:id', protect, admin, async (req, res) => {
     }
 });
 
-// ─── Showtime Management ────────────────────────────────────────────────────
-
 router.get('/showtimes', protect, admin, async (req, res) => {
     try {
+        await expireShowtimes();
         const showtimes = await Showtime.find({})
             .populate('movie', 'title poster duration')
             .populate('cinema', 'name')
@@ -300,9 +624,36 @@ router.get('/showtimes', protect, admin, async (req, res) => {
     }
 });
 
-// ─── Reports & Statistics ───────────────────────────────────────────────────
+router.get('/notifications', protect, admin, async (req, res) => {
+    try {
+        const items = notificationService.listNotifications();
+        res.json({
+            items,
+            unreadCount: items.filter((item) => !item.read).length,
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
 
-// Revenue by period: day/month/quarter/year
+router.get('/notifications/stream', protect, admin, async (req, res) => {
+    const unsubscribe = notificationService.subscribe(res);
+    req.on('close', unsubscribe);
+});
+
+router.post('/notifications/read', protect, admin, async (req, res) => {
+    try {
+        const { ids = [] } = req.body || {};
+        const items = notificationService.markRead(ids);
+        res.json({
+            items,
+            unreadCount: items.filter((item) => !item.read).length,
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 router.get('/reports/revenue', protect, admin, async (req, res) => {
     try {
         const { startDate, endDate, groupBy = 'day' } = req.query;
@@ -338,19 +689,18 @@ router.get('/reports/revenue', protect, admin, async (req, res) => {
     }
 });
 
-// Occupancy rate
 router.get('/reports/occupancy', protect, admin, async (req, res) => {
     try {
         const showtimes = await Showtime.find({ status: 'active' }).populate('movie', 'title');
-        const occupancy = showtimes.map(st => ({
-            showtimeId: st._id,
-            movie: st.movie?.title,
-            date: st.date,
-            startTime: st.startTime,
-            occupied: st.totalSeats - st.availableSeats,
-            total: st.totalSeats,
-            percentage: st.totalSeats > 0
-                ? ((st.totalSeats - st.availableSeats) / st.totalSeats * 100).toFixed(1)
+        const occupancy = showtimes.map((showtime) => ({
+            showtimeId: showtime._id,
+            movie: showtime.movie?.title,
+            date: showtime.date,
+            startTime: showtime.startTime,
+            occupied: showtime.totalSeats - showtime.availableSeats,
+            total: showtime.totalSeats,
+            percentage: showtime.totalSeats > 0
+                ? ((showtime.totalSeats - showtime.availableSeats) / showtime.totalSeats * 100).toFixed(1)
                 : '0.0',
         }));
         res.json(occupancy);
@@ -359,7 +709,6 @@ router.get('/reports/occupancy', protect, admin, async (req, res) => {
     }
 });
 
-// Top movies by revenue & bookings
 router.get('/reports/top-movies', protect, admin, async (req, res) => {
     try {
         const topMovies = await Booking.aggregate([
@@ -378,7 +727,6 @@ router.get('/reports/top-movies', protect, admin, async (req, res) => {
     }
 });
 
-// Booking stats by status
 router.get('/reports/bookings', protect, admin, async (req, res) => {
     try {
         const stats = await Booking.aggregate([
@@ -390,7 +738,6 @@ router.get('/reports/bookings', protect, admin, async (req, res) => {
     }
 });
 
-// Refund stats
 router.get('/reports/refunds', protect, admin, async (req, res) => {
     try {
         const refunds = await Payment.aggregate([
@@ -403,7 +750,6 @@ router.get('/reports/refunds', protect, admin, async (req, res) => {
     }
 });
 
-// F&B / Combo revenue (doanh thu phụ riêng biệt)
 router.get('/reports/combo-revenue', protect, admin, async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
@@ -422,28 +768,27 @@ router.get('/reports/combo-revenue', protect, admin, async (req, res) => {
                     _id: '$extraItems.name',
                     totalQuantity: { $sum: '$extraItems.quantity' },
                     totalRevenue: { $sum: { $multiply: ['$extraItems.price', '$extraItems.quantity'] } },
-                }
+                },
             },
             { $sort: { totalRevenue: -1 } },
         ]);
 
-        const totalComboRevenue = result.reduce((s, r) => s + r.totalRevenue, 0);
+        const totalComboRevenue = result.reduce((sum, item) => sum + item.totalRevenue, 0);
         res.json({ items: result, totalComboRevenue });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
-// Phim theo suất (số suất chiếu + số booking mỗi phim theo ngày)
 router.get('/reports/movies-showtime', protect, admin, async (req, res) => {
     try {
         const { date } = req.query;
         const showtimeFilter = { status: 'active' };
         if (date) {
-            const d = new Date(date);
+            const currentDate = new Date(date);
             showtimeFilter.date = {
-                $gte: new Date(d.setHours(0, 0, 0, 0)),
-                $lt: new Date(d.setHours(23, 59, 59, 999)),
+                $gte: new Date(currentDate.setHours(0, 0, 0, 0)),
+                $lt: new Date(currentDate.setHours(23, 59, 59, 999)),
             };
         }
 
@@ -455,7 +800,7 @@ router.get('/reports/movies-showtime', protect, admin, async (req, res) => {
                     showtimeCount: { $sum: 1 },
                     totalSeats: { $sum: '$totalSeats' },
                     bookedSeats: { $sum: { $subtract: ['$totalSeats', '$availableSeats'] } },
-                }
+                },
             },
             { $lookup: { from: 'movies', localField: '_id', foreignField: '_id', as: 'movie' } },
             { $unwind: '$movie' },
@@ -469,7 +814,6 @@ router.get('/reports/movies-showtime', protect, admin, async (req, res) => {
     }
 });
 
-// Hot time slots
 router.get('/reports/timeslots', protect, admin, async (req, res) => {
     try {
         const data = await Booking.aggregate([

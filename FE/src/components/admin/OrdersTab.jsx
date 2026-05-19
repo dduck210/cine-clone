@@ -10,6 +10,7 @@ import {
   CheckCircle,
   Search,
   Filter,
+  Mail,
   ScanLine,
   Camera,
 } from "lucide-react";
@@ -116,6 +117,10 @@ export const OrderDetailModal = ({ order, onClose, onPrint }) => {
               <div>
                 <p className="text-slate-500">Số điện thoại:</p>
                 <p className="font-bold text-slate-800">{order.phone}</p>
+              </div>
+              <div>
+                <p className="text-slate-500">Email:</p>
+                <p className="font-bold text-slate-800 break-all">{order.customerEmail || "—"}</p>
               </div>
               <div>
                 <p className="text-slate-500">Thời gian giao dịch:</p>
@@ -317,6 +322,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
       !q ||
       o.orderId?.toLowerCase().includes(q) ||
       o.customerName?.toLowerCase().includes(q) ||
+      o.customerEmail?.toLowerCase().includes(q) ||
       o.movieTitle?.toLowerCase().includes(q) ||
       o.phone?.includes(q);
     const matchStatus = !filterStatus || o.status === filterStatus;
@@ -348,7 +354,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
             <input
               ref={searchRef}
               type="text"
-              placeholder={scanning ? "Dí máy quét vào QR code..." : "Tìm mã vé, khách hàng, phim..."}
+              placeholder={scanning ? "Dí máy quét vào QR code..." : "Tìm mã vé, khách hàng, email, phim..."}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onBlur={() => { if (scanning && !search) setScanning(false); }}
@@ -412,7 +418,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filteredOrders.length === 0 ? (
-              <tr><td colSpan="6" className="p-12 text-center text-slate-400 italic">
+              <tr><td colSpan="7" className="p-12 text-center text-slate-400 italic">
                 {search || filterStatus ? "Không tìm thấy đơn hàng phù hợp." : "Chưa có đơn hàng nào."}
               </td></tr>
             ) : filteredOrders.map((order, index) => (
@@ -426,6 +432,10 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
                 <td className="p-4">
                   <div className="font-medium text-slate-800">
                     {order.customerName}
+                  </div>
+                  <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                    <Mail size={12} className="text-slate-400" />
+                    <span className="truncate">{order.customerEmail || "—"}</span>
                   </div>
                   <div className="text-xs text-slate-500">{order.phone}</div>
                 </td>

@@ -4,6 +4,8 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/database');
 const { startExpireBookingsJob } = require('./jobs/expire-bookings');
+const { startExpireShowtimesJob } = require('./jobs/expire-showtimes');
+const { startUpcomingReminderJob } = require('./jobs/send-upcoming-reminders');
 
 dotenv.config();
 connectDB();
@@ -32,4 +34,6 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     startExpireBookingsJob();
+    startExpireShowtimesJob();
+    startUpcomingReminderJob();
 });

@@ -18,7 +18,7 @@ const showtimeSchema = new mongoose.Schema({
     dayType: { type: String, enum: ['weekday', 'weekend', 'holiday'], required: true },
     totalSeats: { type: Number, required: true },
     availableSeats: { type: Number, required: true },
-    status: { type: String, enum: ['active', 'cancelled'], default: 'active' },
+    status: { type: String, enum: ['active', 'expired', 'cancelled'], default: 'active' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Showtime', showtimeSchema);

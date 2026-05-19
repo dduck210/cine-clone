@@ -8,10 +8,15 @@ const Booking = require('../models/Booking');
 const Payment = require('../models/Payment');
 const { protect, admin } = require('../middleware/auth');
 const { getTimeSlot, getDayTypeFromDate, calcEndTime, calcPriceConfig } = require('../utils/pricing');
+const { expireShowtimes } = require('../jobs/expire-showtimes');
+const { isShowtimeExpired } = require('../utils/showtime-status');
+const { sendRefundEmail, sendShowtimeCancelledEmail } = require('../services/email-service');
+const notificationService = require('../services/notification-service');
 
 // Get all showtimes with filters
 router.get('/', async (req, res) => {
     try {
+        await expireShowtimes();
         const { movieId, cinemaId, date } = req.query;
         const filter = { status: 'active' };
         if (movieId) filter.movie = movieId;
@@ -27,7 +32,7 @@ router.get('/', async (req, res) => {
             .populate('cinema')
             .populate('room')
             .sort({ date: 1, startTime: 1 });
-        res.json(showtimes);
+        res.json(showtimes.filter((showtime) => !isShowtimeExpired(showtime)));
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -36,11 +41,19 @@ router.get('/', async (req, res) => {
 // Get showtime by ID with seats
 router.get('/:id', async (req, res) => {
     try {
+        await expireShowtimes();
         const showtime = await Showtime.findById(req.params.id)
             .populate('movie')
             .populate('cinema')
             .populate('room');
         if (!showtime) return res.status(404).json({ message: 'Showtime not found' });
+        if (showtime.status === 'expired' || isShowtimeExpired(showtime)) {
+            if (showtime.status === 'active') {
+                showtime.status = 'expired';
+                await showtime.save();
+            }
+            return res.status(410).json({ message: 'Showtime has expired' });
+        }
 
         const seats = await Seat.find({ showtime: req.params.id }).sort({ row: 1, col: 1 });
         res.json({ data: showtime, seats });
@@ -225,12 +238,45 @@ router.put('/:id/cancel', protect, admin, async (req, res) => {
         // Mark confirmed payments as refunded
         const confirmedBookingIds = bookings.filter(b => b.status === 'paid').map(b => b._id);
         if (confirmedBookingIds.length > 0) {
-            await Payment.updateMany(
-                { booking: { $in: confirmedBookingIds }, status: 'success' },
-                { $set: { status: 'refunded', refundDate: new Date() } }
-            );
+            for (const booking of bookings.filter((item) => item.status === 'paid')) {
+                await Payment.updateMany(
+                    { booking: booking._id, status: 'success' },
+                    {
+                        $set: {
+                            status: 'refunded',
+                            refundDate: new Date(),
+                            refundAmount: booking.totalPrice,
+                        },
+                    }
+                );
+            }
             await Booking.updateMany({ _id: { $in: confirmedBookingIds } }, { status: 'refunded' });
+
+            for (const bookingId of confirmedBookingIds) {
+                const bookingContext = await Booking.findById(bookingId)
+                    .populate('user', 'name email phone')
+                    .populate({
+                        path: 'showtime',
+                        populate: [
+                            { path: 'movie', select: 'title poster' },
+                            { path: 'cinema', select: 'name address' },
+                            { path: 'room', select: 'name' },
+                        ],
+                    });
+                await sendShowtimeCancelledEmail(bookingContext, 'Suất chiếu bị hủy bởi quản trị viên');
+                await sendRefundEmail(bookingContext, 'Suất chiếu bị hủy bởi quản trị viên');
+            }
         }
+
+        notificationService.createNotification({
+            type: 'showtime_cancelled',
+            title: 'Hủy suất chiếu',
+            message: `Suất chiếu ${showtime._id} đã bị hủy, hoàn ${confirmedBookingIds.length} đơn`,
+            data: {
+                showtimeId: showtime._id.toString(),
+                refundedBookings: confirmedBookingIds.length,
+            },
+        });
 
         res.json({
             message: 'Showtime cancelled',

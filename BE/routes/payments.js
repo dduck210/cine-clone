@@ -4,6 +4,22 @@ const Payment = require('../models/Payment');
 const Booking = require('../models/Booking');
 const Seat = require('../models/Seat');
 const { protect } = require('../middleware/auth');
+const { sendPaymentSuccessEmail, sendRefundEmail } = require('../services/email-service');
+const notificationService = require('../services/notification-service');
+
+async function getBookingContext(bookingId) {
+    return Booking.findById(bookingId)
+        .populate('user', 'name email phone')
+        .populate({
+            path: 'showtime',
+            populate: [
+                { path: 'movie', select: 'title poster' },
+                { path: 'cinema', select: 'name address' },
+                { path: 'room', select: 'name' },
+            ],
+        })
+        .populate('paymentId', 'method status');
+}
 
 // Create payment
 router.post('/', protect, async (req, res) => {
@@ -34,6 +50,20 @@ router.post('/', protect, async (req, res) => {
             await Seat.updateMany({ _id: { $in: booking.seats } }, { status: 'booked' });
         }
         await booking.save();
+
+        if (!isCash) {
+            const bookingContext = await getBookingContext(booking._id);
+            await sendPaymentSuccessEmail(bookingContext, method);
+            notificationService.createNotification({
+                type: 'payment_paid',
+                title: 'Thanh toán thành công',
+                message: `${bookingContext?.user?.name || 'Khách hàng'} vừa thanh toán đơn ${bookingContext?.bookingCode}`,
+                data: {
+                    bookingId: bookingContext?._id?.toString(),
+                    bookingCode: bookingContext?.bookingCode,
+                },
+            });
+        }
 
         res.status(201).json(payment);
     } catch (error) {
@@ -78,6 +108,18 @@ router.post('/:id/refund', protect, async (req, res) => {
             { _id: { $in: booking.seats } },
             { status: 'available' }
         );
+
+        const bookingContext = await getBookingContext(booking._id);
+        await sendRefundEmail(bookingContext, 'Yêu cầu hoàn tiền đã được xác nhận');
+        notificationService.createNotification({
+            type: 'refund',
+            title: 'Đơn đã hoàn tiền',
+            message: `Đơn ${bookingContext?.bookingCode} đã được hoàn tiền`,
+            data: {
+                bookingId: bookingContext?._id?.toString(),
+                bookingCode: bookingContext?.bookingCode,
+            },
+        });
 
         res.json({ message: 'Payment refunded', payment });
     } catch (error) {

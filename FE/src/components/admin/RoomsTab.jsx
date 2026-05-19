@@ -358,17 +358,46 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
   );
 };
 
-const EmergencyCloseModal = ({ cinemaId, cinemaName, onClose, onDone }) => {
+const CINEMA_STATUS_META = {
+  active: {
+    label: "Đang hoạt động",
+    badge: "bg-emerald-50 text-emerald-600 border-emerald-200",
+    description: "Rạp đang hoạt động bình thường.",
+  },
+  incident: {
+    label: "Sự cố",
+    badge: "bg-amber-50 text-amber-700 border-amber-200",
+    description: "Rạp đang có sự cố cần xử lý.",
+  },
+  inactive: {
+    label: "Tạm ngưng",
+    badge: "bg-slate-100 text-slate-600 border-slate-200",
+    description: "Rạp đang tạm ngưng khai thác.",
+  },
+};
+
+const EmergencyCloseModal = ({ cinemaId, cinemaName, selectedRooms, onClose, onDone }) => {
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [confirmed, setConfirmed] = useState(false);
   const [closing, setClosing] = useState(false);
+  const roomIds = selectedRooms.map((room) => room._id);
 
   useEffect(() => {
+    if (!cinemaId || roomIds.length === 0) {
+      setPreview(null);
+      setLoading(false);
+      setFetchError("Chưa chọn phòng để đóng khẩn cấp");
+      return;
+    }
+
     setLoading(true);
     setFetchError(null);
-    axiosInstance.get(`/admin/emergency-close/${cinemaId}/preview`)
+    axiosInstance.post("/admin/emergency-close/rooms/preview", {
+      cinemaId,
+      roomIds,
+    })
       .then((res) => setPreview(res.data))
       .catch((err) => {
         const msg = err.response?.data?.message || err.message || 'Lỗi kết nối';
@@ -376,12 +405,15 @@ const EmergencyCloseModal = ({ cinemaId, cinemaName, onClose, onDone }) => {
         toast.error(`Không tải được dữ liệu: ${msg}`);
       })
       .finally(() => setLoading(false));
-  }, [cinemaId]);
+  }, [cinemaId, roomIds]);
 
   const handleClose = async () => {
     setClosing(true);
     try {
-      const res = await axiosInstance.post(`/admin/emergency-close/${cinemaId}`);
+      const res = await axiosInstance.post("/admin/emergency-close/rooms", {
+        cinemaId,
+        roomIds,
+      });
       toast.success(`Đã hủy ${res.data.cancelledShowtimes} suất · Hoàn tiền ${res.data.refundedBookings} đơn`);
       onDone();
       onClose();
@@ -402,7 +434,7 @@ const EmergencyCloseModal = ({ cinemaId, cinemaName, onClose, onDone }) => {
             <Zap size={20} className="text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-black text-white text-base">Đóng rạp khẩn cấp</h3>
+            <h3 className="font-black text-white text-base">Đóng phòng khẩn cấp</h3>
             <p className="text-red-200 text-xs font-medium truncate">{cinemaName}</p>
           </div>
           <button onClick={onClose} className="p-1.5 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-all">
@@ -420,7 +452,14 @@ const EmergencyCloseModal = ({ cinemaId, cinemaName, onClose, onDone }) => {
               <p className="text-red-700 font-bold text-sm mb-1">Không thể tải dữ liệu</p>
               <p className="text-red-500 text-xs font-mono">{fetchError}</p>
               <button
-                onClick={() => { setLoading(true); setFetchError(null); axiosInstance.get(`/admin/emergency-close/${cinemaId}/preview`).then((r) => setPreview(r.data)).catch((e) => setFetchError(e.response?.data?.message || e.message)).finally(() => setLoading(false)); }}
+                onClick={() => {
+                  setLoading(true);
+                  setFetchError(null);
+                  axiosInstance.post("/admin/emergency-close/rooms/preview", {
+                    cinemaId,
+                    roomIds,
+                  }).then((r) => setPreview(r.data)).catch((e) => setFetchError(e.response?.data?.message || e.message)).finally(() => setLoading(false));
+                }}
                 className="mt-3 px-4 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700"
               >
                 Thử lại
@@ -428,6 +467,17 @@ const EmergencyCloseModal = ({ cinemaId, cinemaName, onClose, onDone }) => {
             </div>
           ) : (
             <>
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Phòng được chọn</p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedRooms.map((room) => (
+                    <span key={room._id} className="px-2.5 py-1 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-700">
+                      {room.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
               {/* Impact summary */}
               <div className="grid grid-cols-3 gap-3">
                 {[
@@ -469,14 +519,14 @@ const EmergencyCloseModal = ({ cinemaId, cinemaName, onClose, onDone }) => {
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
                 <AlertTriangle size={18} className="text-amber-500 shrink-0 mt-0.5" />
                 <p className="text-sm text-amber-800 font-medium leading-relaxed">
-                  Thao tác này <strong>không thể hoàn tác</strong>. Tất cả suất chiếu sắp tới sẽ bị hủy và các đơn đã thanh toán sẽ được hoàn tiền tự động.
+                  Thao tác này <strong>không thể hoàn tác</strong>. Tất cả suất chiếu sắp tới trong các phòng đã chọn sẽ bị hủy và các đơn đã thanh toán sẽ được hoàn tiền tự động.
                 </p>
               </div>
 
               <label className="flex items-center gap-3 cursor-pointer select-none">
                 <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)}
                   className="w-4 h-4 accent-red-600 cursor-pointer" />
-                <span className="text-sm font-semibold text-slate-700">Tôi hiểu và xác nhận đóng rạp khẩn cấp</span>
+                <span className="text-sm font-semibold text-slate-700">Tôi hiểu và xác nhận đóng khẩn cấp các phòng đã chọn</span>
               </label>
             </>
           )}
@@ -491,7 +541,7 @@ const EmergencyCloseModal = ({ cinemaId, cinemaName, onClose, onDone }) => {
             disabled={!confirmed || closing || loading || !!fetchError || preview?.totalShowtimes === 0}
             className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm flex items-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-red-200"
           >
-            {closing ? <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" /> Đang xử lý...</> : <><Zap size={16} /> Xác nhận đóng rạp</>}
+            {closing ? <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" /> Đang xử lý...</> : <><Zap size={16} /> Xác nhận đóng phòng</>}
           </button>
         </div>
       </div>
@@ -504,10 +554,15 @@ export const RoomsManager = ({ cinemas }) => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedCinema, setSelectedCinema] = useState("");
+  const [cinemaStatus, setCinemaStatus] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editRoom, setEditRoom] = useState(null);
   const [detailRoom, setDetailRoom] = useState(null);
   const [showEmergency, setShowEmergency] = useState(false);
+  const [selectedRoomIds, setSelectedRoomIds] = useState([]);
+
+  const selectedCinemaData = cinemas.find((cinema) => cinema._id === selectedCinema) || null;
+  const visibleSelectedRooms = rooms.filter((room) => selectedRoomIds.includes(room._id));
 
   const loadRooms = async (cinemaId) => {
     if (!cinemaId) { setRooms([]); return; }
@@ -515,6 +570,7 @@ export const RoomsManager = ({ cinemas }) => {
     try {
       const res = await axiosInstance.get(`/admin/cinemas/${cinemaId}/rooms`);
       setRooms(res.data);
+      setSelectedRoomIds((prev) => prev.filter((id) => res.data.some((room) => room._id === id)));
     } catch {
       setRooms([]);
     } finally {
@@ -523,6 +579,11 @@ export const RoomsManager = ({ cinemas }) => {
   };
 
   useEffect(() => { loadRooms(selectedCinema); }, [selectedCinema]);
+
+  useEffect(() => {
+    setCinemaStatus(selectedCinemaData?.status || "");
+    setSelectedRoomIds([]);
+  }, [selectedCinemaData?._id, selectedCinemaData?.status]);
 
   const handleOpenEdit = (room) => {
     setEditRoom(room);
@@ -534,6 +595,34 @@ export const RoomsManager = ({ cinemas }) => {
     setShowModal(true);
   };
 
+  const toggleRoomSelection = (roomId) => {
+    setSelectedRoomIds((prev) => (
+      prev.includes(roomId)
+        ? prev.filter((id) => id !== roomId)
+        : [...prev, roomId]
+    ));
+  };
+
+  const toggleSelectAllRooms = () => {
+    if (selectedRoomIds.length === rooms.length) {
+      setSelectedRoomIds([]);
+      return;
+    }
+    setSelectedRoomIds(rooms.map((room) => room._id));
+  };
+
+  const handleCinemaStatusChange = async (status) => {
+    if (!selectedCinema || status === cinemaStatus) return;
+
+    try {
+      await axiosInstance.patch(`/admin/cinemas/${selectedCinema}/status`, { status });
+      setCinemaStatus(status);
+      toast.success("Đã cập nhật trạng thái rạp");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Không thể cập nhật trạng thái rạp");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
@@ -542,10 +631,10 @@ export const RoomsManager = ({ cinemas }) => {
           <p className="text-sm text-slate-500">Cấu hình ma trận ghế và loại ghế cho từng phòng</p>
         </div>
         <div className="flex gap-2">
-          {selectedCinema && (
+          {selectedCinema && selectedRoomIds.length > 0 && (
             <button onClick={() => setShowEmergency(true)}
               className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-all shadow-md shadow-amber-200 shrink-0 text-sm">
-              <Zap size={16} /> Sự cố rạp
+              <Zap size={16} /> Đóng {selectedRoomIds.length} phòng
             </button>
           )}
           <button onClick={handleOpenCreate}
@@ -564,6 +653,52 @@ export const RoomsManager = ({ cinemas }) => {
         </select>
       </div>
 
+      {selectedCinemaData && (
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Trạng thái rạp</p>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-slate-800">{selectedCinemaData.name}</h3>
+                <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold border ${(CINEMA_STATUS_META[cinemaStatus] || CINEMA_STATUS_META.active).badge}`}>
+                  {(CINEMA_STATUS_META[cinemaStatus] || CINEMA_STATUS_META.active).label}
+                </span>
+              </div>
+              <p className="text-sm text-slate-500 mt-1">
+                {(CINEMA_STATUS_META[cinemaStatus] || CINEMA_STATUS_META.active).description}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(CINEMA_STATUS_META).map(([value, meta]) => (
+                <button
+                  key={value}
+                  onClick={() => handleCinemaStatusChange(value)}
+                  className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${
+                    cinemaStatus === value
+                      ? meta.badge
+                      : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                  }`}
+                >
+                  {meta.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold text-slate-700">Đóng khẩn cấp theo phòng</p>
+              <p className="text-xs text-slate-500 mt-1">
+                Chọn một hoặc nhiều phòng để preview các suất chiếu bị ảnh hưởng trước khi hủy.
+              </p>
+            </div>
+            <div className="text-sm font-medium text-slate-600">
+              {selectedRoomIds.length > 0 ? `Đã chọn ${selectedRoomIds.length} phòng` : "Chưa chọn phòng nào"}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         {!selectedCinema ? (
           <div className="p-12 text-center text-slate-400 italic">Chọn rạp để xem danh sách phòng</div>
@@ -576,6 +711,14 @@ export const RoomsManager = ({ cinemas }) => {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-bold">
+                  <th className="p-4 pl-6 w-14">
+                    <input
+                      type="checkbox"
+                      checked={rooms.length > 0 && selectedRoomIds.length === rooms.length}
+                      onChange={toggleSelectAllRooms}
+                      className="w-4 h-4 accent-red-600 cursor-pointer"
+                    />
+                  </th>
                   <th className="p-4 pl-6">Tên phòng</th>
                   <th className="p-4">Kích thước</th>
                   <th className="p-4">Tổng ghế</th>
@@ -598,6 +741,14 @@ export const RoomsManager = ({ cinemas }) => {
                   }
                   return (
                     <tr key={room._id} className="hover:bg-slate-50/80 transition-colors cursor-pointer" onClick={() => setDetailRoom(room)}>
+                      <td className="p-4 pl-6" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedRoomIds.includes(room._id)}
+                          onChange={() => toggleRoomSelection(room._id)}
+                          className="w-4 h-4 accent-red-600 cursor-pointer"
+                        />
+                      </td>
                       <td className="p-4 pl-6 font-bold text-slate-800">{room.name}</td>
                       <td className="p-4 text-sm text-slate-600">{room.rows} hàng × {room.cols} cột</td>
                       <td className="p-4 font-bold text-slate-700">{room.totalSeats} ghế</td>
@@ -664,9 +815,14 @@ export const RoomsManager = ({ cinemas }) => {
       {showEmergency && selectedCinema && (
         <EmergencyCloseModal
           cinemaId={selectedCinema}
-          cinemaName={cinemas.find((c) => c._id === selectedCinema)?.name || "Rạp"}
+          cinemaName={selectedCinemaData?.name || "Rạp"}
+          selectedRooms={visibleSelectedRooms}
           onClose={() => setShowEmergency(false)}
-          onDone={() => loadRooms(selectedCinema)}
+          onDone={() => {
+            setCinemaStatus("incident");
+            setSelectedRoomIds([]);
+            loadRooms(selectedCinema);
+          }}
         />
       )}
     </div>

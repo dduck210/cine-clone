@@ -8,7 +8,7 @@ const cinemaSchema = new mongoose.Schema({
     email: { type: String },
     city: { type: String },
     totalRooms: { type: Number, default: 0 },
-    status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+    status: { type: String, enum: ['active', 'incident', 'inactive'], default: 'active' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Cinema', cinemaSchema);

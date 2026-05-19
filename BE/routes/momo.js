@@ -5,6 +5,8 @@ const Booking = require('../models/Booking');
 const Payment = require('../models/Payment');
 const Seat = require('../models/Seat');
 const { protect } = require('../middleware/auth');
+const { sendPaymentSuccessEmail } = require('../services/email-service');
+const notificationService = require('../services/notification-service');
 
 const PARTNER_CODE = process.env.MOMO_PARTNER_CODE || 'MOMO';
 const ACCESS_KEY   = process.env.MOMO_ACCESS_KEY   || 'F8BBA842ECF85';
@@ -154,6 +156,29 @@ async function processSuccessfulPayment(bookingId, transactionId, amount) {
     await booking.save();
 
     await Seat.updateMany({ _id: { $in: booking.seats } }, { status: 'booked' });
+
+    const bookingContext = await Booking.findById(bookingId)
+        .populate('user', 'name email phone')
+        .populate({
+            path: 'showtime',
+            populate: [
+                { path: 'movie', select: 'title poster' },
+                { path: 'cinema', select: 'name address' },
+                { path: 'room', select: 'name' },
+            ],
+        })
+        .populate('paymentId', 'method status');
+
+    await sendPaymentSuccessEmail(bookingContext, 'momo');
+    notificationService.createNotification({
+        type: 'payment_paid',
+        title: 'Thanh toán MoMo thành công',
+        message: `${bookingContext?.user?.name || 'Khách hàng'} vừa thanh toán đơn ${bookingContext?.bookingCode}`,
+        data: {
+            bookingId: bookingContext?._id?.toString(),
+            bookingCode: bookingContext?.bookingCode,
+        },
+    });
 }
 
 module.exports = router;

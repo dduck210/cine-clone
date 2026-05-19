@@ -28,6 +28,23 @@ const ErrorMsg = ({ msg }) => (
 
 const DAY_TYPE_LABEL = { weekday: "Ngày thường", weekend: "Cuối tuần", holiday: "Ngày lễ" };
 const TIME_SLOT_LABEL = { morning: "Buổi sáng", afternoon: "Buổi chiều", evening: "Buổi tối", night: "Buổi đêm" };
+const SHOWTIME_STATUS_META = {
+  active: {
+    label: "Đang chiếu",
+    badge: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    dot: "bg-emerald-500 animate-pulse",
+  },
+  expired: {
+    label: "Đã hết hạn",
+    badge: "bg-slate-100 text-slate-600 border-slate-200",
+    dot: "bg-slate-400",
+  },
+  cancelled: {
+    label: "Đã hủy",
+    badge: "bg-red-50 text-red-500 border-red-100",
+    dot: "bg-red-400",
+  },
+};
 
 const ShowtimeDetailModal = ({ showtime: st, onClose }) => (
   <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
@@ -103,9 +120,9 @@ const ShowtimeDetailModal = ({ showtime: st, onClose }) => (
           </div>
           <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Trạng thái</p>
-            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${st.status === "active" ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-red-50 text-red-500 border-red-100"}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${st.status === "active" ? "bg-emerald-500 animate-pulse" : "bg-red-400"}`} />
-              {st.status === "active" ? "Đang chiếu" : "Đã hủy"}
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${(SHOWTIME_STATUS_META[st.status] || SHOWTIME_STATUS_META.cancelled).badge}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${(SHOWTIME_STATUS_META[st.status] || SHOWTIME_STATUS_META.cancelled).dot}`} />
+              {(SHOWTIME_STATUS_META[st.status] || SHOWTIME_STATUS_META.cancelled).label}
             </span>
           </div>
         </div>
@@ -391,7 +408,10 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
     return movieOk && cinemaOk && statusOk;
   });
 
-  const cancelledCount = showtimes.filter(st => st.status === "cancelled").length;
+  const statusCounts = showtimes.reduce((acc, st) => {
+    acc[st.status] = (acc[st.status] || 0) + 1;
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-6">
@@ -413,8 +433,9 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
         {/* Status toggle */}
         <div className="flex items-center gap-2">
           {[
-            { value: "active", label: "Đang chiếu", cls: "bg-emerald-50 text-emerald-600 border-emerald-200" },
-            { value: "cancelled", label: `Đã hủy${cancelledCount > 0 ? ` (${cancelledCount})` : ""}`, cls: "bg-red-50 text-red-500 border-red-200" },
+            { value: "active", label: `Đang chiếu${statusCounts.active ? ` (${statusCounts.active})` : ""}`, cls: "bg-emerald-50 text-emerald-600 border-emerald-200" },
+            { value: "expired", label: `Đã hết hạn${statusCounts.expired ? ` (${statusCounts.expired})` : ""}`, cls: "bg-slate-100 text-slate-600 border-slate-200" },
+            { value: "cancelled", label: `Đã hủy${statusCounts.cancelled ? ` (${statusCounts.cancelled})` : ""}`, cls: "bg-red-50 text-red-500 border-red-200" },
             { value: "", label: "Tất cả", cls: "bg-slate-100 text-slate-600 border-slate-200" },
           ].map((opt) => (
             <button
@@ -505,9 +526,9 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
                         {st.availableSeats ?? "—"} / {st.totalSeats ?? "—"}
                       </td>
                       <td className="p-4 text-center">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${st.status === "active" ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-red-50 text-red-500 border-red-100"}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${st.status === "active" ? "bg-emerald-500 animate-pulse" : "bg-red-400"}`}></span>
-                          {st.status === "active" ? "Đang chiếu" : "Đã hủy"}
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${(SHOWTIME_STATUS_META[st.status] || SHOWTIME_STATUS_META.cancelled).badge}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${(SHOWTIME_STATUS_META[st.status] || SHOWTIME_STATUS_META.cancelled).dot}`}></span>
+                          {(SHOWTIME_STATUS_META[st.status] || SHOWTIME_STATUS_META.cancelled).label}
                         </span>
                       </td>
                       <td className="p-4 pr-6 text-right" onClick={(e) => e.stopPropagation()}>

@@ -12,6 +12,7 @@ import {
   Trash2,
   Star,
   PlayCircle,
+  Search,
 } from "lucide-react";
 
 export const ErrorMsg = ({ msg }) => (
@@ -329,7 +330,9 @@ export const MoviesManager = ({
   handleEdit,
   handleDeleteClick,
 }) => {
+  const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [filterGenre, setFilterGenre] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [detailMovie, setDetailMovie] = useState(null);
   const filterRef = useRef(null);
@@ -343,9 +346,27 @@ export const MoviesManager = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredMovies = filterStatus
-    ? movies.filter((m) => m.status === filterStatus)
-    : movies;
+  const genreOptions = Array.from(new Set(
+    movies.flatMap((movie) => (
+      Array.isArray(movie.genre)
+        ? movie.genre.map((genre) => (typeof genre === "object" ? genre.name : genre))
+        : movie.genre
+          ? [movie.genre]
+          : []
+    )).filter(Boolean)
+  )).sort((a, b) => a.localeCompare(b));
+
+  const filteredMovies = movies.filter((movie) => {
+    const matchesStatus = !filterStatus || movie.status === filterStatus;
+    const genreNames = Array.isArray(movie.genre)
+      ? movie.genre.map((genre) => (typeof genre === "object" ? genre.name : genre))
+      : movie.genre
+        ? [movie.genre]
+        : [];
+    const matchesGenre = !filterGenre || genreNames.includes(filterGenre);
+    const matchesSearch = !search.trim() || movie.title?.toLowerCase().includes(search.trim().toLowerCase());
+    return matchesStatus && matchesGenre && matchesSearch;
+  });
 
   const filterOptions = [
     { value: "", label: "Tất cả" },
@@ -366,6 +387,28 @@ export const MoviesManager = ({
         </p>
       </div>
       <div className="flex gap-2 w-full sm:w-auto">
+        <div className="relative flex-1 sm:w-64">
+          <Search size={18} className="absolute left-3 top-3 text-slate-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tìm theo tên phim..."
+            className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#dc2626]"
+          />
+        </div>
+        <div className="relative hidden sm:block">
+          <select
+            value={filterGenre}
+            onChange={(e) => setFilterGenre(e.target.value)}
+            className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-9 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#dc2626] appearance-none"
+          >
+            <option value="">Tất cả thể loại</option>
+            {genreOptions.map((genre) => (
+              <option key={genre} value={genre}>{genre}</option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-3 top-3 text-slate-400 pointer-events-none" size={16} />
+        </div>
         <div className="relative" ref={filterRef}>
           <button
             onClick={() => setShowFilter((v) => !v)}

@@ -106,9 +106,10 @@ const BookingPage = () => {
     return () => window.removeEventListener("resize", recalcScale);
   }, [recalcScale]);
   const [seatMap, setSeatMap] = useState({});
-  const [loadingSeats, setLoadingSeats] = useState(true);
+  const [loadingSeats, setLoadingSeats] = useState(() => !!showtimeId);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [gapError, setGapError] = useState("");
+  const [fallbackShowDate] = useState(() => new Date());
 
   const [secondsLeft, setSecondsLeft] = useState(HOLD_SECONDS);
   const [timerStarted, setTimerStarted] = useState(false);
@@ -116,7 +117,7 @@ const BookingPage = () => {
   const [combos, setCombos] = useState(COMBOS.map((c) => ({ ...c, quantity: 0 })));
 
   useEffect(() => {
-    if (!showtimeId) { setLoadingSeats(false); return; }
+    if (!showtimeId) return;
     axiosInstance.get(`/showtimes/${showtimeId}`)
       .then((res) => {
         setShowtimeData(res.data.data);
@@ -126,13 +127,15 @@ const BookingPage = () => {
         for (const s of seatList) map[s.seatNumber] = s;
         setSeatMap(map);
       })
-      .catch(() => setSeats([]))
+      .catch((error) => {
+        setSeats([]);
+        if (error?.response?.status === 410) {
+          window.alert("Suất chiếu này đã hết hạn hoặc không còn khả dụng. Vui lòng chọn suất khác.");
+          navigate(`/movie/${id}`);
+        }
+      })
       .finally(() => setLoadingSeats(false));
-  }, [showtimeId]);
-
-  useEffect(() => {
-    if (selectedSeats.length > 0 && !timerStarted) setTimerStarted(true);
-  }, [selectedSeats, timerStarted]);
+  }, [showtimeId, navigate, id]);
 
   useEffect(() => {
     if (!timerStarted) return;
@@ -146,16 +149,20 @@ const BookingPage = () => {
   const updateCombo = (comboId, delta) =>
     setCombos(combos.map((c) => (c.id === comboId ? { ...c, quantity: Math.max(0, c.quantity + delta) } : c)));
 
-  const handleSeatClick = useCallback((seatNum) => {
+  const handleSeatClick = (seatNum) => {
     const seat = seatMap[seatNum];
     if (!seat || seat.status === "reserved" || seat.status === "booked" || seat.isLocked) return;
     const error = checkGapViolation(seatMap, seats, selectedSeats, seatNum);
     if (error) { setGapError(error); setTimeout(() => setGapError(""), 3000); return; }
     setGapError("");
-    setSelectedSeats((prev) => prev.includes(seatNum) ? prev.filter((s) => s !== seatNum) : [...prev, seatNum]);
-  }, [seatMap, seats, selectedSeats]);
+    setSelectedSeats((prev) => {
+      const next = prev.includes(seatNum) ? prev.filter((s) => s !== seatNum) : [...prev, seatNum];
+      if (next.length > 0 && !timerStarted) setTimerStarted(true);
+      return next;
+    });
+  };
 
-  const handleCoupleSeatClick = useCallback((seatNumA, seatNumB) => {
+  const handleCoupleSeatClick = (seatNumA, seatNumB) => {
     const seatA = seatMap[seatNumA]; const seatB = seatMap[seatNumB];
     if (!seatA || !seatB) return;
     const bothSelected = selectedSeats.includes(seatNumA) && selectedSeats.includes(seatNumB);
@@ -163,9 +170,15 @@ const BookingPage = () => {
     if (bothSelected) {
       setSelectedSeats((prev) => prev.filter((s) => s !== seatNumA && s !== seatNumB));
     } else {
-      setSelectedSeats((prev) => { const next = [...prev]; if (!next.includes(seatNumA)) next.push(seatNumA); if (!next.includes(seatNumB)) next.push(seatNumB); return next; });
+      setSelectedSeats((prev) => {
+        const next = [...prev];
+        if (!next.includes(seatNumA)) next.push(seatNumA);
+        if (!next.includes(seatNumB)) next.push(seatNumB);
+        if (next.length > 0 && !timerStarted) setTimerStarted(true);
+        return next;
+      });
     }
-  }, [seatMap, selectedSeats]);
+  };
 
   const rows = [...new Set(seats.map((s) => s.row))].sort();
   const maxCol = seats.length > 0 ? Math.max(...seats.map((s) => s.col)) : 12;
@@ -185,7 +198,7 @@ const BookingPage = () => {
   })();
   const discountedPrice = isMonday ? Math.round(finalTotalPrice * 0.8) : finalTotalPrice;
 
-  const showDate = new Date(selectedShowtime?.date || Date.now()).toLocaleDateString("vi-VN", {
+  const showDate = new Date(selectedShowtime?.date || fallbackShowDate).toLocaleDateString("vi-VN", {
     timeZone: "Asia/Ho_Chi_Minh",
     weekday: "long", day: "2-digit", month: "2-digit", year: "numeric",
   });
@@ -203,7 +216,7 @@ const BookingPage = () => {
   });
 
   // Step indicator
-  const StepBar = () => (
+  const renderStepBar = () => (
     <div className="flex items-center gap-2 mb-6">
       {["Chọn ghế", "Chọn combo"].map((label, i) => {
         const s = i + 1;
@@ -225,7 +238,7 @@ const BookingPage = () => {
   );
 
   // Right summary panel (both steps)
-  const SummaryPanel = () => (
+  const renderSummaryPanel = () => (
     <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
       <div className="bg-slate-900 p-6 text-white relative overflow-hidden shrink-0">
         <div className="relative z-10">
@@ -314,7 +327,7 @@ const BookingPage = () => {
 
       <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-28 pb-28 lg:pb-16">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-          <StepBar />
+          {renderStepBar()}
           {timerStarted && (
             <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm ${isUrgent ? "bg-red-100 text-red-600 animate-pulse" : "bg-slate-100 text-slate-600"}`}>
               <Clock size={16} />
@@ -481,7 +494,7 @@ const BookingPage = () => {
 
           {/* RIGHT: Summary panel (desktop only) */}
           <div className="hidden lg:block w-full lg:w-[400px] shrink-0 sticky top-28">
-            <SummaryPanel />
+            {renderSummaryPanel()}
           </div>
         </div>
       </main>

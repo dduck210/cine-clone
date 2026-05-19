@@ -5,6 +5,7 @@ const Showtime = require('../models/Showtime');
 const Seat = require('../models/Seat');
 const Payment = require('../models/Payment');
 const { protect } = require('../middleware/auth');
+const { sendRefundEmail } = require('../services/email-service');
 
 const HOLD_MINUTES = 5;
 
@@ -136,7 +137,7 @@ router.put('/:id/cancel', protect, async (req, res) => {
         const booking = await Booking.findById(req.params.id);
         if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-        if (!['pending', 'confirmed'].includes(booking.status)) {
+        if (!['pending', 'paid'].includes(booking.status)) {
             return res.status(400).json({ message: 'Cannot cancel this booking' });
         }
 
@@ -155,6 +156,18 @@ router.put('/:id/cancel', protect, async (req, res) => {
                 refundDate: new Date(),
                 refundAmount: booking.totalPrice,
             });
+
+            const bookingContext = await Booking.findById(booking._id)
+                .populate('user', 'name email phone')
+                .populate({
+                    path: 'showtime',
+                    populate: [
+                        { path: 'movie', select: 'title poster' },
+                        { path: 'cinema', select: 'name address' },
+                        { path: 'room', select: 'name' },
+                    ],
+                });
+            await sendRefundEmail(bookingContext, 'Khách hàng đã hủy vé');
         }
 
         res.json({ message: wasConfirmed ? 'Booking refunded' : 'Booking cancelled', booking });

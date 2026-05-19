@@ -2,8 +2,12 @@ const express = require('express');
 const router = express.Router();
 const PDFDocument = require('pdfkit');
 const QRCode = require('qrcode');
+const jwt = require('jsonwebtoken');
 const Booking = require('../models/Booking');
+const User = require('../models/User');
 const { protect } = require('../middleware/auth');
+const { sendEmail } = require('../services/email-service');
+const { createTicketAccessToken, verifyTicketAccessToken } = require('../utils/ticket-access');
 
 // Design tokens — mirrors electronic ticket UI
 const DARK  = '#0f172a';
@@ -26,8 +30,53 @@ function dashedLine(doc, x1, y, x2, color) {
     doc.restore();
 }
 
+async function resolveAuthenticatedUser(req) {
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        token = req.headers.authorization.split(' ')[1];
+    } else if (req.query?.token) {
+        token = req.query.token;
+    }
+
+    if (!token) return null;
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        return await User.findById(decoded.id).select('-password');
+    } catch (error) {
+        return null;
+    }
+}
+
+async function ensureTicketAccess(req, booking) {
+    const accessToken = req.query?.accessToken;
+    if (accessToken) {
+        const payload = verifyTicketAccessToken(accessToken);
+        const bookingUserId = booking.user?._id?.toString?.() || booking.user?.toString?.() || null;
+        if (payload.bookingId !== booking._id.toString()) {
+            return { allowed: false, status: 403, message: 'Ticket link is not valid for this booking' };
+        }
+        if (payload.userId && bookingUserId && payload.userId !== bookingUserId) {
+            return { allowed: false, status: 403, message: 'Ticket link is not valid for this user' };
+        }
+        return { allowed: true };
+    }
+
+    const user = await resolveAuthenticatedUser(req);
+    if (!user) {
+        return { allowed: false, status: 401, message: 'Not authorized, no token' };
+    }
+
+    const bookingUserId = booking.user?._id?.toString?.() || booking.user?.toString?.() || null;
+    if (user.role === 'admin' || user._id.toString() === bookingUserId) {
+        return { allowed: true };
+    }
+
+    return { allowed: false, status: 403, message: 'Not authorized' };
+}
+
 // Generate ticket PDF
-router.get('/:bookingId/pdf', protect, async (req, res) => {
+router.get('/:bookingId/pdf', async (req, res) => {
     try {
         const booking = await Booking.findById(req.params.bookingId)
             .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }, { path: 'room', select: 'name' }] })
@@ -206,17 +255,46 @@ router.get('/:bookingId/pdf', protect, async (req, res) => {
     }
 });
 
-// Send ticket via email (placeholder)
+// Send ticket via email
 router.post('/:bookingId/email', protect, async (req, res) => {
     try {
         const booking = await Booking.findById(req.params.bookingId)
-            .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }] })
+            .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }, { path: 'room', select: 'name' }] })
             .populate('user');
 
         if (!booking) return res.status(404).json({ message: 'Booking not found' });
+        const access = await ensureTicketAccess(req, booking);
+        if (!access.allowed) return res.status(access.status).json({ message: access.message });
         if (booking.status !== 'paid') return res.status(400).json({ message: 'Booking not paid yet' });
 
-        res.json({ message: 'Ticket email sent (placeholder)' });
+        const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173';
+        const serverUrl = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 5000}`;
+        const accessToken = createTicketAccessToken(booking);
+        const pdfUrl = `${serverUrl}/api/tickets/${booking._id}/pdf?accessToken=${encodeURIComponent(accessToken)}`;
+
+        const result = await sendEmail({
+            to: booking.user?.email,
+            subject: `5Cine - Vé điện tử cho đơn ${booking.bookingCode}`,
+            html: `
+                <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#ffffff;border:1px solid #e5e7eb;border-radius:16px">
+                    <h2 style="margin:0 0 8px;color:#dc2626">5Cine</h2>
+                    <h3 style="margin:0 0 20px;color:#111827">Vé điện tử của bạn</h3>
+                    <p>Xin chào <strong>${booking.user?.name || 'bạn'}</strong>,</p>
+                    <p>Mã đơn <strong>${booking.bookingCode}</strong> đã sẵn sàng.</p>
+                    <p><strong>Phim:</strong> ${booking.showtime?.movie?.title || 'Phim'}<br/>
+                    <strong>Rạp:</strong> ${booking.showtime?.cinema?.name || '5Cine'}<br/>
+                    <strong>Phòng:</strong> ${booking.showtime?.room?.name || '---'}<br/>
+                    <strong>Ghế:</strong> ${(booking.seatNumbers || []).join(', ') || '---'}</p>
+                    <p>Xem đơn hàng tại: <a href="${frontendUrl}/my-tickets">${frontendUrl}/my-tickets</a></p>
+                    <p>PDF vé: <a href="${pdfUrl}">${pdfUrl}</a></p>
+                </div>
+            `,
+        });
+
+        res.json({
+            message: result.sent ? 'Ticket email sent' : 'Ticket email skipped',
+            result,
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

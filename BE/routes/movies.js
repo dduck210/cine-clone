@@ -8,6 +8,8 @@ const Seat = require('../models/Seat');
 const Payment = require('../models/Payment');
 const { protect, admin } = require('../middleware/auth');
 const { calcEndTime } = require('../utils/pricing');
+const { sendRefundEmail, sendShowtimeCancelledEmail } = require('../services/email-service');
+const notificationService = require('../services/notification-service');
 
 router.get('/', async (req, res) => {
     try {
@@ -131,15 +133,51 @@ router.post('/:id/cancel-affected', protect, admin, async (req, res) => {
 
             const paidIds = bookings.filter(b => b.status === 'paid').map(b => b._id);
             if (paidIds.length > 0) {
-                await Payment.updateMany(
-                    { booking: { $in: paidIds }, status: 'success' },
-                    { $set: { status: 'refunded', refundDate: new Date() } }
-                );
+                for (const booking of bookings.filter((item) => item.status === 'paid')) {
+                    await Payment.updateMany(
+                        { booking: booking._id, status: 'success' },
+                        {
+                            $set: {
+                                status: 'refunded',
+                                refundDate: new Date(),
+                                refundAmount: booking.totalPrice,
+                            },
+                        }
+                    );
+                }
                 await Booking.updateMany({ _id: { $in: paidIds } }, { status: 'refunded' });
                 totalRefunded += paidIds.length;
+
+                for (const bookingId of paidIds) {
+                    const bookingContext = await Booking.findById(bookingId)
+                        .populate('user', 'name email phone')
+                        .populate({
+                            path: 'showtime',
+                            populate: [
+                                { path: 'movie', select: 'title poster' },
+                                { path: 'cinema', select: 'name address' },
+                                { path: 'room', select: 'name' },
+                            ],
+                        });
+                    await sendShowtimeCancelledEmail(bookingContext, 'Lịch chiếu bị ảnh hưởng do thay đổi thời lượng phim');
+                    await sendRefundEmail(bookingContext, 'Lịch chiếu bị ảnh hưởng do thay đổi thời lượng phim');
+                }
             }
 
             totalCancelled += bookings.length;
+        }
+
+        if (showtimeIds.length > 0) {
+            notificationService.createNotification({
+                type: 'showtime_cancelled',
+                title: 'Hủy suất chiếu bị ảnh hưởng',
+                message: `Đã hủy ${showtimeIds.length} suất chiếu sau khi cập nhật phim, hoàn ${totalRefunded} đơn`,
+                data: {
+                    movieId: req.params.id,
+                    showtimeIds,
+                    totalRefunded,
+                },
+            });
         }
 
         res.json({
