@@ -439,9 +439,7 @@ const MovieDetailPage = () => {
             </div>
           )}
         </div>
-        <div className="max-w-6xl mx-auto px-4 pb-12">
-          <ReviewSection movieId={id} />
-        </div>
+        <ReviewSection movieId={id} />
       </main>
       <Footer />
     </div>
