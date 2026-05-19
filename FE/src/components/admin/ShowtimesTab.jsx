@@ -26,33 +26,10 @@ const ErrorMsg = ({ msg }) => (
   <p className="text-red-500 text-xs mt-1 ml-1">{msg}</p>
 );
 
-const SHOWTIME_STATUS_META = {
-  active: {
-    label: "Dang chieu",
-    badgeClass: "bg-emerald-50 text-emerald-600 border-emerald-100",
-    dotClass: "bg-emerald-500 animate-pulse",
-  },
-  cancelled: {
-    label: "Da huy",
-    badgeClass: "bg-red-50 text-red-500 border-red-100",
-    dotClass: "bg-red-400",
-  },
-  expired: {
-    label: "Da het han",
-    badgeClass: "bg-amber-50 text-amber-700 border-amber-200",
-    dotClass: "bg-amber-500",
-  },
-};
-
-const getShowtimeStatusMeta = (status) => SHOWTIME_STATUS_META[status] || SHOWTIME_STATUS_META.cancelled;
-
 const DAY_TYPE_LABEL = { weekday: "Ngày thường", weekend: "Cuối tuần", holiday: "Ngày lễ" };
 const TIME_SLOT_LABEL = { morning: "Buổi sáng", afternoon: "Buổi chiều", evening: "Buổi tối", night: "Buổi đêm" };
 
-const ShowtimeDetailModal = ({ showtime: st, onClose }) => {
-  const statusMeta = getShowtimeStatusMeta(st.status);
-
-  return (
+const ShowtimeDetailModal = ({ showtime: st, onClose }) => (
   <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
     <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-slate-100">
@@ -126,23 +103,22 @@ const ShowtimeDetailModal = ({ showtime: st, onClose }) => {
           </div>
           <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Trạng thái</p>
-            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${statusMeta.badgeClass}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dotClass}`} />
-              {statusMeta.label}
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${st.status === "active" ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-red-50 text-red-500 border-red-100"}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${st.status === "active" ? "bg-emerald-500 animate-pulse" : "bg-red-400"}`} />
+              {st.status === "active" ? "Đang chiếu" : "Đã hủy"}
             </span>
           </div>
         </div>
       </div>
     </div>
   </div>
-  );
-};
+);
 
 const selectClass = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] appearance-none font-medium text-slate-700 cursor-pointer transition-colors";
 const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] font-medium text-slate-700 transition-all";
 
 export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm({
     defaultValues: { movieId: "", cinemaId: "", roomId: "", date: "", startTime: "", basePrice: "", dayType: "" },
   });
 
@@ -155,7 +131,6 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
   const [selectedDays, setSelectedDays] = useState([1, 2, 3, 4, 5, 6, 0]);
   const [bulkErrors, setBulkErrors] = useState({});
   const selectedCinema = watch("cinemaId");
-  const selectedRoom = watch("roomId");
 
   useEffect(() => {
     if (!selectedCinema) { setRooms([]); return; }
@@ -165,18 +140,6 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
       .catch(() => setRooms([]))
       .finally(() => setLoadingRooms(false));
   }, [selectedCinema]);
-
-  useEffect(() => {
-    setValue("roomId", "");
-  }, [selectedCinema, setValue]);
-
-  const activeRooms = rooms.filter((room) => room.status === "active");
-
-  useEffect(() => {
-    if (!selectedRoom) return;
-    const roomStillValid = activeRooms.some((room) => room._id === selectedRoom);
-    if (!roomStillValid) setValue("roomId", "");
-  }, [activeRooms, selectedRoom, setValue]);
 
   const toggleDay = (day) => {
     setSelectedDays((prev) => {
@@ -212,25 +175,13 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
           dayType: data.dayType || undefined,
         };
       }
-      const res = await axiosInstance.post("/showtimes", payload);
-      const createdCount = Array.isArray(res.data?.created) ? res.data.created.length : 1;
-      const errorCount = Array.isArray(res.data?.errors) ? res.data.errors.length : 0;
-      if (errorCount > 0) {
-        toast.success(`Da tao ${createdCount} suat chieu. ${errorCount} suat bi bo qua do trung lich.`);
-      } else {
-        toast.success(`Da tao ${createdCount} suat chieu thanh cong!`);
-      }
+      await axiosInstance.post("/showtimes", payload);
+      const count = Array.isArray(payload) ? payload.length : 1;
+      toast.success(`Đã tạo ${count} suất chiếu thành công!`);
       onSaved();
       onClose();
     } catch (err) {
-      const errorLines = Array.isArray(err.response?.data?.errors)
-        ? err.response.data.errors
-            .slice(0, 3)
-            .map((item) => `${item.date || ""} ${item.startTime || ""} ${item.error || ""}`.trim())
-            .filter(Boolean)
-        : [];
-      const fallbackMessage = err.response?.data?.message || "Them suat chieu that bai";
-      toast.error(errorLines.length > 0 ? `${fallbackMessage}: ${errorLines.join(" | ")}` : fallbackMessage);
+      toast.error(err.response?.data?.message || "Thêm suất chiếu thất bại");
     } finally {
       setSaving(false);
     }
@@ -296,15 +247,12 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
                 className={`${selectClass} ${loadingRooms ? "opacity-50" : ""}`}
                 disabled={!selectedCinema || loadingRooms}
               >
-                <option value="">{loadingRooms ? "Đang tải..." : selectedCinema ? (activeRooms.length > 0 ? "-- Chọn phòng --" : "Khong co phong hoat dong") : "Chọn rạp trước"}</option>
-                {activeRooms.map((r) => <option key={r._id} value={r._id}>{r.name} ({r.totalSeats} ghế)</option>)}
+                <option value="">{loadingRooms ? "Đang tải..." : selectedCinema ? "-- Chọn phòng --" : "Chọn rạp trước"}</option>
+                {rooms.map((r) => <option key={r._id} value={r._id}>{r.name} ({r.totalSeats} ghế)</option>)}
               </select>
               <ChevronDown className="absolute right-4 top-3.5 text-slate-400 pointer-events-none" size={18} />
             </div>
             {errors.roomId && <ErrorMsg msg={errors.roomId.message} />}
-            {!!selectedCinema && !loadingRooms && activeRooms.length === 0 && (
-              <p className="text-amber-600 text-xs mt-1 ml-1">Rap nay chua co phong hoat dong de tao suat chieu.</p>
-            )}
           </div>
 
           {bulkMode ? (
@@ -442,7 +390,6 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
   });
 
   const cancelledCount = showtimes.filter(st => st.status === "cancelled").length;
-  const expiredCount = showtimes.filter(st => st.status === "expired").length;
 
   return (
     <div className="space-y-6">
@@ -466,7 +413,6 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
           {[
             { value: "active", label: "Đang chiếu", cls: "bg-emerald-50 text-emerald-600 border-emerald-200" },
             { value: "cancelled", label: `Đã hủy${cancelledCount > 0 ? ` (${cancelledCount})` : ""}`, cls: "bg-red-50 text-red-500 border-red-200" },
-            { value: "expired", label: `Đã hết hạn${expiredCount > 0 ? ` (${expiredCount})` : ""}`, cls: "bg-amber-50 text-amber-700 border-amber-200" },
             { value: "", label: "Tất cả", cls: "bg-slate-100 text-slate-600 border-slate-200" },
           ].map((opt) => (
             <button
@@ -557,9 +503,9 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
                         {st.availableSeats ?? "—"} / {st.totalSeats ?? "—"}
                       </td>
                       <td className="p-4 text-center">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${getShowtimeStatusMeta(st.status).badgeClass}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${getShowtimeStatusMeta(st.status).dotClass}`}></span>
-                          {getShowtimeStatusMeta(st.status).label}
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${st.status === "active" ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-red-50 text-red-500 border-red-100"}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${st.status === "active" ? "bg-emerald-500 animate-pulse" : "bg-red-400"}`}></span>
+                          {st.status === "active" ? "Đang chiếu" : "Đã hủy"}
                         </span>
                       </td>
                       <td className="p-4 pr-6 text-right" onClick={(e) => e.stopPropagation()}>

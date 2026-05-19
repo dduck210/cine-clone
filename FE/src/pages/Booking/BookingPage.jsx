@@ -107,7 +107,6 @@ const BookingPage = () => {
   }, [recalcScale]);
   const [seatMap, setSeatMap] = useState({});
   const [loadingSeats, setLoadingSeats] = useState(true);
-  const [showtimeError, setShowtimeError] = useState("");
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [gapError, setGapError] = useState("");
 
@@ -117,14 +116,9 @@ const BookingPage = () => {
   const [combos, setCombos] = useState(COMBOS.map((c) => ({ ...c, quantity: 0 })));
 
   useEffect(() => {
-    if (!showtimeId) {
-      setShowtimeError("Suất chiếu không hợp lệ hoặc đã hết hiệu lực.");
-      setLoadingSeats(false);
-      return;
-    }
+    if (!showtimeId) { setLoadingSeats(false); return; }
     axiosInstance.get(`/showtimes/${showtimeId}`)
       .then((res) => {
-        setShowtimeError("");
         setShowtimeData(res.data.data);
         const seatList = res.data.seats || [];
         setSeats(seatList);
@@ -132,11 +126,7 @@ const BookingPage = () => {
         for (const s of seatList) map[s.seatNumber] = s;
         setSeatMap(map);
       })
-      .catch((error) => {
-        setSeats([]);
-        setShowtimeData(null);
-        setShowtimeError(error.response?.data?.message || "Suất chiếu này đã quá giờ hoặc không còn khả dụng.");
-      })
+      .catch(() => setSeats([]))
       .finally(() => setLoadingSeats(false));
   }, [showtimeId]);
 
@@ -300,9 +290,9 @@ const BookingPage = () => {
 
         {step === 1 ? (
           <button
-            disabled={selectedSeats.length === 0 || !!showtimeError}
+            disabled={selectedSeats.length === 0}
             onClick={() => setStep(2)}
-            className={`w-full font-black py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm ${selectedSeats.length === 0 || showtimeError ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-[#dc2626] hover:bg-red-700 text-white shadow-lg shadow-red-200"}`}
+            className={`w-full font-black py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm ${selectedSeats.length === 0 ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-[#dc2626] hover:bg-red-700 text-white shadow-lg shadow-red-200"}`}
           >
             Tiếp tục <ChevronRight size={18} />
           </button>
@@ -341,20 +331,6 @@ const BookingPage = () => {
             {/* ── STEP 1: Seat map ── */}
             {step === 1 && (
               <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-8">
-                {showtimeError && (
-                  <div className="mb-4 flex items-start justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-                      <span>{showtimeError}</span>
-                    </div>
-                    <button
-                      onClick={() => navigate(-1)}
-                      className="shrink-0 rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-xs font-bold text-amber-700 transition-colors hover:bg-amber-100"
-                    >
-                      Quay lại
-                    </button>
-                  </div>
-                )}
                 {gapError && (
                   <div className="mb-4 flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium">
                     <AlertTriangle size={16} />{gapError}
@@ -524,9 +500,9 @@ const BookingPage = () => {
         </div>
         {step === 1 ? (
           <button
-            disabled={selectedSeats.length === 0 || !!showtimeError}
+            disabled={selectedSeats.length === 0}
             onClick={() => setStep(2)}
-            className={`shrink-0 font-black px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 transition-all ${selectedSeats.length === 0 || showtimeError ? "bg-slate-700 text-slate-500 cursor-not-allowed" : "bg-[#dc2626] text-white"}`}
+            className={`shrink-0 font-black px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 transition-all ${selectedSeats.length === 0 ? "bg-slate-700 text-slate-500 cursor-not-allowed" : "bg-[#dc2626] text-white"}`}
           >
             Tiếp tục <ChevronRight size={16} />
           </button>

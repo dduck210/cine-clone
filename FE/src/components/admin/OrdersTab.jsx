@@ -317,7 +317,6 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
       !q ||
       o.orderId?.toLowerCase().includes(q) ||
       o.customerName?.toLowerCase().includes(q) ||
-      o.customerEmail?.toLowerCase().includes(q) ||
       o.movieTitle?.toLowerCase().includes(q) ||
       o.phone?.includes(q);
     const matchStatus = !filterStatus || o.status === filterStatus;
@@ -413,7 +412,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filteredOrders.length === 0 ? (
-              <tr><td colSpan="7" className="p-12 text-center text-slate-400 italic">
+              <tr><td colSpan="6" className="p-12 text-center text-slate-400 italic">
                 {search || filterStatus ? "Không tìm thấy đơn hàng phù hợp." : "Chưa có đơn hàng nào."}
               </td></tr>
             ) : filteredOrders.map((order, index) => (
@@ -428,9 +427,6 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
                   <div className="font-medium text-slate-800">
                     {order.customerName}
                   </div>
-                  {order.customerEmail && (
-                    <div className="text-xs text-slate-500">{order.customerEmail}</div>
-                  )}
                   <div className="text-xs text-slate-500">{order.phone}</div>
                 </td>
                 <td className="p-4">
