@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Plus, X, Save, Grid, Eye, Settings, AlertTriangle, Zap, Calendar, Ticket } from "lucide-react";
+import { Plus, X, Save, Grid, Eye, Settings, AlertTriangle, Zap, Calendar, Ticket, RotateCcw } from "lucide-react";
 import axiosInstance from "../../api/axiosConfig";
 import toast from "react-hot-toast";
 
@@ -160,8 +160,8 @@ const RoomDetailModal = ({ room, onClose, onEdit }) => {
                     {room.roomType}
                   </span>
                 ) : item.isStatus ? (
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${room.status === "active" ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-100 text-slate-500 border-slate-200"}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${room.status === "active" ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${room.status === "active" ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-amber-50 text-amber-700 border-amber-200"}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${room.status === "active" ? "bg-emerald-500 animate-pulse" : "bg-amber-400"}`} />
                     {item.value}
                   </span>
                 ) : (
@@ -365,14 +365,9 @@ const CINEMA_STATUS_META = {
     description: "Rạp đang hoạt động bình thường.",
   },
   incident: {
-    label: "Sự cố",
+    label: "Bảo trì",
     badge: "bg-amber-50 text-amber-700 border-amber-200",
     description: "Rạp đang có sự cố cần xử lý.",
-  },
-  inactive: {
-    label: "Tạm ngưng",
-    badge: "bg-slate-100 text-slate-600 border-slate-200",
-    description: "Rạp đang tạm ngưng khai thác.",
   },
 };
 
@@ -382,9 +377,12 @@ const EmergencyCloseModal = ({ cinemaId, cinemaName, selectedRooms, onClose, onD
   const [fetchError, setFetchError] = useState(null);
   const [confirmed, setConfirmed] = useState(false);
   const [closing, setClosing] = useState(false);
-  const roomIds = selectedRooms.map((room) => room._id);
+
+  // Stable string key — prevents useEffect from re-firing on every render due to new array reference
+  const roomIdsKey = selectedRooms.map((r) => r._id).join(",");
 
   useEffect(() => {
+    const roomIds = roomIdsKey.split(",").filter(Boolean);
     if (!cinemaId || roomIds.length === 0) {
       setPreview(null);
       setLoading(false);
@@ -405,10 +403,11 @@ const EmergencyCloseModal = ({ cinemaId, cinemaName, selectedRooms, onClose, onD
         toast.error(`Không tải được dữ liệu: ${msg}`);
       })
       .finally(() => setLoading(false));
-  }, [cinemaId, roomIds]);
+  }, [cinemaId, roomIdsKey]);
 
   const handleClose = async () => {
     setClosing(true);
+    const roomIds = roomIdsKey.split(",").filter(Boolean);
     try {
       const res = await axiosInstance.post("/admin/emergency-close/rooms", {
         cinemaId,
@@ -453,11 +452,12 @@ const EmergencyCloseModal = ({ cinemaId, cinemaName, selectedRooms, onClose, onD
               <p className="text-red-500 text-xs font-mono">{fetchError}</p>
               <button
                 onClick={() => {
+                  const retryRoomIds = roomIdsKey.split(",").filter(Boolean);
                   setLoading(true);
                   setFetchError(null);
                   axiosInstance.post("/admin/emergency-close/rooms/preview", {
                     cinemaId,
-                    roomIds,
+                    roomIds: retryRoomIds,
                   }).then((r) => setPreview(r.data)).catch((e) => setFetchError(e.response?.data?.message || e.message)).finally(() => setLoading(false));
                 }}
                 className="mt-3 px-4 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700"
@@ -549,6 +549,84 @@ const EmergencyCloseModal = ({ cinemaId, cinemaName, selectedRooms, onClose, onD
   );
 };
 
+const ReopenModal = ({ cinemaId, cinemaName, selectedRooms, onClose, onDone }) => {
+  const [reopening, setReopening] = useState(false);
+  const roomIds = selectedRooms.map((r) => r._id);
+
+  const handleReopen = async () => {
+    setReopening(true);
+    try {
+      const res = await axiosInstance.post("/admin/rooms/reopen", { cinemaId, roomIds });
+      const msg = res.data.cinemaRestored
+        ? `Đã mở ${res.data.reopenedCount} phòng · Rạp đã khôi phục hoạt động`
+        : `Đã mở ${res.data.reopenedCount} phòng`;
+      toast.success(msg);
+      onDone(res.data.cinemaRestored);
+      onClose();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Thao tác thất bại");
+    } finally {
+      setReopening(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md border border-emerald-200 overflow-hidden">
+        <div className="bg-emerald-600 px-6 py-4 flex items-center gap-3">
+          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
+            <RotateCcw size={20} className="text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-black text-white text-base">Mở phòng chiếu</h3>
+            <p className="text-emerald-200 text-xs font-medium truncate">{cinemaName}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-all">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Phòng sẽ được mở</p>
+            <div className="flex flex-wrap gap-2">
+              {selectedRooms.map((room) => (
+                <span key={room._id} className="px-2.5 py-1 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-700">
+                  {room.name}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex gap-3">
+            <RotateCcw size={18} className="text-emerald-500 shrink-0 mt-0.5" />
+            <p className="text-sm text-emerald-800 font-medium leading-relaxed">
+              Các phòng đã chọn sẽ được chuyển về trạng thái <strong>hoạt động</strong>.
+              Nếu tất cả phòng của rạp đều hoạt động, rạp cũng sẽ được khôi phục tự động.
+            </p>
+          </div>
+        </div>
+
+        <div className="px-6 pb-6 flex justify-end gap-3">
+          <button onClick={onClose} className="px-5 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-semibold text-sm transition-all">
+            Hủy bỏ
+          </button>
+          <button
+            onClick={handleReopen}
+            disabled={reopening}
+            className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm flex items-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-emerald-200"
+          >
+            {reopening
+              ? <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" /> Đang mở...</>
+              : <><RotateCcw size={16} /> Xác nhận mở phòng</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Main Rooms Manager tab
 export const RoomsManager = ({ cinemas }) => {
   const [rooms, setRooms] = useState([]);
@@ -559,10 +637,13 @@ export const RoomsManager = ({ cinemas }) => {
   const [editRoom, setEditRoom] = useState(null);
   const [detailRoom, setDetailRoom] = useState(null);
   const [showEmergency, setShowEmergency] = useState(false);
+  const [showReopen, setShowReopen] = useState(false);
   const [selectedRoomIds, setSelectedRoomIds] = useState([]);
 
   const selectedCinemaData = cinemas.find((cinema) => cinema._id === selectedCinema) || null;
   const visibleSelectedRooms = rooms.filter((room) => selectedRoomIds.includes(room._id));
+  const selectedActiveRooms = visibleSelectedRooms.filter((r) => r.status === "active");
+  const selectedMaintenanceRooms = visibleSelectedRooms.filter((r) => r.status !== "active");
 
   const loadRooms = async (cinemaId) => {
     if (!cinemaId) { setRooms([]); return; }
@@ -571,6 +652,10 @@ export const RoomsManager = ({ cinemas }) => {
       const res = await axiosInstance.get(`/admin/cinemas/${cinemaId}/rooms`);
       setRooms(res.data);
       setSelectedRoomIds((prev) => prev.filter((id) => res.data.some((room) => room._id === id)));
+      // Derive cinema status from rooms: all active → active, otherwise → incident
+      if (res.data.length > 0) {
+        setCinemaStatus(res.data.every((r) => r.status === 'active') ? 'active' : 'incident');
+      }
     } catch {
       setRooms([]);
     } finally {
@@ -614,10 +699,25 @@ export const RoomsManager = ({ cinemas }) => {
   const handleCinemaStatusChange = async (status) => {
     if (!selectedCinema || status === cinemaStatus) return;
 
+    const confirmMsg = status === "incident"
+      ? `Chuyển rạp sang Bảo trì sẽ huỷ toàn bộ suất chiếu sắp tới và hoàn tiền các đơn đã thanh toán.\n\nXác nhận?`
+      : `Mở lại rạp sẽ chuyển tất cả phòng về trạng thái hoạt động.\n\nXác nhận?`;
+    if (!window.confirm(confirmMsg)) return;
+
     try {
-      await axiosInstance.patch(`/admin/cinemas/${selectedCinema}/status`, { status });
+      const res = await axiosInstance.patch(`/admin/cinemas/${selectedCinema}/status`, { status });
       setCinemaStatus(status);
-      toast.success("Đã cập nhật trạng thái rạp");
+      let msg = "Đã cập nhật trạng thái rạp";
+      if (status === "active") {
+        msg = "Đã mở lại rạp · Tất cả phòng đã hoạt động";
+      } else if (status === "incident") {
+        const cancelled = res.data.cancelledShowtimes;
+        msg = cancelled > 0
+          ? `Rạp chuyển bảo trì · Đã huỷ ${cancelled} suất chiếu`
+          : "Rạp chuyển bảo trì · Không có suất chiếu nào bị ảnh hưởng";
+      }
+      toast.success(msg);
+      loadRooms(selectedCinema);
     } catch (err) {
       toast.error(err.response?.data?.message || "Không thể cập nhật trạng thái rạp");
     }
@@ -631,10 +731,16 @@ export const RoomsManager = ({ cinemas }) => {
           <p className="text-sm text-slate-500">Cấu hình ma trận ghế và loại ghế cho từng phòng</p>
         </div>
         <div className="flex gap-2">
-          {selectedCinema && selectedRoomIds.length > 0 && (
+          {selectedCinema && selectedMaintenanceRooms.length > 0 && (
+            <button onClick={() => setShowReopen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all shadow-md shadow-emerald-200 shrink-0 text-sm">
+              <RotateCcw size={16} /> Mở {selectedMaintenanceRooms.length} phòng
+            </button>
+          )}
+          {selectedCinema && selectedActiveRooms.length > 0 && (
             <button onClick={() => setShowEmergency(true)}
               className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-all shadow-md shadow-amber-200 shrink-0 text-sm">
-              <Zap size={16} /> Đóng {selectedRoomIds.length} phòng
+              <Zap size={16} /> Đóng {selectedActiveRooms.length} phòng
             </button>
           )}
           <button onClick={handleOpenCreate}
@@ -685,17 +791,6 @@ export const RoomsManager = ({ cinemas }) => {
             </div>
           </div>
 
-          <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div>
-              <p className="text-sm font-bold text-slate-700">Đóng khẩn cấp theo phòng</p>
-              <p className="text-xs text-slate-500 mt-1">
-                Chọn một hoặc nhiều phòng để preview các suất chiếu bị ảnh hưởng trước khi hủy.
-              </p>
-            </div>
-            <div className="text-sm font-medium text-slate-600">
-              {selectedRoomIds.length > 0 ? `Đã chọn ${selectedRoomIds.length} phòng` : "Chưa chọn phòng nào"}
-            </div>
-          </div>
         </div>
       )}
 
@@ -767,8 +862,8 @@ export const RoomsManager = ({ cinemas }) => {
                         )}
                       </td>
                       <td className="p-4 text-center">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${room.status === "active" ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-100 text-slate-500 border-slate-200"}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${room.status === "active" ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`}></span>
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${room.status === "active" ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-amber-50 text-amber-700 border-amber-200"}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${room.status === "active" ? "bg-emerald-500 animate-pulse" : "bg-amber-400"}`}></span>
                           {room.status === "active" ? "Hoạt động" : "Bảo trì"}
                         </span>
                       </td>
@@ -816,10 +911,24 @@ export const RoomsManager = ({ cinemas }) => {
         <EmergencyCloseModal
           cinemaId={selectedCinema}
           cinemaName={selectedCinemaData?.name || "Rạp"}
-          selectedRooms={visibleSelectedRooms}
+          selectedRooms={selectedActiveRooms}
           onClose={() => setShowEmergency(false)}
           onDone={() => {
             setCinemaStatus("incident");
+            setSelectedRoomIds([]);
+            loadRooms(selectedCinema);
+          }}
+        />
+      )}
+
+      {showReopen && selectedCinema && (
+        <ReopenModal
+          cinemaId={selectedCinema}
+          cinemaName={selectedCinemaData?.name || "Rạp"}
+          selectedRooms={selectedMaintenanceRooms}
+          onClose={() => setShowReopen(false)}
+          onDone={(cinemaRestored) => {
+            if (cinemaRestored) setCinemaStatus("active");
             setSelectedRoomIds([]);
             loadRooms(selectedCinema);
           }}
