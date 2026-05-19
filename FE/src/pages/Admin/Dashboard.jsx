@@ -336,6 +336,12 @@ const Dashboard = () => {
           toast.success(incoming.title || "Có thông báo mới", {
             id: incoming.id,
           });
+          // If showtimes were expired on the server, refresh the showtimes list in background
+          if (incoming.type === 'showtime_expired' && activeTab === 'showtimes') {
+            axiosInstance.get('/admin/showtimes')
+              .then((r) => setShowtimes(r.data))
+              .catch(() => {});
+          }
         }
       } catch {
         // Ignore malformed SSE payloads.
