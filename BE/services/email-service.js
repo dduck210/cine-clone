@@ -1,5 +1,4 @@
 const nodemailer = require('nodemailer');
-const { createTicketAccessToken } = require('../utils/ticket-access');
 
 let transporter;
 
@@ -79,8 +78,6 @@ function wrapEmail(title, bodyHtml) {
 async function sendPaymentSuccessEmail(booking, paymentMethod = '') {
     const movieTitle = booking?.showtime?.movie?.title || 'Phim';
     const cinemaName = booking?.showtime?.cinema?.name || '5Cine';
-    const accessToken = createTicketAccessToken(booking);
-    const pdfUrl = `${getServerUrl()}/api/tickets/${booking._id}/pdf?accessToken=${encodeURIComponent(accessToken)}`;
     const orderUrl = `${getFrontendUrl()}/my-tickets`;
 
     return sendEmail({
@@ -97,7 +94,7 @@ async function sendPaymentSuccessEmail(booking, paymentMethod = '') {
                 <strong>Ghế:</strong> ${(booking?.seatNumbers || []).join(', ') || '---'}<br/>
                 <strong>Tổng tiền:</strong> ${formatCurrency(booking?.totalPrice)} đ<br/>
                 <strong>Phương thức:</strong> ${paymentMethod || booking?.paymentId?.method || 'online'}</p>
-                <p>Bạn có thể tải vé PDF tại: <a href="${pdfUrl}">${pdfUrl}</a></p>
+                <p>Bạn có thể xem và tải vé tại: <a href="${orderUrl}">${orderUrl}</a></p>
             `
         ),
     });
