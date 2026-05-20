@@ -9,6 +9,7 @@ const Payment = require('../models/Payment');
 const Seat = require('../models/Seat');
 const { protect, admin } = require('../middleware/auth');
 const { expireShowtimes } = require('../jobs/expire-showtimes');
+const { isShowtimeExpired } = require('../utils/showtime-status');
 const {
     sendPaymentSuccessEmail,
     sendRefundEmail,
@@ -265,7 +266,35 @@ router.patch('/cinemas/:id/status', protect, admin, async (req, res) => {
             console.error('Failed to update room statuses for cinema:', cinema._id, err.message);
         }
 
-        res.json(cinema);
+        // When setting to incident (maintenance), cancel all upcoming showtimes and refund
+        let cancelResult = null;
+        if (status === 'incident') {
+            await expireShowtimes();
+            const showtimes = await Showtime.find({
+                cinema: cinema._id,
+                status: 'active',
+                date: { $gte: getTodayFloor() },
+            });
+
+            if (showtimes.length > 0) {
+                cancelResult = await cancelShowtimesDbUpdates(showtimes, 'Rạp tạm thời bảo trì');
+
+                // Fire-and-forget background emails
+                (async () => {
+                    for (const paidId of cancelResult.paidBookingIds) {
+                        try {
+                            const bookingContext = await loadBookingContext(paidId);
+                            await sendShowtimeCancelledEmail(bookingContext, 'Rạp tạm thời bảo trì');
+                            await sendRefundEmail(bookingContext, 'Rạp tạm thời bảo trì');
+                        } catch (e) {
+                            console.error('Failed to send emails for booking', paidId, e.message);
+                        }
+                    }
+                })();
+            }
+        }
+
+        res.json({ ...cinema.toObject(), ...(cancelResult || {}) });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -647,6 +676,14 @@ router.get('/showtimes', protect, admin, async (req, res) => {
             .populate('cinema', 'name')
             .populate('room', 'name')
             .sort({ date: -1, startTime: -1 });
+
+        await Promise.all(showtimes.map(async (showtime) => {
+            if (showtime.status === 'active' && isShowtimeExpired(showtime)) {
+                showtime.status = 'expired';
+                await showtime.save();
+            }
+        }));
+
         res.json(showtimes);
     } catch (error) {
         res.status(500).json({ message: error.message });

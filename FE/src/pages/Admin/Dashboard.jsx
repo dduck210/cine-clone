@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import Sidebar from "../../components/admin/Sidebar";
 import axiosInstance from "../../api/axiosConfig";
 import {
-  Bell, DollarSign, Ticket, Clock, AlertTriangle, Menu, X, ExternalLink,
+  Bell, DollarSign, Ticket, Clock, AlertTriangle, Menu, ExternalLink,
   Popcorn, RefreshCw, TrendingUp, Trophy,
 } from "lucide-react";
 import { OrdersManager, OrderDetailModal } from "../../components/admin/OrdersTab";
@@ -21,20 +21,21 @@ const toastConfig = {
   },
 };
 
-const StatCard = ({ icon: Icon, label, value, sub, color }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_-3px_rgba(220,38,38,0.1)] border border-slate-100 hover:shadow-lg transition-all duration-300 group">
-    <div className="flex justify-between items-start mb-4">
-      <div className={`p-3 rounded-2xl ${color}`}>
-        <Icon size={24} />
+const StatCard = ({ icon, label, value, sub, color }) => {
+  const Icon = icon;
+  return (
+    <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_-3px_rgba(220,38,38,0.1)] border border-slate-100 hover:shadow-lg transition-all duration-300 group">
+      <div className="flex justify-between items-start mb-4">
+        <div className={`p-3 rounded-2xl ${color}`}>
+          <Icon size={24} />
+        </div>
       </div>
+      <p className="text-slate-500 text-sm font-semibold uppercase tracking-wider">{label}</p>
+      <h3 className="text-3xl font-extrabold text-slate-800 mt-1 group-hover:text-[#dc2626] transition-colors">{value}</h3>
+      <p className="text-xs text-slate-400 mt-2 font-medium">{sub}</p>
     </div>
-    <p className="text-slate-500 text-sm font-semibold uppercase tracking-wider">{label}</p>
-    <h3 className="text-3xl font-extrabold text-slate-800 mt-1 group-hover:text-[#dc2626] transition-colors">{value}</h3>
-    <p className="text-xs text-slate-400 mt-2 font-medium">{sub}</p>
-  </div>
-);
-
-const TIME_SLOT_LABEL = { morning: "Sáng (trước 12h)", evening: "Chiều (12-18h)", night: "Tối/Khuya (sau 18h)" };
+  );
+};
 
 const DashboardView = ({ stats, extStats, loading }) => (
   <div className="space-y-6">
@@ -64,7 +65,7 @@ const DashboardView = ({ stats, extStats, loading }) => (
           const max = extStats.timeslots[0]?.bookings || 1;
           const BAR_MAX_PX = 110;
           const SHORT = { morning: "Sáng", evening: "Chiều", night: "Tối" };
-          const SUB   = { morning: "trước 12h", evening: "12–18h", night: "sau 18h" };
+          const SUB = { morning: "trước 12h", evening: "12–18h", night: "sau 18h" };
           const COLORS = { morning: "#f97316", evening: "#dc2626", night: "#991b1b" };
           return (
             <div>
@@ -128,7 +129,7 @@ const DashboardView = ({ stats, extStats, loading }) => (
       {loading || !extStats.topMovies.length ? (
         loading ? (
           <div className="space-y-3">
-            {[1,2,3,4,5].map(i => <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />)}
+            {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />)}
           </div>
         ) : (
           <p className="text-slate-400 text-sm italic">Chưa có dữ liệu</p>
@@ -201,6 +202,8 @@ const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const adminUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+  const notificationsRef = useRef(null);
+  const notificationsOpenRef = useRef(false);
 
   const [movies, setMovies] = useState([]);
   const [moviesLoading, setMoviesLoading] = useState(false);
@@ -222,124 +225,322 @@ const Dashboard = () => {
   const [movieToDelete, setMovieToDelete] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const loadNotifications = useCallback(async () => {
+    try {
+      const res = await axiosInstance.get("/admin/notifications");
+      setNotifications(res.data.items || []);
+      setUnreadCount(res.data.unreadCount || 0);
+    } catch {
+      // Keep the dashboard usable even if notification history fails to load.
+    }
+  }, []);
+
+  const buildNotificationStreamUrl = () => {
+    const token = localStorage.getItem("token");
+    if (!token) return null;
+
+    const baseURL = axiosInstance.defaults.baseURL || "/api";
+    const normalizedBase = baseURL.replace(/\/$/, "");
+    const streamPath = `${normalizedBase}/admin/notifications/stream?token=${encodeURIComponent(token)}`;
+
+    if (/^https?:\/\//i.test(normalizedBase)) return streamPath;
+    const relativeBase = normalizedBase.startsWith("/") ? normalizedBase : `/${normalizedBase}`;
+    return `${window.location.origin}${relativeBase}/admin/notifications/stream?token=${encodeURIComponent(token)}`;
+  };
+
+  const markNotificationsRead = useCallback(async (ids = []) => {
+    if (ids.length === 0 && unreadCount === 0) return;
+
+    setNotifications((prev) => prev.map((item) => (
+      ids.length === 0 || ids.includes(item.id)
+        ? { ...item, read: true }
+        : item
+    )));
+    setUnreadCount((prev) => (ids.length === 0 ? 0 : Math.max(0, prev - ids.length)));
+
+    try {
+      const res = await axiosInstance.post("/admin/notifications/read", { ids });
+      setNotifications(res.data.items || []);
+      setUnreadCount(res.data.unreadCount || 0);
+    } catch {
+      loadNotifications();
+    }
+  }, [unreadCount, loadNotifications]);
+
+  const handleToggleNotifications = async () => {
+    const nextOpen = !showNotifications;
+    setShowNotifications(nextOpen);
+
+    if (nextOpen) {
+      const unreadIds = notifications.filter((item) => !item.read).map((item) => item.id);
+      if (unreadIds.length > 0) {
+        await markNotificationsRead(unreadIds);
+      }
+    }
+  };
+
+  useEffect(() => {
+    notificationsOpenRef.current = showNotifications;
+  }, [showNotifications]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadNotifications();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [loadNotifications]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      void loadNotifications();
+    }, 15000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void loadNotifications();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [loadNotifications]);
+
+  useEffect(() => {
+    const streamUrl = buildNotificationStreamUrl();
+    if (!streamUrl) return undefined;
+
+    const source = new EventSource(streamUrl);
+    source.onmessage = (event) => {
+      try {
+        const incoming = JSON.parse(event.data);
+        const shouldMarkRead = notificationsOpenRef.current;
+        const nextItem = shouldMarkRead ? { ...incoming, read: true } : incoming;
+
+        setNotifications((prev) => [
+          nextItem,
+          ...prev.filter((item) => item.id !== incoming.id),
+        ].slice(0, 20));
+
+        if (shouldMarkRead) {
+          markNotificationsRead([incoming.id]);
+        } else {
+          setUnreadCount((prev) => prev + 1);
+          toast.success(incoming.title || "Có thông báo mới", {
+            id: incoming.id,
+          });
+          // If showtimes were expired on the server, refresh the showtimes list in background
+          if (incoming.type === 'showtime_expired' && activeTab === 'showtimes') {
+            axiosInstance.get('/admin/showtimes')
+              .then((r) => setShowtimes(r.data))
+              .catch(() => { });
+          }
+        }
+      } catch {
+        // Ignore malformed SSE payloads.
+      }
+    };
+    source.onerror = () => {
+      void loadNotifications();
+    };
+
+    return () => source.close();
+  }, [loadNotifications, markNotificationsRead]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Fetch stats
   useEffect(() => {
     if (activeTab !== "dashboard") return;
-    setStatsLoading(true);
-    Promise.all([
-      axiosInstance.get("/admin/reports/revenue"),
-      axiosInstance.get("/admin/reports/bookings"),
-      axiosInstance.get("/admin/reports/combo-revenue"),
-      axiosInstance.get("/admin/reports/timeslots"),
-      axiosInstance.get("/admin/reports/refunds"),
-      axiosInstance.get("/admin/reports/top-movies"),
-    ]).then(([revenueRes, bookingsRes, comboRes, timeslotsRes, refundsRes, topMoviesRes]) => {
-      const byStatus = bookingsRes.data.reduce((acc, item) => {
-        acc[item._id] = item;
-        return acc;
-      }, {});
-      setStats({
-        totalRevenue: revenueRes.data.summary?.totalRevenue || 0,
-        totalBookings: revenueRes.data.summary?.totalBookings || 0,
-        pendingBookings: byStatus["pending"]?.count || 0,
-        expiredBookings: byStatus["expired"]?.count || 0,
-      });
-      setExtStats({
-        comboRevenue: comboRes.data.totalComboRevenue || 0,
-        comboItems: comboRes.data.items || [],
-        timeslots: timeslotsRes.data || [],
-        refunds: refundsRes.data || { totalRefunds: 0, totalRefundAmount: 0 },
-        topMovies: topMoviesRes.data || [],
-      });
-    }).catch(() => {}).finally(() => setStatsLoading(false));
+    let cancelled = false;
+    const timeoutId = window.setTimeout(async () => {
+      setStatsLoading(true);
+      try {
+        const [revenueRes, bookingsRes, comboRes, timeslotsRes, refundsRes, topMoviesRes] = await Promise.all([
+          axiosInstance.get("/admin/reports/revenue"),
+          axiosInstance.get("/admin/reports/bookings"),
+          axiosInstance.get("/admin/reports/combo-revenue"),
+          axiosInstance.get("/admin/reports/timeslots"),
+          axiosInstance.get("/admin/reports/refunds"),
+          axiosInstance.get("/admin/reports/top-movies"),
+        ]);
+        if (cancelled) return;
+
+        const byStatus = bookingsRes.data.reduce((acc, item) => {
+          acc[item._id] = item;
+          return acc;
+        }, {});
+
+        setStats({
+          totalRevenue: revenueRes.data.summary?.totalRevenue || 0,
+          totalBookings: revenueRes.data.summary?.totalBookings || 0,
+          pendingBookings: byStatus.pending?.count || 0,
+          expiredBookings: byStatus.expired?.count || 0,
+        });
+        setExtStats({
+          comboRevenue: comboRes.data.totalComboRevenue || 0,
+          comboItems: comboRes.data.items || [],
+          timeslots: timeslotsRes.data || [],
+          refunds: refundsRes.data || { totalRefunds: 0, totalRefundAmount: 0 },
+          topMovies: topMoviesRes.data || [],
+        });
+      } catch {
+        // Keep the last dashboard snapshot if the refresh fails.
+      } finally {
+        if (!cancelled) setStatsLoading(false);
+      }
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
   }, [activeTab]);
 
   // Fetch movies
   useEffect(() => {
     if (activeTab !== "movies") return;
-    setMoviesLoading(true);
-    axiosInstance.get("/movies")
-      .then((res) => setMovies(res.data))
-      .catch(() => toast.error("Không tải được danh sách phim"))
-      .finally(() => setMoviesLoading(false));
+    const timeoutId = window.setTimeout(() => {
+      setMoviesLoading(true);
+      axiosInstance.get("/movies")
+        .then((res) => setMovies(res.data))
+        .catch(() => toast.error("Không tải được danh sách phim"))
+        .finally(() => setMoviesLoading(false));
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [activeTab]);
 
   // Fetch orders
   useEffect(() => {
     if (activeTab !== "orders") return;
-    setOrdersLoading(true);
-    axiosInstance.get("/admin/bookings")
-      .then((res) => {
-        const transformed = res.data.map((booking) => {
-          const showtime = booking.showtime || {};
-          const movie = showtime.movie || {};
-          const cinema = showtime.cinema || {};
-          return {
-            _raw: booking,
-            orderId: booking.bookingCode || booking._id,
-            customerName: booking.user?.name || "Khách hàng",
-            phone: booking.user?.phone || "",
-            bookingTime: new Date(booking.createdAt).toLocaleString("vi-VN"),
-            movieTitle: movie.title || "Phim",
-            cinemaName: cinema.name || "5Cine",
-            showDate: showtime.date ? new Date(showtime.date).toLocaleDateString("vi-VN") : "",
-            showTime: showtime.startTime || "",
-            selectedSeats: booking.seatNumbers || [],
-            finalTotalPrice: booking.totalPrice,
-            combos: booking.extraItems || [],
-            status: booking.status === "paid" ? "Đã thanh toán" : booking.status === "cancelled" ? "Đã hủy" : booking.status === "expired" ? "Hết hạn" : booking.status === "refunded" ? "Đã hoàn tiền" : "Chờ thanh toán",
-            ticketStatus: booking.ticketStatus || "not_printed",
-            paymentMethod: booking.paymentId?.method || "",
-            bookingRawId: booking._id,
-          };
-        });
-        setOrders(transformed);
-      })
-      .catch(() => toast.error("Không tải được đơn hàng"))
-      .finally(() => setOrdersLoading(false));
+    const timeoutId = window.setTimeout(() => {
+      setOrdersLoading(true);
+      axiosInstance.get("/admin/bookings")
+        .then((res) => {
+          const transformed = res.data.map((booking) => {
+            const showtime = booking.showtime || {};
+            const movie = showtime.movie || {};
+            const cinema = showtime.cinema || {};
+            return {
+              _raw: booking,
+              orderId: booking.bookingCode || booking._id,
+              customerName: booking.user?.name || "Khách hàng",
+              customerEmail: booking.user?.email || "",
+              phone: booking.user?.phone || "",
+              bookingTime: new Date(booking.createdAt).toLocaleString("vi-VN"),
+              movieTitle: movie.title || "Phim",
+              cinemaName: cinema.name || "5Cine",
+              showDate: showtime.date ? new Date(showtime.date).toLocaleDateString("vi-VN") : "",
+              showTime: showtime.startTime || "",
+              selectedSeats: booking.seatNumbers || [],
+              finalTotalPrice: booking.totalPrice,
+              combos: booking.extraItems || [],
+              status: booking.status === "paid" ? "Đã thanh toán" : booking.status === "cancelled" ? "Đã hủy" : booking.status === "expired" ? "Hết hạn" : booking.status === "refunded" ? "Đã hoàn tiền" : "Chờ thanh toán",
+              ticketStatus: booking.ticketStatus || "not_printed",
+              paymentMethod: booking.paymentId?.method || "",
+              bookingRawId: booking._id,
+            };
+          });
+          setOrders(transformed);
+        })
+        .catch(() => toast.error("Không tải được đơn hàng"))
+        .finally(() => setOrdersLoading(false));
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [activeTab]);
 
   // Auto-open order detail modal when ?booking=BKXXX is in URL
   useEffect(() => {
     if (!bookingParam || ordersLoading || !orders.length) return;
-    const found = orders.find((o) => o.orderId === bookingParam);
-    if (found) {
-      setSelectedOrder(found);
-      setIsOrderModalOpen(true);
-    }
+    const timeoutId = window.setTimeout(() => {
+      const found = orders.find((o) => o.orderId === bookingParam);
+      if (found) {
+        setSelectedOrder(found);
+        setIsOrderModalOpen(true);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [bookingParam, orders, ordersLoading]);
 
   // Fetch users
   useEffect(() => {
     if (activeTab !== "users") return;
-    setUsersLoading(true);
-    axiosInstance.get("/admin/users")
-      .then((res) => setUsers(res.data))
-      .catch(() => toast.error("Không tải được danh sách thành viên"))
-      .finally(() => setUsersLoading(false));
+    const timeoutId = window.setTimeout(() => {
+      setUsersLoading(true);
+      axiosInstance.get("/admin/users")
+        .then((res) => setUsers(res.data))
+        .catch(() => toast.error("Không tải được danh sách thành viên"))
+        .finally(() => setUsersLoading(false));
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [activeTab]);
 
   // Fetch cinemas when needed (showtimes or rooms tabs)
   useEffect(() => {
     if (activeTab !== "rooms" || cinemas.length > 0) return;
-    axiosInstance.get("/admin/cinemas").then((res) => setCinemas(res.data)).catch(() => {});
+    axiosInstance.get("/admin/cinemas").then((res) => setCinemas(res.data)).catch(() => { });
   }, [activeTab, cinemas.length]);
 
   // Fetch showtimes + cinemas + movies (dùng cho filter và modal)
   useEffect(() => {
     if (activeTab !== "showtimes") return;
-    setShowtimesLoading(true);
-    Promise.all([
-      axiosInstance.get("/admin/showtimes"),
-      axiosInstance.get("/admin/cinemas"),
-      axiosInstance.get("/movies"),
-    ]).then(([stRes, cinemasRes, moviesRes]) => {
-      setShowtimes(stRes.data);
-      setCinemas(cinemasRes.data);
-      setMovies(moviesRes.data);
-    }).catch(() => toast.error("Không tải được danh sách suất chiếu"))
-      .finally(() => setShowtimesLoading(false));
+    const timeoutId = window.setTimeout(() => {
+      setShowtimesLoading(true);
+      Promise.all([
+        axiosInstance.get("/admin/showtimes"),
+        axiosInstance.get("/admin/cinemas"),
+        axiosInstance.get("/movies"),
+      ]).then(([stRes, cinemasRes, moviesRes]) => {
+        setShowtimes(stRes.data);
+        setCinemas(cinemasRes.data);
+        setMovies(moviesRes.data);
+      }).catch(() => toast.error("Không tải được danh sách suất chiếu"))
+        .finally(() => setShowtimesLoading(false));
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== "showtimes") return undefined;
+
+    const intervalId = window.setInterval(async () => {
+      try {
+        const [stRes, cinemasRes, moviesRes] = await Promise.all([
+          axiosInstance.get("/admin/showtimes"),
+          axiosInstance.get("/admin/cinemas"),
+          axiosInstance.get("/movies"),
+        ]);
+
+        setShowtimes(stRes.data);
+        setCinemas(cinemasRes.data);
+        setMovies(moviesRes.data);
+      } catch {
+        // Keep the current list visible if background refresh fails.
+      }
+    }, 60000);
+
+    return () => window.clearInterval(intervalId);
   }, [activeTab]);
 
   const handleTabChange = (tabId) => {
@@ -501,10 +702,74 @@ const Dashboard = () => {
               <ExternalLink size={15} />
               <span className="hidden sm:inline">Trang người dùng</span>
             </Link>
-            <button className="p-2.5 bg-white border border-slate-100 rounded-xl text-slate-500 hover:text-[#dc2626] hover:shadow-md transition-all relative">
-              <Bell size={20} />
-              <span className="absolute top-2 right-2.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white" />
-            </button>
+            <div className="relative" ref={notificationsRef}>
+              <button
+                onClick={handleToggleNotifications}
+                className="p-2.5 bg-white border border-slate-100 rounded-xl text-slate-500 hover:text-[#dc2626] hover:shadow-md transition-all relative"
+              >
+                <Bell size={20} />
+                {unreadCount > 0 && (
+                  <>
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                    <span className="absolute top-2 right-2.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white" />
+                  </>
+                )}
+              </button>
+
+              {showNotifications && (
+                <div className="absolute right-0 mt-3 w-[360px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden z-40">
+                  <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-slate-800 text-sm">Thông báo quản trị</p>
+                      <p className="text-xs text-slate-400">Cập nhật theo thời gian thực</p>
+                    </div>
+                    {notifications.length > 0 && (
+                      <button
+                        onClick={() => markNotificationsRead([])}
+                        className="text-xs font-bold text-[#dc2626] hover:underline"
+                      >
+                        Đánh dấu đã đọc
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="max-h-[420px] overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="px-4 py-10 text-center text-sm text-slate-400">
+                        Chưa có thông báo nào.
+                      </div>
+                    ) : (
+                      notifications.map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            if (item.data?.bookingCode) {
+                              setSearchParams({ tab: "orders", booking: item.data.bookingCode });
+                              setShowNotifications(false);
+                            }
+                          }}
+                          className={`w-full text-left px-4 py-3 border-b border-slate-100 last:border-b-0 transition-colors ${item.data?.bookingCode ? "hover:bg-slate-50 cursor-pointer" : "cursor-default"
+                            } ${item.read ? "bg-white" : "bg-rose-50/50"}`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <span className={`mt-1 w-2.5 h-2.5 rounded-full shrink-0 ${item.read ? "bg-slate-200" : "bg-rose-500"}`} />
+                            <div className="min-w-0">
+                              <p className="text-sm font-bold text-slate-800">{item.title}</p>
+                              <p className="text-xs text-slate-500 mt-1 leading-relaxed">{item.message}</p>
+                              <p className="text-[11px] text-slate-400 mt-2">
+                                {item.createdAt ? new Date(item.createdAt).toLocaleString("vi-VN") : ""}
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 bg-[#dc2626] rounded-xl text-white flex items-center justify-center font-bold shadow-lg shadow-red-200 text-sm">
                 {adminUser?.name?.charAt(0).toUpperCase() || "A"}
@@ -534,7 +799,7 @@ const Dashboard = () => {
                 cinemas={cinemas}
                 onAddNew={() => {
                   if (movies.length === 0) {
-                    axiosInstance.get("/movies").then((r) => setMovies(r.data)).catch(() => {});
+                    axiosInstance.get("/movies").then((r) => setMovies(r.data)).catch(() => { });
                   }
                   setIsShowtimeModalOpen(true);
                 }}

@@ -22,15 +22,76 @@ function generateDateRange(from, to, allowedDays) {
   return result;
 }
 
+function parseTimeValue(value) {
+  if (!value || typeof value !== "string") return null;
+  const [hours, minutes] = value.split(":").map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+  return { hours, minutes };
+}
+
+function getShowtimeDateTime(showtime, useEndTime = true) {
+  if (!showtime?.date) return null;
+
+  const date = new Date(showtime.date);
+  const timeValue = useEndTime ? (showtime.endTime || showtime.startTime) : showtime.startTime;
+  const parsed = parseTimeValue(timeValue);
+
+  if (!parsed) return date;
+
+  date.setHours(parsed.hours, parsed.minutes, 0, 0);
+
+  if (
+    useEndTime &&
+    showtime.endTime &&
+    showtime.startTime &&
+    showtime.endTime < showtime.startTime
+  ) {
+    date.setDate(date.getDate() + 1);
+  }
+
+  return date;
+}
+
+function getEffectiveShowtimeStatus(showtime, now = new Date()) {
+  if (!showtime) return "cancelled";
+  if (showtime.status === "cancelled" || showtime.status === "expired") return showtime.status;
+
+  const endDateTime = getShowtimeDateTime(showtime, true);
+  if (!endDateTime) return showtime.status || "active";
+
+  return endDateTime < now ? "expired" : (showtime.status || "active");
+}
+
 const ErrorMsg = ({ msg }) => (
   <p className="text-red-500 text-xs mt-1 ml-1">{msg}</p>
 );
 
 const DAY_TYPE_LABEL = { weekday: "Ngày thường", weekend: "Cuối tuần", holiday: "Ngày lễ" };
 const TIME_SLOT_LABEL = { morning: "Buổi sáng", afternoon: "Buổi chiều", evening: "Buổi tối", night: "Buổi đêm" };
+const SHOWTIME_STATUS_META = {
+  active: {
+    label: "Đang chiếu",
+    badge: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    dot: "bg-emerald-500 animate-pulse",
+  },
+  expired: {
+    label: "Đã hết hạn",
+    badge: "bg-slate-100 text-slate-600 border-slate-200",
+    dot: "bg-slate-400",
+  },
+  cancelled: {
+    label: "Đã hủy",
+    badge: "bg-red-50 text-red-500 border-red-100",
+    dot: "bg-red-400",
+  },
+};
 
-const ShowtimeDetailModal = ({ showtime: st, onClose }) => (
-  <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+const ShowtimeDetailModal = ({ showtime: st, onClose }) => {
+  const effectiveStatus = getEffectiveShowtimeStatus(st);
+  const statusMeta = SHOWTIME_STATUS_META[effectiveStatus] || SHOWTIME_STATUS_META.cancelled;
+
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
     <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-slate-100">
       <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
@@ -103,16 +164,17 @@ const ShowtimeDetailModal = ({ showtime: st, onClose }) => (
           </div>
           <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Trạng thái</p>
-            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${st.status === "active" ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-red-50 text-red-500 border-red-100"}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${st.status === "active" ? "bg-emerald-500 animate-pulse" : "bg-red-400"}`} />
-              {st.status === "active" ? "Đang chiếu" : "Đã hủy"}
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${statusMeta.badge}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`} />
+              {statusMeta.label}
             </span>
           </div>
         </div>
       </div>
     </div>
-  </div>
-);
+    </div>
+  );
+};
 
 const selectClass = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] appearance-none font-medium text-slate-700 cursor-pointer transition-colors";
 const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] font-medium text-slate-700 transition-all";
@@ -383,15 +445,33 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
   const [filterCinema, setFilterCinema] = useState("");
   const [filterStatus, setFilterStatus] = useState("active");
   const [detailShowtime, setDetailShowtime] = useState(null);
+  const [nowTick, setNowTick] = useState(() => Date.now());
 
-  const filtered = showtimes.filter((st) => {
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNowTick(Date.now());
+    }, 30000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  const currentTime = new Date(nowTick);
+  const normalizedShowtimes = showtimes.map((st) => ({
+    ...st,
+    effectiveStatus: getEffectiveShowtimeStatus(st, currentTime),
+  }));
+
+  const filtered = normalizedShowtimes.filter((st) => {
     const movieOk = !filterMovie || st.movie?._id === filterMovie;
     const cinemaOk = !filterCinema || st.cinema?._id === filterCinema;
-    const statusOk = !filterStatus || st.status === filterStatus;
+    const statusOk = !filterStatus || st.effectiveStatus === filterStatus;
     return movieOk && cinemaOk && statusOk;
   });
 
-  const cancelledCount = showtimes.filter(st => st.status === "cancelled").length;
+  const statusCounts = normalizedShowtimes.reduce((acc, st) => {
+    acc[st.effectiveStatus] = (acc[st.effectiveStatus] || 0) + 1;
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-6">
@@ -413,8 +493,9 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
         {/* Status toggle */}
         <div className="flex items-center gap-2">
           {[
-            { value: "active", label: "Đang chiếu", cls: "bg-emerald-50 text-emerald-600 border-emerald-200" },
-            { value: "cancelled", label: `Đã hủy${cancelledCount > 0 ? ` (${cancelledCount})` : ""}`, cls: "bg-red-50 text-red-500 border-red-200" },
+            { value: "active", label: `Đang chiếu${statusCounts.active ? ` (${statusCounts.active})` : ""}`, cls: "bg-emerald-50 text-emerald-600 border-emerald-200" },
+            { value: "expired", label: `Đã hết hạn${statusCounts.expired ? ` (${statusCounts.expired})` : ""}`, cls: "bg-slate-100 text-slate-600 border-slate-200" },
+            { value: "cancelled", label: `Đã hủy${statusCounts.cancelled ? ` (${statusCounts.cancelled})` : ""}`, cls: "bg-red-50 text-red-500 border-red-200" },
             { value: "", label: "Tất cả", cls: "bg-slate-100 text-slate-600 border-slate-200" },
           ].map((opt) => (
             <button
@@ -470,8 +551,11 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
                 {filtered.length === 0 ? (
                   <tr><td colSpan="8" className="p-12 text-center text-slate-400 italic">Chưa có suất chiếu nào.</td></tr>
                 ) : (
-                  filtered.map((st) => (
-                    <tr key={st._id} onClick={() => setDetailShowtime(st)} className="hover:bg-slate-50/80 transition-colors group cursor-pointer">
+                  filtered.map((st) => {
+                    const statusMeta = SHOWTIME_STATUS_META[st.effectiveStatus] || SHOWTIME_STATUS_META.cancelled;
+
+                    return (
+                      <tr key={st._id} onClick={() => setDetailShowtime(st)} className="hover:bg-slate-50/80 transition-colors group cursor-pointer">
                       <td className="p-4 pl-6">
                         <div className="flex items-center gap-3">
                           {st.movie?.poster && (
@@ -505,9 +589,9 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
                         {st.availableSeats ?? "—"} / {st.totalSeats ?? "—"}
                       </td>
                       <td className="p-4 text-center">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${st.status === "active" ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-red-50 text-red-500 border-red-100"}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${st.status === "active" ? "bg-emerald-500 animate-pulse" : "bg-red-400"}`}></span>
-                          {st.status === "active" ? "Đang chiếu" : "Đã hủy"}
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${statusMeta.badge}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`}></span>
+                          {statusMeta.label}
                         </span>
                       </td>
                       <td className="p-4 pr-6 text-right" onClick={(e) => e.stopPropagation()}>
@@ -517,7 +601,7 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
                             title="Xem chi tiết">
                             <Eye size={16} />
                           </button>
-                          {st.status === "active" && (
+                          {st.effectiveStatus === "active" && (
                             <button onClick={() => onCancel(st)}
                               className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                               title="Hủy suất chiếu">
@@ -526,8 +610,9 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
                           )}
                         </div>
                       </td>
-                    </tr>
-                  ))
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

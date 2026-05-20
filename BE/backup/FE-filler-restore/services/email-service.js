@@ -1,0 +1,168 @@
+const nodemailer = require('nodemailer');
+const { createTicketAccessToken } = require('../utils/ticket-access');
+
+let transporter;
+
+function isEmailConfigured() {
+    return !!(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+}
+
+function getTransporter() {
+    if (!isEmailConfigured()) return null;
+    if (!transporter) {
+        transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+        });
+    }
+    return transporter;
+}
+
+function getFrontendUrl() {
+    return process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173';
+}
+
+function getServerUrl() {
+    return process.env.SERVER_URL || `http://localhost:${process.env.PORT || 5000}`;
+}
+
+function formatCurrency(amount) {
+    return Number(amount || 0).toLocaleString('vi-VN');
+}
+
+function formatShowtime(booking) {
+    const showtime = booking?.showtime;
+    const dateText = showtime?.date ? new Date(showtime.date).toLocaleDateString('vi-VN') : '---';
+    const timeText = showtime?.startTime || '---';
+    const roomText = showtime?.room?.name ? ` - ${showtime.room.name}` : '';
+    return `${dateText} ${timeText}${roomText}`;
+}
+
+async function sendEmail({ to, subject, html }) {
+    if (!to) return { skipped: true, reason: 'missing_recipient' };
+
+    const mailer = getTransporter();
+    if (!mailer) {
+        console.warn(`[email] skipped "${subject}" because email credentials are missing`);
+        return { skipped: true, reason: 'not_configured' };
+    }
+
+    try {
+        await mailer.sendMail({
+            from: `"5Cine" <${process.env.EMAIL_USER}>`,
+            to,
+            subject,
+            html,
+        });
+        return { sent: true };
+    } catch (error) {
+        console.error('[email] send failed:', error.message);
+        return { sent: false, error: error.message };
+    }
+}
+
+function wrapEmail(title, bodyHtml) {
+    return `
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#ffffff;border:1px solid #e5e7eb;border-radius:16px">
+            <h2 style="margin:0 0 8px;color:#dc2626">5Cine</h2>
+            <h3 style="margin:0 0 20px;color:#111827">${title}</h3>
+            <div style="color:#374151;line-height:1.6;font-size:14px">
+                ${bodyHtml}
+            </div>
+        </div>
+    `;
+}
+
+async function sendPaymentSuccessEmail(booking, paymentMethod = '') {
+    const movieTitle = booking?.showtime?.movie?.title || 'Phim';
+    const cinemaName = booking?.showtime?.cinema?.name || '5Cine';
+    const accessToken = createTicketAccessToken(booking);
+    const pdfUrl = `${getServerUrl()}/api/tickets/${booking._id}/pdf?accessToken=${encodeURIComponent(accessToken)}`;
+    const orderUrl = `${getFrontendUrl()}/my-tickets`;
+
+    return sendEmail({
+        to: booking?.user?.email,
+        subject: `5Cine - Thanh toán thành công cho đơn ${booking.bookingCode}`,
+        html: wrapEmail(
+            'Thanh toán thành công',
+            `
+                <p>Xin chào <strong>${booking?.user?.name || 'bạn'}</strong>, đơn vé của bạn đã được thanh toán thành công.</p>
+                <p><strong>Mã đơn:</strong> ${booking.bookingCode}<br/>
+                <strong>Phim:</strong> ${movieTitle}<br/>
+                <strong>Rạp:</strong> ${cinemaName}<br/>
+                <strong>Suất chiếu:</strong> ${formatShowtime(booking)}<br/>
+                <strong>Ghế:</strong> ${(booking?.seatNumbers || []).join(', ') || '---'}<br/>
+                <strong>Tổng tiền:</strong> ${formatCurrency(booking?.totalPrice)} đ<br/>
+                <strong>Phương thức:</strong> ${paymentMethod || booking?.paymentId?.method || 'online'}</p>
+                <p>Bạn có thể xem vé tại <a href="${orderUrl}">${orderUrl}</a>.</p>
+                <p>Link PDF sẽ hoạt động sau khi vé được nhân viên rạp xác nhận: <a href="${pdfUrl}">${pdfUrl}</a></p>
+            `
+        ),
+    });
+}
+
+async function sendShowtimeReminderEmail(booking) {
+    return sendEmail({
+        to: booking?.user?.email,
+        subject: `5Cine - Nhắc lịch chiếu cho đơn ${booking.bookingCode}`,
+        html: wrapEmail(
+            'Nhắc lịch chiếu trong 24 giờ tới',
+            `
+                <p>Đây là lời nhắc cho vé phim của <strong>${booking?.user?.name || 'bạn'}</strong>.</p>
+                <p><strong>Mã đơn:</strong> ${booking.bookingCode}<br/>
+                <strong>Suất chiếu:</strong> ${formatShowtime(booking)}<br/>
+                <strong>Rạp:</strong> ${booking?.showtime?.cinema?.name || '5Cine'}<br/>
+                <strong>Ghế:</strong> ${(booking?.seatNumbers || []).join(', ') || '---'}</p>
+                <p>Vui lòng đến rạp sớm để làm thủ tục thuận tiện hơn.</p>
+            `
+        ),
+    });
+}
+
+async function sendRefundEmail(booking, reason) {
+    return sendEmail({
+        to: booking?.user?.email,
+        subject: `5Cine - Hoàn tiền cho đơn ${booking.bookingCode}`,
+        html: wrapEmail(
+            'Đơn vé đã được hoàn tiền',
+            `
+                <p>Đơn vé của <strong>${booking?.user?.name || 'bạn'}</strong> đã được hoàn tiền.</p>
+                <p><strong>Mã đơn:</strong> ${booking.bookingCode}<br/>
+                <strong>Phim:</strong> ${booking?.showtime?.movie?.title || 'Phim'}<br/>
+                <strong>Suất chiếu:</strong> ${formatShowtime(booking)}<br/>
+                <strong>Số tiền hoàn:</strong> ${formatCurrency(booking?.totalPrice)} đ</p>
+                <p><strong>Lý do:</strong> ${reason || 'Hệ thống cập nhật trạng thái hoàn tiền'}.</p>
+            `
+        ),
+    });
+}
+
+async function sendShowtimeCancelledEmail(booking, reason) {
+    return sendEmail({
+        to: booking?.user?.email,
+        subject: `5Cine - Suất chiếu đã bị hủy cho đơn ${booking.bookingCode}`,
+        html: wrapEmail(
+            'Suất chiếu đã bị hủy',
+            `
+                <p>Rất tiếc, suất chiếu trong đơn <strong>${booking.bookingCode}</strong> đã bị hủy.</p>
+                <p><strong>Phim:</strong> ${booking?.showtime?.movie?.title || 'Phim'}<br/>
+                <strong>Rạp:</strong> ${booking?.showtime?.cinema?.name || '5Cine'}<br/>
+                <strong>Suất chiếu:</strong> ${formatShowtime(booking)}</p>
+                <p><strong>Lý do:</strong> ${reason || 'Rạp cần điều chỉnh lịch chiếu'}.</p>
+                <p>Nếu đơn đã thanh toán, hệ thống sẽ tự động hoàn tiền cho bạn.</p>
+            `
+        ),
+    });
+}
+
+module.exports = {
+    isEmailConfigured,
+    sendEmail,
+    sendPaymentSuccessEmail,
+    sendRefundEmail,
+    sendShowtimeCancelledEmail,
+    sendShowtimeReminderEmail,
+};

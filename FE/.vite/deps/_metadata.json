@@ -1,67 +1,61 @@
 {
-  "hash": "9d3de2cf",
+  "hash": "ebf83b8a",
   "configHash": "5104dd9d",
-  "lockfileHash": "c4aa0d28",
-  "browserHash": "1b4c71c1",
+  "lockfileHash": "73098568",
+  "browserHash": "a89e2372",
   "optimized": {
     "react": {
       "src": "../../node_modules/react/index.js",
       "file": "react.js",
-      "fileHash": "5fbb9107",
+      "fileHash": "2b152b00",
       "needsInterop": true
     },
     "react-dom/client": {
       "src": "../../node_modules/react-dom/client.js",
       "file": "react-dom_client.js",
-      "fileHash": "e7800632",
+      "fileHash": "c11c6b1b",
       "needsInterop": true
     },
     "react-router-dom": {
       "src": "../../node_modules/react-router-dom/dist/index.mjs",
       "file": "react-router-dom.js",
-      "fileHash": "5870cfcd",
+      "fileHash": "4613ccfa",
       "needsInterop": false
     },
     "react-hot-toast": {
       "src": "../../node_modules/react-hot-toast/dist/index.mjs",
       "file": "react-hot-toast.js",
-      "fileHash": "6134e140",
+      "fileHash": "5c39d838",
       "needsInterop": false
     },
     "lucide-react": {
       "src": "../../node_modules/lucide-react/dist/esm/lucide-react.js",
       "file": "lucide-react.js",
-      "fileHash": "21788c6b",
-      "needsInterop": false
-    },
-    "axios": {
-      "src": "../../node_modules/axios/index.js",
-      "file": "axios.js",
-      "fileHash": "749dda73",
+      "fileHash": "339f6b64",
       "needsInterop": false
     },
     "qrcode.react": {
       "src": "../../node_modules/qrcode.react/lib/esm/index.js",
       "file": "qrcode__react.js",
-      "fileHash": "db7127af",
+      "fileHash": "597531f6",
       "needsInterop": false
     },
-    "socket.io-client": {
-      "src": "../../node_modules/socket.io-client/build/esm/index.js",
-      "file": "socket__io-client.js",
-      "fileHash": "bb5515b9",
-      "needsInterop": false
-    },
-    "react-hook-form": {
-      "src": "../../node_modules/react-hook-form/dist/index.esm.mjs",
-      "file": "react-hook-form.js",
-      "fileHash": "5ccb4d09",
+    "axios": {
+      "src": "../../node_modules/axios/index.js",
+      "file": "axios.js",
+      "fileHash": "5c15837c",
       "needsInterop": false
     },
     "html5-qrcode": {
       "src": "../../node_modules/html5-qrcode/esm/index.js",
       "file": "html5-qrcode.js",
-      "fileHash": "483f304b",
+      "fileHash": "68e594db",
+      "needsInterop": false
+    },
+    "react-hook-form": {
+      "src": "../../node_modules/react-hook-form/dist/index.esm.mjs",
+      "file": "react-hook-form.js",
+      "fileHash": "8fb737c4",
       "needsInterop": false
     }
   },
