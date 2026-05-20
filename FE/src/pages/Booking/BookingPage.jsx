@@ -113,6 +113,8 @@ const BookingPage = () => {
 
   const [secondsLeft, setSecondsLeft] = useState(HOLD_SECONDS);
   const [timerStarted, setTimerStarted] = useState(false);
+  const [timerExpired, setTimerExpired] = useState(false);
+  const warnedRef = useRef(false);
 
   const [combos, setCombos] = useState(COMBOS.map((c) => ({ ...c, quantity: 0 })));
 
@@ -139,10 +141,13 @@ const BookingPage = () => {
 
   useEffect(() => {
     if (!timerStarted) return;
-    if (secondsLeft <= 0) { alert("Hết thời gian giữ ghế! Vui lòng chọn lại."); navigate(-1); return; }
+    if (secondsLeft <= 0) { setTimerExpired(true); return; }
+    if (secondsLeft === 60 && !warnedRef.current) {
+      warnedRef.current = true;
+    }
     const interval = setInterval(() => setSecondsLeft((s) => s - 1), 1000);
     return () => clearInterval(interval);
-  }, [timerStarted, secondsLeft, navigate]);
+  }, [timerStarted, secondsLeft]);
 
   const formatTime = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
@@ -221,6 +226,8 @@ const BookingPage = () => {
 
   const title = movieTitle || "Đang tải...";
   const isUrgent = timerStarted && secondsLeft <= 60;
+  const isWarning = timerStarted && secondsLeft <= 120 && secondsLeft > 60;
+  const timerProgress = secondsLeft / HOLD_SECONDS; // 1 → 0
   const activeCombos = combos.filter((c) => c.quantity > 0);
 
   const goToPayment = () => navigate("/payment", {
@@ -337,17 +344,66 @@ const BookingPage = () => {
     </div>
   );
 
+  // SVG ring circumference for timer circle
+  const RING_R = 20;
+  const RING_C = 2 * Math.PI * RING_R;
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
       <Navbar />
+
+      {/* Timer expired modal */}
+      {timerExpired && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+          <div className="bg-white rounded-[28px] shadow-2xl max-w-xs w-full overflow-hidden border border-slate-100 text-center">
+            <div className="bg-gradient-to-br from-red-500 to-rose-600 px-6 pt-8 pb-6">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 ring-4 ring-white/30">
+                <Clock className="w-9 h-9 text-white" strokeWidth={2.5} />
+              </div>
+              <h2 className="text-xl font-black text-white mb-1">Hết thời gian giữ ghế</h2>
+              <p className="text-red-100 text-sm">Ghế bạn chọn đã được giải phóng. Vui lòng chọn lại.</p>
+            </div>
+            <div className="p-6 space-y-3">
+              <button
+                onClick={() => { setTimerExpired(false); setSelectedSeats([]); setSecondsLeft(HOLD_SECONDS); setTimerStarted(false); warnedRef.current = false; }}
+                className="w-full bg-[#dc2626] hover:bg-red-700 text-white font-black py-3.5 rounded-2xl transition-all text-sm uppercase tracking-wider"
+              >
+                Chọn lại ghế
+              </button>
+              <button
+                onClick={() => navigate(-1)}
+                className="w-full text-slate-400 hover:text-slate-600 font-medium text-sm py-2 transition-colors"
+              >
+                Quay lại trang trước
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-28 pb-28 lg:pb-16">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           {renderStepBar()}
           {timerStarted && (
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm ${isUrgent ? "bg-red-100 text-red-600 animate-pulse" : "bg-slate-100 text-slate-600"}`}>
-              <Clock size={16} />
-              Giữ ghế: <span className="font-black text-base">{formatTime(secondsLeft)}</span>
+            <div className={`flex items-center gap-2.5 pl-3 pr-4 py-2 rounded-2xl font-bold text-sm transition-all ${
+              isUrgent ? "bg-red-600 text-white shadow-lg shadow-red-200 animate-pulse" :
+              isWarning ? "bg-amber-50 text-amber-700 border-2 border-amber-300" :
+              "bg-slate-100 text-slate-600"
+            }`}>
+              {/* SVG circular progress ring */}
+              <svg width="40" height="40" viewBox="0 0 48 48" className="shrink-0 -rotate-90">
+                <circle cx="24" cy="24" r={RING_R} fill="none" strokeWidth="4"
+                  className={isUrgent ? "stroke-red-300/50" : isWarning ? "stroke-amber-200" : "stroke-slate-200"} />
+                <circle cx="24" cy="24" r={RING_R} fill="none" strokeWidth="4"
+                  strokeDasharray={RING_C}
+                  strokeDashoffset={RING_C * (1 - timerProgress)}
+                  strokeLinecap="round"
+                  className={isUrgent ? "stroke-white transition-all duration-1000" : isWarning ? "stroke-amber-500 transition-all duration-1000" : "stroke-[#dc2626] transition-all duration-1000"} />
+              </svg>
+              <div>
+                <p className={`text-[10px] font-bold uppercase tracking-wider leading-none mb-0.5 ${isUrgent ? "text-red-100" : "text-slate-400"}`}>Giữ ghế</p>
+                <span className="font-black text-base leading-none">{formatTime(secondsLeft)}</span>
+              </div>
             </div>
           )}
         </div>
