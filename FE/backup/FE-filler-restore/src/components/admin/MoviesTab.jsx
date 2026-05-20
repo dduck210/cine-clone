@@ -295,8 +295,8 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave }) => {
                   {...register("status")}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 appearance-none font-medium text-slate-700 cursor-pointer hover:bg-slate-100 transition-colors"
                 >
-                  <option value="now_showing">🟢 Đang chiếu</option>
-                  <option value="coming_soon">🟡 Sắp chiếu</option>
+                  <option value="now_showing">Đang chiếu</option>
+                  <option value="coming_soon">Sắp chiếu</option>
                 </select>
                 <ChevronDown className="absolute right-4 top-3.5 text-slate-400 pointer-events-none" size={18} />
               </div>
