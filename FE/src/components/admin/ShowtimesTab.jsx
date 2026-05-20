@@ -214,7 +214,7 @@ const selectClass = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 
 const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] font-medium text-slate-700 transition-all";
 
 export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
-  const { register, handleSubmit, watch, formState: { errors } } = useForm({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({
     defaultValues: { movieId: "", cinemaId: "", roomId: "", date: "", startTime: "", basePrice: "", dayType: "" },
   });
 
@@ -242,6 +242,13 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
       .catch(() => setRooms([]))
       .finally(() => setLoadingRooms(false));
   }, [selectedCinema]);
+
+  // Auto-fill dayType when date changes in single mode (user can still override)
+  useEffect(() => {
+    if (!watchedDate || bulkMode) return;
+    const detected = getDayTypeFE(watchedDate);
+    if (detected) setValue("dayType", detected);
+  }, [watchedDate, bulkMode]);
 
   const toggleDay = (day) => {
     setSelectedDays((prev) => {
