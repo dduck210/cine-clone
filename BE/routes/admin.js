@@ -616,12 +616,7 @@ router.put('/bookings/:id/confirm', protect, admin, async (req, res) => {
         await Seat.updateMany({ _id: { $in: booking.seats } }, { status: 'booked' });
 
         const bookingContext = await loadBookingContext(booking._id);
-        try {
-            const emailRes = await sendPaymentSuccessEmail(bookingContext, 'cash');
-            console.log('[email] sendPaymentSuccessEmail result:', emailRes);
-        } catch (err) {
-            console.error('[email] sendPaymentSuccessEmail error:', err?.message || err);
-        }
+        await sendPaymentSuccessEmail(bookingContext, 'cash');
         notificationService.createNotification({
             type: 'payment_paid',
             title: 'Thanh toán tại quầy thành công',

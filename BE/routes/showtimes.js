@@ -89,7 +89,7 @@ router.post('/', protect, admin, async (req, res) => {
             // Conflict check: same room, same date, overlapping time
             const conflict = await Showtime.findOne({
                 room: roomId,
-                date: { $gte: new Date(new Date(date).setHours(0, 0, 0, 0)), $lt: new Date(new Date(date).setHours(23, 59, 59, 999)) },
+                date: { $gte: new Date(new Date(date).setHours(0,0,0,0)), $lt: new Date(new Date(date).setHours(23,59,59,999)) },
                 status: 'active',
                 $or: [
                     { startTime: { $gte: startTime, $lt: endTime } },
@@ -152,7 +152,7 @@ router.post('/', protect, admin, async (req, res) => {
                 for (let i = 0; i < room.rows; i++) {
                     const row = String.fromCharCode(65 + i);
                     const isCouple = room.rows >= 6 && i === room.rows - 1;
-                    const isVip = room.rows >= 6 && i >= room.rows - 2;
+                    const isVip    = room.rows >= 6 && i >= room.rows - 2;
                     const seatType = isCouple ? 'couple' : isVip ? 'vip' : 'normal';
                     for (let j = 1; j <= room.cols; j++) {
                         seats.push({
@@ -263,18 +263,8 @@ router.put('/:id/cancel', protect, admin, async (req, res) => {
                             { path: 'room', select: 'name' },
                         ],
                     });
-                try {
-                    const cancelRes = await sendShowtimeCancelledEmail(bookingContext, 'Suất chiếu bị hủy bởi quản trị viên');
-                    console.log('[email] sendShowtimeCancelledEmail result:', cancelRes);
-                } catch (err) {
-                    console.error('[email] sendShowtimeCancelledEmail error:', err?.message || err);
-                }
-                try {
-                    const refundRes = await sendRefundEmail(bookingContext, 'Suất chiếu bị hủy bởi quản trị viên');
-                    console.log('[email] sendRefundEmail result:', refundRes);
-                } catch (err) {
-                    console.error('[email] sendRefundEmail error:', err?.message || err);
-                }
+                await sendShowtimeCancelledEmail(bookingContext, 'Suất chiếu bị hủy bởi quản trị viên');
+                await sendRefundEmail(bookingContext, 'Suất chiếu bị hủy bởi quản trị viên');
             }
         }
 
