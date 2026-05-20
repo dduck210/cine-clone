@@ -1115,6 +1115,11 @@ export const RoomsManager = ({ cinemas }) => {
     setSelectedRoomIds([]);
   }, [selectedCinemaData?._id, selectedCinemaData?.status]);
 
+  useEffect(() => {
+    setCinemaStatus(selectedCinemaData?.status || "");
+    setSelectedRoomIds([]);
+  }, [selectedCinemaData?._id, selectedCinemaData?.status]);
+
   const handleOpenEdit = (room) => {
     setEditRoom(room);
     setShowModal(true);
