@@ -521,6 +521,8 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
   const [filterCinema, setFilterCinema] = useState("");
   const [filterStatus, setFilterStatus] = useState("active");
   const [detailShowtime, setDetailShowtime] = useState(null);
+  const [cancelTarget, setCancelTarget] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [nowTick, setNowTick] = useState(() => Date.now());
 
@@ -557,8 +559,73 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
     return acc;
   }, {});
 
+  const handleConfirmCancel = async () => {
+    if (!cancelTarget) return;
+    setCancelling(true);
+    await onCancel(cancelTarget);
+    setCancelling(false);
+    setCancelTarget(null);
+  };
+
   return (
     <div className="space-y-6">
+
+      {/* Cancel confirm modal */}
+      {cancelTarget && (
+        <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur-sm">
+          <div className="bg-white rounded-[28px] shadow-2xl max-w-sm w-full overflow-hidden border border-slate-100">
+            <div className="bg-gradient-to-br from-red-500 to-rose-600 px-6 pt-7 pb-6 text-center">
+              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 ring-4 ring-white/30">
+                <Ban className="w-7 h-7 text-white" strokeWidth={2.5} />
+              </div>
+              <h2 className="text-lg font-black text-white mb-1">Xác nhận hủy suất chiếu</h2>
+              <p className="text-red-100 text-sm">Hành động này không thể hoàn tác</p>
+            </div>
+            <div className="p-5 space-y-2">
+              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-400 font-medium">Phim</span>
+                  <span className="font-bold text-slate-800 text-right max-w-[60%] line-clamp-1">{cancelTarget.movie?.title || "—"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400 font-medium">Suất chiếu</span>
+                  <span className="font-bold text-slate-800">{cancelTarget.startTime} — {cancelTarget.endTime}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400 font-medium">Ngày</span>
+                  <span className="font-bold text-slate-800">{cancelTarget.date ? new Date(cancelTarget.date).toLocaleDateString("vi-VN") : "—"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400 font-medium">Rạp</span>
+                  <span className="font-bold text-slate-800">{cancelTarget.cinema?.name || "—"}</span>
+                </div>
+              </div>
+              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 font-medium">
+                Tất cả vé đã đặt sẽ được hoàn tiền tự động.
+              </p>
+            </div>
+            <div className="px-5 pb-5 flex gap-3">
+              <button
+                onClick={() => setCancelTarget(null)}
+                disabled={cancelling}
+                className="flex-1 py-3 rounded-2xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all disabled:opacity-50"
+              >
+                Không hủy
+              </button>
+              <button
+                onClick={handleConfirmCancel}
+                disabled={cancelling}
+                className="flex-1 py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {cancelling ? (
+                  <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Đang hủy...</>
+                ) : "Xác nhận hủy"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
         <div>
           <h2 className="text-xl font-bold text-slate-800">Quản Lý Suất Chiếu</h2>
@@ -686,7 +753,7 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
                             <Eye size={16} />
                           </button>
                           {st.effectiveStatus === "active" && (
-                            <button onClick={() => onCancel(st)}
+                            <button onClick={(e) => { e.stopPropagation(); setCancelTarget(st); }}
                               className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                               title="Hủy suất chiếu">
                               <Ban size={16} />

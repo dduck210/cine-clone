@@ -366,7 +366,10 @@ const Dashboard = () => {
                 markNotificationsRead([incoming.id]);
               } else {
                 setUnreadCount((prev) => prev + 1);
-                toast.success(incoming.title || "Có thông báo mới", { id: incoming.id });
+                // skip toast for admin-initiated actions that already show their own toast
+                if (incoming.type !== "showtime_cancelled") {
+                  toast.success(incoming.title || "Có thông báo mới", { id: incoming.id });
+                }
                 if (incoming.type === "showtime_expired" && activeTab === "showtimes") {
                   axiosInstance.get("/admin/showtimes")
                     .then((r) => setShowtimes(r.data))
@@ -699,7 +702,6 @@ const Dashboard = () => {
   };
 
   const handleCancelShowtime = async (showtime) => {
-    if (!window.confirm(`Hủy suất chiếu "${showtime.movie?.title}" lúc ${showtime.startTime}?`)) return;
     try {
       await axiosInstance.put(`/showtimes/${showtime._id}/cancel`);
       setShowtimes(showtimes.map((s) => s._id === showtime._id ? { ...s, status: "cancelled" } : s));
