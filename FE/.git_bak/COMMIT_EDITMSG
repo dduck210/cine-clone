@@ -1,0 +1,6 @@
+feat: add admin-to-user nav button and remove unused files
+
+- Add "Trang người dùng" link in admin dashboard header
+- Add search and filter to Orders tab
+- Fix status labels in MyTicketsPage and ProfilePage
+- Remove unused AdminLayout, adminData, mockData, TestAPI, TestAuth
