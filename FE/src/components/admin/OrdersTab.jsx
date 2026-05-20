@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Html5QrcodeScanner } from "html5-qrcode";
+import toast from "react-hot-toast";
 import {
   Ticket,
   X,
@@ -269,12 +270,15 @@ export const OrderDetailModal = ({ order, onClose, onPrint }) => {
   );
 };
 
+const PAGE_SIZE = 10;
+
 export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onConfirm, onPrint }) => {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const filterRef = useRef(null);
   const searchRef = useRef(null);
 
@@ -287,16 +291,22 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Auto-open modal when a full booking code is scanned/typed
+  const autoPrintByCode = (code) => {
+    const trimmed = code.trim();
+    const found = orders.find((o) => o.orderId?.toLowerCase() === trimmed.toLowerCase());
+    if (!found) { toast.error(`Không tìm thấy đơn hàng: ${trimmed}`); return; }
+    if (found.status !== "Đã thanh toán") { toast.error("Đơn hàng này chưa được thanh toán"); return; }
+    if (found.ticketStatus === "printed") { toast("Vé này đã được xác nhận trước đó", { icon: "ℹ️" }); return; }
+    onPrint?.(found.bookingRawId);
+  };
+
+  // Auto-print when a full booking code is typed via keyboard wedge scanner
   useEffect(() => {
     const trimmed = search.trim();
     if (!/^BK\d{10,}$/i.test(trimmed)) return;
-    const found = orders.find((o) => o.orderId?.toLowerCase() === trimmed.toLowerCase());
-    if (found) {
-      onViewTicket(found);
-      setSearch("");
-      setScanning(false);
-    }
+    setSearch("");
+    setScanning(false);
+    autoPrintByCode(trimmed);
   }, [search, orders]);
 
   const handleScanClick = () => {
@@ -307,7 +317,8 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
 
   const handleScanned = (code) => {
     setShowScanner(false);
-    setSearch(code);
+    setScanning(false);
+    autoPrintByCode(code);
   };
 
   const filterOptions = [
@@ -328,6 +339,13 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
     const matchStatus = !filterStatus || o.status === filterStatus;
     return matchSearch && matchStatus;
   });
+
+  const totalPages = Math.ceil(filteredOrders.length / PAGE_SIZE);
+  const pagedOrders = filteredOrders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  // Reset to page 1 when filter/search changes
+  const handleSearch = (val) => { setSearch(val); setCurrentPage(1); };
+  const handleFilterStatus = (val) => { setFilterStatus(val); setCurrentPage(1); };
 
   return (
     <div className="space-y-6">
@@ -356,7 +374,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
               type="text"
               placeholder={scanning ? "Dí máy quét vào QR code..." : "Tìm mã vé, khách hàng, email, phim..."}
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               onBlur={() => { if (scanning && !search) setScanning(false); }}
               className={`w-full pl-9 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all ${
                 scanning
@@ -375,7 +393,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
               <Filter size={16} />
               <span className="hidden sm:inline">{filterStatus || "Lọc"}</span>
               {filterStatus && (
-                <span onClick={(e) => { e.stopPropagation(); setFilterStatus(""); }} className="hover:text-red-800">
+                <span onClick={(e) => { e.stopPropagation(); handleFilterStatus(""); }} className="hover:text-red-800">
                   <X size={13} />
                 </span>
               )}
@@ -385,7 +403,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
                 {filterOptions.map((opt) => (
                   <button
                     key={opt.value}
-                    onClick={() => { setFilterStatus(opt.value); setShowFilter(false); }}
+                    onClick={() => { handleFilterStatus(opt.value); setShowFilter(false); }}
                     className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${
                       filterStatus === opt.value ? "bg-red-50 text-red-600" : "text-slate-600 hover:bg-slate-50"
                     }`}
@@ -421,7 +439,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
               <tr><td colSpan="7" className="p-12 text-center text-slate-400 italic">
                 {search || filterStatus ? "Không tìm thấy đơn hàng phù hợp." : "Chưa có đơn hàng nào."}
               </td></tr>
-            ) : filteredOrders.map((order, index) => (
+            ) : pagedOrders.map((order, index) => (
               <tr
                 key={`${order.orderId}-${index}`}
                 className="hover:bg-slate-50 transition-colors"
@@ -505,6 +523,54 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
         </table>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-2">
+          <p className="text-sm text-slate-500">
+            Hiển thị <span className="font-bold text-slate-700">{(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredOrders.length)}</span> / <span className="font-bold text-slate-700">{filteredOrders.length}</span> đơn hàng
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              ‹ Trước
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+              .reduce((acc, p, i, arr) => {
+                if (i > 0 && p - arr[i - 1] > 1) acc.push("...");
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((p, i) =>
+                p === "..." ? (
+                  <span key={`dots-${i}`} className="px-2 text-slate-400 text-sm">…</span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => setCurrentPage(p)}
+                    className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${
+                      currentPage === p
+                        ? "bg-[#dc2626] text-white shadow-sm shadow-red-200"
+                        : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              Sau ›
+            </button>
+          </div>
+        </div>
+      )}
 
       {showScanner && (
         <QrScannerModal

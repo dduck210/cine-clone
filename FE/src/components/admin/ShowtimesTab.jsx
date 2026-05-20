@@ -514,11 +514,14 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
   );
 };
 
+const SHOWTIMES_PAGE_SIZE = 10;
+
 export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew, onCancel }) => {
   const [filterMovie, setFilterMovie] = useState("");
   const [filterCinema, setFilterCinema] = useState("");
   const [filterStatus, setFilterStatus] = useState("active");
   const [detailShowtime, setDetailShowtime] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [nowTick, setNowTick] = useState(() => Date.now());
 
   useEffect(() => {
@@ -541,6 +544,13 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
     const statusOk = !filterStatus || st.effectiveStatus === filterStatus;
     return movieOk && cinemaOk && statusOk;
   });
+
+  const totalPages = Math.ceil(filtered.length / SHOWTIMES_PAGE_SIZE);
+  const pagedShowtimes = filtered.slice((currentPage - 1) * SHOWTIMES_PAGE_SIZE, currentPage * SHOWTIMES_PAGE_SIZE);
+
+  const handleFilterMovie = (v) => { setFilterMovie(v); setCurrentPage(1); };
+  const handleFilterCinema = (v) => { setFilterCinema(v); setCurrentPage(1); };
+  const handleFilterStatus = (v) => { setFilterStatus(v); setCurrentPage(1); };
 
   const statusCounts = normalizedShowtimes.reduce((acc, st) => {
     acc[st.effectiveStatus] = (acc[st.effectiveStatus] || 0) + 1;
@@ -574,7 +584,7 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
           ].map((opt) => (
             <button
               key={opt.value}
-              onClick={() => setFilterStatus(opt.value)}
+              onClick={() => handleFilterStatus(opt.value)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${filterStatus === opt.value ? opt.cls : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"}`}
             >
               {opt.label}
@@ -584,7 +594,7 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="relative">
             <Film className="absolute left-3 top-3 text-slate-400" size={16} />
-            <select value={filterMovie} onChange={(e) => setFilterMovie(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm font-medium text-slate-700 appearance-none outline-none focus:border-[#dc2626] cursor-pointer">
+            <select value={filterMovie} onChange={(e) => handleFilterMovie(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm font-medium text-slate-700 appearance-none outline-none focus:border-[#dc2626] cursor-pointer">
               <option value="">Tất cả phim</option>
               {movies.map((m) => <option key={m._id} value={m._id}>{m.title}</option>)}
             </select>
@@ -592,7 +602,7 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
           </div>
           <div className="relative">
             <MapPin className="absolute left-3 top-3 text-slate-400" size={16} />
-            <select value={filterCinema} onChange={(e) => setFilterCinema(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm font-medium text-slate-700 appearance-none outline-none focus:border-[#dc2626] cursor-pointer">
+            <select value={filterCinema} onChange={(e) => handleFilterCinema(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm font-medium text-slate-700 appearance-none outline-none focus:border-[#dc2626] cursor-pointer">
               <option value="">Tất cả rạp</option>
               {cinemas.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
             </select>
@@ -625,7 +635,7 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
                 {filtered.length === 0 ? (
                   <tr><td colSpan="8" className="p-12 text-center text-slate-400 italic">Chưa có suất chiếu nào.</td></tr>
                 ) : (
-                  filtered.map((st) => {
+                  pagedShowtimes.map((st) => {
                     const statusMeta = SHOWTIME_STATUS_META[st.effectiveStatus] || SHOWTIME_STATUS_META.cancelled;
 
                     return (
@@ -692,6 +702,36 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
             </table>
           </div>
         )}
+      </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between px-2">
+        <p className="text-sm text-slate-500">
+          Hiển thị <span className="font-bold text-slate-700">
+            {filtered.length === 0 ? 0 : (currentPage - 1) * SHOWTIMES_PAGE_SIZE + 1}–{Math.min(currentPage * SHOWTIMES_PAGE_SIZE, filtered.length)}
+          </span> / <span className="font-bold text-slate-700">{filtered.length}</span> suất chiếu
+        </p>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}
+            className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+            ‹ Trước
+          </button>
+          {Array.from({ length: Math.max(totalPages, 1) }, (_, i) => i + 1)
+            .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+            .reduce((acc, p, i, arr) => { if (i > 0 && p - arr[i - 1] > 1) acc.push("..."); acc.push(p); return acc; }, [])
+            .map((p, i) => p === "..." ? (
+              <span key={`d${i}`} className="px-2 text-slate-400 text-sm">…</span>
+            ) : (
+              <button key={p} onClick={() => setCurrentPage(p)}
+                className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${currentPage === p ? "bg-[#dc2626] text-white shadow-sm" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                {p}
+              </button>
+            ))}
+          <button onClick={() => setCurrentPage((p) => Math.min(Math.max(totalPages, 1), p + 1))} disabled={currentPage >= totalPages}
+            className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+            Sau ›
+          </button>
+        </div>
       </div>
 
       {detailShowtime && (

@@ -68,11 +68,14 @@ export const UserEditModal = ({ user, onClose, onSave }) => {
   );
 };
 
+const USERS_PAGE_SIZE = 10;
+
 export const UsersManager = ({ users, loading, onUpdate, onDelete }) => {
   const [search, setSearch] = useState("");
   const [editUser, setEditUser] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
 
@@ -81,6 +84,11 @@ export const UsersManager = ({ users, loading, onUpdate, onDelete }) => {
       u.name?.toLowerCase().includes(search.toLowerCase()) ||
       u.email?.toLowerCase().includes(search.toLowerCase())
   );
+
+  const totalPages = Math.ceil(filtered.length / USERS_PAGE_SIZE);
+  const pagedUsers = filtered.slice((currentPage - 1) * USERS_PAGE_SIZE, currentPage * USERS_PAGE_SIZE);
+
+  const handleSearch = (e) => { setSearch(e.target.value); setCurrentPage(1); };
 
   const formatDate = (d) => new Date(d).toLocaleDateString("vi-VN");
 
@@ -101,7 +109,7 @@ export const UsersManager = ({ users, loading, onUpdate, onDelete }) => {
             type="text"
             placeholder="Tìm tên hoặc email..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={handleSearch}
             className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 font-medium"
           />
         </div>
@@ -126,7 +134,7 @@ export const UsersManager = ({ users, loading, onUpdate, onDelete }) => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {filtered.map((user) => (
+                  {pagedUsers.map((user) => (
                     <tr key={user._id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -181,8 +189,33 @@ export const UsersManager = ({ users, loading, onUpdate, onDelete }) => {
                 </tbody>
               </table>
             </div>
-            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50">
-              <p className="text-xs text-slate-400 font-medium">Tổng: {filtered.length} / {users.length} thành viên</p>
+            <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100">
+              <p className="text-xs text-slate-400 font-medium">
+                Hiển thị {filtered.length === 0 ? 0 : (currentPage - 1) * USERS_PAGE_SIZE + 1}–{Math.min(currentPage * USERS_PAGE_SIZE, filtered.length)} / {filtered.length} thành viên
+              </p>
+              <div className="flex items-center gap-1">
+                <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}
+                  className="px-3 h-9 rounded-lg text-sm font-bold border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed">‹ Trước</button>
+                {Array.from({ length: totalPages || 1 }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                  .reduce((acc, p, idx, arr) => {
+                    if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, i) =>
+                    p === "..." ? (
+                      <span key={`e-${i}`} className="w-9 h-9 flex items-center justify-center text-slate-400 text-sm">…</span>
+                    ) : (
+                      <button key={p} onClick={() => setCurrentPage(p)}
+                        className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${currentPage === p ? "bg-[#dc2626] text-white shadow-sm" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                        {p}
+                      </button>
+                    )
+                  )}
+                <button onClick={() => setCurrentPage((p) => Math.min(Math.max(totalPages, 1), p + 1))} disabled={currentPage >= totalPages}
+                  className="px-3 h-9 rounded-lg text-sm font-bold border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed">Sau ›</button>
+              </div>
             </div>
           </>
         )}
