@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const QRCode = require('qrcode');
 
 let transporter;
 
@@ -78,7 +79,8 @@ function wrapEmail(title, bodyHtml) {
 async function sendPaymentSuccessEmail(booking, paymentMethod = '') {
     const movieTitle = booking?.showtime?.movie?.title || 'Phim';
     const cinemaName = booking?.showtime?.cinema?.name || '5Cine';
-    const orderUrl = `${getFrontendUrl()}/my-tickets`;
+    const qrData = `${booking.bookingCode}`;
+    const qrDataUrl = await QRCode.toDataURL(qrData, { width: 200, margin: 2 });
 
     return sendEmail({
         to: booking?.user?.email,
@@ -94,7 +96,11 @@ async function sendPaymentSuccessEmail(booking, paymentMethod = '') {
                 <strong>Ghế:</strong> ${(booking?.seatNumbers || []).join(', ') || '---'}<br/>
                 <strong>Tổng tiền:</strong> ${formatCurrency(booking?.totalPrice)} đ<br/>
                 <strong>Phương thức:</strong> ${paymentMethod || booking?.paymentId?.method || 'online'}</p>
-                <p>Bạn có thể xem và tải vé tại: <a href="${orderUrl}">${orderUrl}</a></p>
+                <div style="margin:20px 0;text-align:center">
+                    <img src="${qrDataUrl}" alt="QR vé" style="width:180px;height:180px;border:1px solid #e5e7eb;border-radius:8px;padding:8px"/>
+                    <p style="margin:10px 0 4px;font-weight:700;color:#111827">Mã QR vé của bạn</p>
+                    <p style="margin:0;color:#6b7280;font-size:13px">Xuất trình mã QR này tại quầy — nhân viên rạp sẽ quét để xác nhận và in vé cho bạn.</p>
+                </div>
             `
         ),
     });
