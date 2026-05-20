@@ -104,7 +104,34 @@ export const MovieDetailModal = ({ movie, onClose, onEdit }) => {
   );
 };
 
-export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave }) => {
+export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOptions = [] }) => {
+  const [selectedGenres, setSelectedGenres] = useState(() => {
+    if (!currentMovie?.genre) return [];
+    return Array.isArray(currentMovie.genre)
+      ? currentMovie.genre.map((g) => (typeof g === "object" ? g._id : g))
+      : [];
+  });
+  const [genreDropdownOpen, setGenreDropdownOpen] = useState(false);
+  const genreDropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (genreDropdownRef.current && !genreDropdownRef.current.contains(e.target))
+        setGenreDropdownOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const toggleGenre = (id) =>
+    setSelectedGenres((prev) =>
+      prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]
+    );
+
+  const selectedGenreNames = selectedGenres
+    .map((id) => genreOptions.find((g) => g._id === id)?.name)
+    .filter(Boolean);
+
   const {
     register,
     handleSubmit,
@@ -125,7 +152,13 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave }) => {
     },
   });
   useEffect(() => {
-    if (currentMovie) reset(currentMovie);
+    if (currentMovie) {
+      const ids = Array.isArray(currentMovie.genre)
+        ? currentMovie.genre.map((g) => (typeof g === "object" ? g._id : g))
+        : [];
+      setSelectedGenres(ids);
+      reset({ ...currentMovie, genre: ids });
+    }
   }, [currentMovie, reset]);
 
   const inputClass = (error) =>
@@ -155,7 +188,10 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave }) => {
           </button>
         </div>
         <form
-          onSubmit={handleSubmit(handleSave)}
+          onSubmit={handleSubmit((data) => {
+            if (selectedGenres.length === 0) return;
+            handleSave({ ...data, genre: selectedGenres });
+          })}
           className="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1"
         >
           <div>
@@ -173,16 +209,44 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave }) => {
             {errors.title && <ErrorMsg msg={errors.title.message} />}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div>
+            <div ref={genreDropdownRef} className="relative">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
                 Thể loại <span className="text-red-500">*</span>
               </label>
-              <input
-                {...register("genre", { required: "Nhập thể loại" })}
-                className={inputClass(errors.genre)}
-                placeholder="Hành động..."
-              />
-              {errors.genre && <ErrorMsg msg={errors.genre.message} />}
+              <button
+                type="button"
+                onClick={() => setGenreDropdownOpen((o) => !o)}
+                className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-left font-medium transition-all flex items-center justify-between ${
+                  selectedGenres.length === 0 ? "text-slate-400" : "text-slate-700"
+                } ${genreDropdownOpen ? "border-[#dc2626] ring-4 ring-red-50" : "border-slate-200 hover:border-slate-300"}`}
+              >
+                <span className="truncate text-sm">
+                  {selectedGenreNames.length > 0 ? selectedGenreNames.join(", ") : "Chọn thể loại..."}
+                </span>
+                <ChevronDown size={16} className={`shrink-0 ml-2 text-slate-400 transition-transform ${genreDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+              {genreDropdownOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                  {genreOptions.length === 0 ? (
+                    <p className="text-xs text-slate-400 text-center py-4">Không có thể loại nào</p>
+                  ) : (
+                    genreOptions.map((g) => (
+                      <label key={g._id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedGenres.includes(g._id)}
+                          onChange={() => toggleGenre(g._id)}
+                          className="w-4 h-4 accent-[#dc2626] rounded"
+                        />
+                        <span className="text-sm text-slate-700 font-medium">{g.name}</span>
+                      </label>
+                    ))
+                  )}
+                </div>
+              )}
+              {selectedGenres.length === 0 && (
+                <p className="text-red-500 text-xs mt-1 ml-1">Chọn ít nhất 1 thể loại</p>
+              )}
             </div>
             <div>
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">

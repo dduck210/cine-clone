@@ -11,6 +11,15 @@ const { calcEndTime } = require('../utils/pricing');
 const { sendRefundEmail, sendShowtimeCancelledEmail } = require('../services/email-service');
 const notificationService = require('../services/notification-service');
 
+router.get('/genres', async (req, res) => {
+    try {
+        const genres = await Genre.find({}).sort({ name: 1 });
+        res.json(genres);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 router.get('/', async (req, res) => {
     try {
         const movies = await Movie.find({}).populate('genre');
@@ -88,6 +97,7 @@ router.put('/:id', protect, admin, async (req, res) => {
             }
         }
 
+        await updated.populate('genre');
         res.json({
             movie: updated,
             durationChanged,

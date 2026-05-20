@@ -208,6 +208,7 @@ const Dashboard = () => {
 
   const [movies, setMovies] = useState([]);
   const [moviesLoading, setMoviesLoading] = useState(false);
+  const [genreOptions, setGenreOptions] = useState([]);
   const [stats, setStats] = useState({ totalRevenue: 0, totalBookings: 0, pendingBookings: 0 });
   const [statsLoading, setStatsLoading] = useState(false);
   const [extStats, setExtStats] = useState({ comboRevenue: 0, comboItems: [], timeslots: [], refunds: { totalRefunds: 0, totalRefundAmount: 0 }, topMovies: [] });
@@ -454,8 +455,14 @@ const Dashboard = () => {
     if (activeTab !== "movies") return;
     const timeoutId = window.setTimeout(() => {
       setMoviesLoading(true);
-      axiosInstance.get("/movies")
-        .then((res) => setMovies(res.data))
+      Promise.all([
+        axiosInstance.get("/movies"),
+        axiosInstance.get("/movies/genres"),
+      ])
+        .then(([moviesRes, genresRes]) => {
+          setMovies(moviesRes.data);
+          setGenreOptions(genresRes.data);
+        })
         .catch(() => toast.error("Không tải được danh sách phim"))
         .finally(() => setMoviesLoading(false));
     }, 0);
@@ -855,7 +862,7 @@ const Dashboard = () => {
       </main>
 
       {isModalOpen && (
-        <MovieModal currentMovie={currentMovie} setIsModalOpen={setIsModalOpen} handleSave={handleSave} />
+        <MovieModal currentMovie={currentMovie} setIsModalOpen={setIsModalOpen} handleSave={handleSave} genreOptions={genreOptions} />
       )}
       {isShowtimeModalOpen && (
         <ShowtimeModal
