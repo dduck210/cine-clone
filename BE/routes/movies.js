@@ -44,6 +44,7 @@ router.post('/', protect, admin, async (req, res) => {
     try {
         const movie = new Movie({ title, genre, duration, poster, trailer, description, status, ageRestriction, director, cast, releaseDate });
         const createdMovie = await movie.save();
+        await createdMovie.populate('genre');
         res.status(201).json(createdMovie);
     } catch (error) {
         res.status(500).json({ message: error.message });
