@@ -19,14 +19,18 @@ axiosInstance.interceptors.request.use((config) => {
     return config;
 });
 
-// Handle responses
+// Handle responses — only force-logout on 401 from protected endpoints, not from auth endpoints
 axiosInstance.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('currentUser');
-            window.location.href = '/login';
+            const url = error.config?.url || '';
+            const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/register');
+            if (!isAuthEndpoint) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('currentUser');
+                window.location.href = '/login';
+            }
         }
         return Promise.reject(error);
     }
