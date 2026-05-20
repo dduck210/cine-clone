@@ -210,8 +210,8 @@ const ShowtimeDetailModal = ({ showtime: st, onClose }) => {
   );
 };
 
-const selectClass = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] appearance-none font-medium text-slate-700 cursor-pointer transition-colors";
-const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] font-medium text-slate-700 transition-all";
+const selectClass = "w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] appearance-none font-medium text-slate-700 cursor-pointer transition-colors";
+const inputClass = "w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] font-medium text-slate-700 transition-all";
 
 export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({
