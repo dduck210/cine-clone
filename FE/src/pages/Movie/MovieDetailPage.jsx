@@ -282,7 +282,14 @@ const MovieDetailPage = () => {
                     navigate("/login");
                     return;
                   }
-                  toast("Vui lòng chọn suất chiếu bên dưới", { icon: "👇" });
+                  showtimeSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  // pulse-highlight the showtime section for 1.5s
+                  const el = showtimeSectionRef.current;
+                  if (el) {
+                    el.classList.add("ring-2", "ring-[#dc2626]", "ring-offset-4", "rounded-xl", "transition-all");
+                    setTimeout(() => el.classList.remove("ring-2", "ring-[#dc2626]", "ring-offset-4", "rounded-xl"), 1500);
+                  }
+                  toast("Vui lòng chọn suất chiếu bên dưới ↓", { icon: "🎬", duration: 2500 });
                 }}
                 className="w-full bg-[#dc2626] hover:bg-red-700 text-white font-bold py-4 rounded-lg shadow-lg shadow-red-200 transition-all uppercase tracking-wider text-sm flex items-center justify-center gap-2"
               >

@@ -149,11 +149,27 @@ const BookingPage = () => {
   const updateCombo = (comboId, delta) =>
     setCombos(combos.map((c) => (c.id === comboId ? { ...c, quantity: Math.max(0, c.quantity + delta) } : c)));
 
+  const checkMixTypeViolation = (currentSelected, addingType) => {
+    const isDeselecting = currentSelected.every(sn => seatMap[sn]?.type !== addingType || currentSelected.includes(sn));
+    const existingTypes = new Set(currentSelected.map(sn => seatMap[sn]?.type || "normal"));
+    if (existingTypes.has(addingType)) return null; // same type already selected, no new type added
+    if (existingTypes.size >= 2) return "Không thể chọn quá 2 loại ghế khác nhau trong cùng một đơn";
+    return null;
+  };
+
   const handleSeatClick = (seatNum) => {
     const seat = seatMap[seatNum];
     if (!seat || seat.status === "reserved" || seat.status === "booked" || seat.isLocked) return;
-    const error = checkGapViolation(seatMap, seats, selectedSeats, seatNum);
-    if (error) { setGapError(error); setTimeout(() => setGapError(""), 3000); return; }
+
+    const isDeselecting = selectedSeats.includes(seatNum);
+    if (!isDeselecting) {
+      const typeError = checkMixTypeViolation(selectedSeats, seat.type || "normal");
+      if (typeError) { setGapError(typeError); setTimeout(() => setGapError(""), 3500); return; }
+    }
+
+    const gapError = checkGapViolation(seatMap, seats, selectedSeats, seatNum);
+    if (gapError) { setGapError(gapError); setTimeout(() => setGapError(""), 3000); return; }
+
     setGapError("");
     setSelectedSeats((prev) => {
       const next = prev.includes(seatNum) ? prev.filter((s) => s !== seatNum) : [...prev, seatNum];
@@ -170,6 +186,8 @@ const BookingPage = () => {
     if (bothSelected) {
       setSelectedSeats((prev) => prev.filter((s) => s !== seatNumA && s !== seatNumB));
     } else {
+      const typeError = checkMixTypeViolation(selectedSeats, "couple");
+      if (typeError) { setGapError(typeError); setTimeout(() => setGapError(""), 3500); return; }
       setSelectedSeats((prev) => {
         const next = [...prev];
         if (!next.includes(seatNumA)) next.push(seatNumA);

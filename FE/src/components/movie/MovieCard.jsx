@@ -33,11 +33,11 @@ const MovieCard = ({ movie }) => {
       className="group block"
     >
       {/* Poster */}
-      <div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-gray-200 shadow-sm group-hover:shadow-xl transition-shadow duration-300">
+      <div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-gray-200 shadow-sm group-hover:shadow-xl transition-all duration-300 will-change-transform group-hover:-translate-y-1">
         <img
           src={movie.poster}
           alt={movie.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 will-change-transform"
         />
 
         {/* Gradient overlay on hover */}

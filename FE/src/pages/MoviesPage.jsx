@@ -31,6 +31,13 @@ const MoviesPage = () => {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans text-gray-900">
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(24px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .card-enter { animation: fadeInUp 0.45s cubic-bezier(0.22,1,0.36,1) both; }
+      `}</style>
       <Navbar />
 
       {/* Hero banner */}
@@ -135,9 +142,11 @@ const MoviesPage = () => {
             ))}
           </div>
         ) : displayMovies.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-            {displayMovies.map((movie) => (
-              <MovieCard key={movie._id || movie.id} movie={movie} />
+          <div key={activeTab + searchQuery} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+            {displayMovies.map((movie, i) => (
+              <div key={movie._id || movie.id} className="card-enter" style={{ animationDelay: `${Math.min(i * 55, 440)}ms` }}>
+                <MovieCard movie={movie} />
+              </div>
             ))}
           </div>
         ) : (
