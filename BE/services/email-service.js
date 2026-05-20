@@ -80,6 +80,8 @@ function wrapEmail(title, bodyHtml) {
 async function sendPaymentSuccessEmail(booking, paymentMethod = '') {
     const movieTitle = booking?.showtime?.movie?.title || 'Phim';
     const cinemaName = booking?.showtime?.cinema?.name || '5Cine';
+    const rawMethod = paymentMethod || booking?.paymentId?.method || '';
+    const methodLabel = rawMethod === 'momo' ? 'MoMo' : rawMethod === 'qr' ? 'QR Banking' : rawMethod || 'Online';
     const qrBuffer = await QRCode.toBuffer(booking.bookingCode, { width: 200, margin: 2 });
 
     return sendEmail({
@@ -96,7 +98,7 @@ async function sendPaymentSuccessEmail(booking, paymentMethod = '') {
                 <strong>Suất chiếu:</strong> ${formatShowtime(booking)}<br/>
                 <strong>Ghế:</strong> ${(booking?.seatNumbers || []).join(', ') || '---'}<br/>
                 <strong>Tổng tiền:</strong> ${formatCurrency(booking?.totalPrice)} đ<br/>
-                <strong>Phương thức:</strong> ${paymentMethod || booking?.paymentId?.method || 'online'}</p>
+                <strong>Phương thức:</strong> ${methodLabel}</p>
                 <div style="margin:20px 0;text-align:center">
                     <img src="cid:ticket-qr" alt="QR vé" style="width:180px;height:180px;border:1px solid #e5e7eb;border-radius:8px;padding:8px"/>
                     <p style="margin:10px 0 4px;font-weight:700;color:#111827">Mã QR vé của bạn</p>
