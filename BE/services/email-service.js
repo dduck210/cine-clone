@@ -172,20 +172,27 @@ async function sendAdminPaymentNotificationEmail(booking, paymentMethod = '') {
     return sendEmail({
         to: adminEmail,
         subject: `[5Cine] Đơn ${booking.bookingCode} vừa được thanh toán`,
-        html: wrapEmail(
-            'Thông báo thanh toán mới',
-            `
-                <p>Có đơn đặt vé mới vừa được thanh toán thành công.</p>
-                <p><strong>Khách hàng:</strong> ${booking?.user?.name || 'N/A'} (${booking?.user?.email || 'N/A'})<br/>
-                <strong>Mã đơn:</strong> ${booking.bookingCode}<br/>
-                <strong>Phim:</strong> ${movieTitle}<br/>
-                <strong>Rạp:</strong> ${cinemaName}<br/>
-                <strong>Suất chiếu:</strong> ${formatShowtime(booking)}<br/>
-                <strong>Ghế:</strong> ${(booking?.seatNumbers || []).join(', ') || '---'}<br/>
-                <strong>Tổng tiền:</strong> ${formatCurrency(booking?.totalPrice)} đ<br/>
-                <strong>Phương thức:</strong> ${methodLabel}</p>
-            `
-        ),
+        html: `
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08)">
+                <div style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:32px 24px;text-align:center">
+                    <h1 style="color:#fff;margin:0;font-size:22px;font-weight:900">5Cine</h1>
+                    <p style="color:rgba(255,255,255,0.85);margin:6px 0 0;font-size:13px">Thông báo thanh toán mới</p>
+                </div>
+                <div style="background:#fff;padding:28px 24px">
+                    <p style="color:#374151;font-size:15px;margin:0 0 16px">Có đơn đặt vé mới vừa được thanh toán thành công.</p>
+                    <div style="background:#f9fafb;border-radius:12px;padding:20px;font-size:14px;color:#374151;line-height:2">
+                        <div><span style="color:#6b7280">Khách hàng:</span> <strong>${booking?.user?.name || 'N/A'}</strong> (${booking?.user?.email || 'N/A'})</div>
+                        <div><span style="color:#6b7280">Mã đơn:</span> <strong style="color:#dc2626">${booking.bookingCode}</strong></div>
+                        <div><span style="color:#6b7280">Phim:</span> <strong>${movieTitle}</strong></div>
+                        <div><span style="color:#6b7280">Rạp:</span> ${cinemaName}</div>
+                        <div><span style="color:#6b7280">Suất chiếu:</span> ${formatShowtime(booking)}</div>
+                        <div><span style="color:#6b7280">Ghế:</span> ${(booking?.seatNumbers || []).join(', ') || '---'}</div>
+                        <div><span style="color:#6b7280">Tổng tiền:</span> <strong>${formatCurrency(booking?.totalPrice)} đ</strong></div>
+                        <div><span style="color:#6b7280">Phương thức:</span> ${methodLabel}</div>
+                    </div>
+                </div>
+            </div>
+        `,
     });
 }
 
