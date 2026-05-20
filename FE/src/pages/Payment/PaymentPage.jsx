@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../../components/common/Navbar";
 import Footer from "../../components/common/Footer";
@@ -13,6 +13,9 @@ import {
   Popcorn,
   X,
   Copy,
+  ShieldCheck,
+  ArrowLeft,
+  Ticket,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -100,6 +103,10 @@ const PaymentPage = () => {
   });
   const [errors, setErrors] = useState({});
   const [qrModal, setQrModal] = useState(null); // { bookingId, bookingCode, qrUrl, amount }
+  const [qrStep, setQrStep] = useState(1); // 1=QR scan, 2=OTP
+  const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
+  const [otpError, setOtpError] = useState("");
+  const otpRefs = useRef([]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -183,6 +190,46 @@ const PaymentPage = () => {
     }
   };
 
+  // Derive 6-digit OTP from bookingCode (last 6 numeric chars)
+  const getExpectedOtp = (bookingCode = "") =>
+    bookingCode.replace(/\D/g, "").slice(-6).padStart(6, "0");
+
+  const handleOtpInput = (idx, val) => {
+    const digit = val.replace(/\D/g, "").slice(-1);
+    const next = [...otpDigits];
+    next[idx] = digit;
+    setOtpDigits(next);
+    setOtpError("");
+    if (digit && idx < 5) otpRefs.current[idx + 1]?.focus();
+  };
+
+  const handleOtpKeyDown = (idx, e) => {
+    if (e.key === "Backspace" && !otpDigits[idx] && idx > 0)
+      otpRefs.current[idx - 1]?.focus();
+  };
+
+  const handleOtpPaste = (e) => {
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!pasted) return;
+    e.preventDefault();
+    const next = [...otpDigits];
+    for (let i = 0; i < 6; i++) next[i] = pasted[i] || "";
+    setOtpDigits(next);
+    otpRefs.current[Math.min(pasted.length, 5)]?.focus();
+  };
+
+  const handleConfirmOtp = () => {
+    const entered = otpDigits.join("");
+    if (entered.length < 6) { setOtpError("Vui lòng nhập đủ 6 số"); return; }
+    if (entered !== getExpectedOtp(qrModal.bookingCode)) {
+      setOtpError("Mã xác nhận không đúng. Vui lòng kiểm tra lại.");
+      setOtpDigits(["", "", "", "", "", ""]);
+      otpRefs.current[0]?.focus();
+      return;
+    }
+    handleConfirmQr();
+  };
+
   const handleConfirmQr = async () => {
     if (!qrModal) return;
     setIsProcessing(true);
@@ -193,7 +240,10 @@ const PaymentPage = () => {
         method: "qr",
       });
       toast.dismiss(loadingToast);
+      const savedModal = qrModal;
       setQrModal(null);
+      setQrStep(1);
+      setOtpDigits(["", "", "", "", "", ""]);
       setIsSuccess(true);
       const timer = setInterval(() => {
         setCountdown((prev) => {
@@ -202,8 +252,8 @@ const PaymentPage = () => {
             navigate("/payment-success", {
               state: {
                 ...location.state,
-                orderId: qrModal.bookingCode,
-                bookingId: qrModal.bookingId,
+                orderId: savedModal.bookingCode,
+                bookingId: savedModal.bookingId,
                 paymentMethod: "qr",
               },
             });
@@ -228,119 +278,173 @@ const PaymentPage = () => {
       <Toaster position="top-center" />
 
       {isSuccess && (
-        <div className="fixed inset-0 bg-slate-900/80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-[32px] shadow-2xl p-10 max-w-md w-full text-center border border-slate-100">
-            <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-100">
-              <CheckCircle
-                className="w-12 h-12 text-emerald-500"
-                strokeWidth={3}
-              />
+        <div className="fixed inset-0 bg-slate-900/90 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-[32px] shadow-2xl max-w-sm w-full overflow-hidden border border-slate-100">
+            <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-8 text-center">
+              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 ring-4 ring-white/30">
+                <CheckCircle className="w-11 h-11 text-white" strokeWidth={2.5} />
+              </div>
+              <h2 className="text-2xl font-black text-white mb-1">Thanh toán thành công!</h2>
+              <p className="text-emerald-100 text-sm font-medium">Vé của bạn đã được xác nhận</p>
             </div>
-            <h2 className="text-2xl font-black text-slate-800 mb-2">
-              Đặt vé thành công!
-            </h2>
-            <p className="text-slate-500 mb-8 font-medium">
-              Đang chuyển đến trang vé ({countdown}s)...
-            </p>
+            <div className="p-6 space-y-3">
+              <div className="flex items-center gap-3 bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                <Ticket size={18} className="text-[#dc2626] shrink-0" />
+                <div>
+                  <p className="text-xs text-slate-400 font-medium">Phim</p>
+                  <p className="font-bold text-slate-800 text-sm line-clamp-1">{movieTitle}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100 text-center">
+                  <p className="text-xs text-slate-400 font-medium mb-0.5">Suất chiếu</p>
+                  <p className="font-bold text-slate-800 text-sm">{showTime}</p>
+                </div>
+                <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100 text-center">
+                  <p className="text-xs text-slate-400 font-medium mb-0.5">Ghế</p>
+                  <p className="font-bold text-[#dc2626] text-sm">{selectedSeats?.join(", ")}</p>
+                </div>
+              </div>
+              <div className="bg-emerald-50 rounded-2xl p-3 border border-emerald-100 flex items-center justify-between">
+                <span className="text-xs text-emerald-700 font-bold uppercase tracking-wide">Tổng tiền</span>
+                <span className="font-black text-emerald-700 text-lg">{finalTotalPrice?.toLocaleString()}đ</span>
+              </div>
+            </div>
+            <div className="px-6 pb-6">
+              <div className="w-full bg-slate-100 rounded-full h-1.5 mb-2">
+                <div className="bg-emerald-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${((5 - countdown) / 5) * 100}%` }} />
+              </div>
+              <p className="text-center text-slate-400 text-xs font-medium">Đang chuyển đến trang vé ({countdown}s)...</p>
+            </div>
           </div>
         </div>
       )}
 
-      {/* QR Payment Modal */}
+      {/* QR Payment Modal — multi-step */}
       {qrModal && (
-        <div className="fixed inset-0 bg-slate-900/80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-[32px] shadow-2xl p-8 max-w-sm w-full text-center border border-slate-100 relative">
-            <button
-              onClick={() => setQrModal(null)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 text-slate-400"
-            >
-              <X size={18} />
-            </button>
-            <h2 className="text-xl font-black text-slate-800 mb-1">
-              Quét mã QR để thanh toán
-            </h2>
-            <p className="text-slate-500 text-sm mb-4">
-              Dùng app ngân hàng hoặc ví điện tử để quét
-            </p>
+        <div className="fixed inset-0 bg-slate-900/85 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-[32px] shadow-2xl max-w-sm w-full border border-slate-100 overflow-hidden">
 
-            <div className="bg-blue-50 rounded-2xl p-4 mb-4 border border-blue-100">
-              <img
-                src={qrModal.qrUrl}
-                alt="VietQR"
-                className="w-48 h-48 mx-auto rounded-xl"
-                onError={(e) => {
-                  e.target.src = `https://api.qrserver.com/v1/create-qr-code/?size=192x192&data=${encodeURIComponent(`${QR_BANK.bankId} ${QR_BANK.accountNo} ${qrModal.amount} ${qrModal.bookingCode}`)}`;
-                }}
-              />
-            </div>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 pt-6 pb-5 relative">
+              <button onClick={() => { setQrModal(null); setQrStep(1); setOtpDigits(["","","","","",""]); setOtpError(""); }}
+                className="absolute top-4 right-4 p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors">
+                <X size={16} />
+              </button>
 
-            <div className="text-left space-y-2 mb-5 bg-slate-50 rounded-2xl p-4 border border-slate-100">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Ngân hàng</span>
-                <span className="font-bold text-slate-800">
-                  {QR_BANK.bankId} Bank
-                </span>
+              {/* Step indicator */}
+              <div className="flex items-center justify-center gap-2 mb-4">
+                {[{ n: 1, label: "Chuyển khoản" }, { n: 2, label: "Xác nhận OTP" }].map(({ n, label }) => (
+                  <React.Fragment key={n}>
+                    <div className="flex items-center gap-1.5">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black transition-all ${qrStep >= n ? "bg-white text-blue-600" : "bg-white/20 text-white/60"}`}>{n}</div>
+                      <span className={`text-xs font-bold hidden sm:inline ${qrStep >= n ? "text-white" : "text-white/50"}`}>{label}</span>
+                    </div>
+                    {n < 2 && <div className={`w-8 h-0.5 rounded-full ${qrStep > n ? "bg-white" : "bg-white/30"}`} />}
+                  </React.Fragment>
+                ))}
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Số tài khoản</span>
-                <div className="flex items-center gap-1">
-                  <span className="font-bold text-slate-800">
-                    {QR_BANK.accountNo}
-                  </span>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(QR_BANK.accountNo);
-                      toast.success("Đã sao chép!");
-                    }}
-                    className="text-blue-500 hover:text-blue-700"
-                  >
-                    <Copy size={13} />
-                  </button>
-                </div>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Chủ tài khoản</span>
-                <span className="font-bold text-slate-800">
-                  {QR_BANK.accountName}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Số tiền</span>
-                <span className="font-black text-blue-600">
-                  {qrModal.amount.toLocaleString()}đ
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Nội dung CK</span>
-                <div className="flex items-center gap-1">
-                  <span className="font-bold text-slate-800">
-                    5CINE {qrModal.bookingCode}
-                  </span>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(
-                        `5CINE ${qrModal.bookingCode}`,
-                      );
-                      toast.success("Đã sao chép!");
-                    }}
-                    className="text-blue-500 hover:text-blue-700"
-                  >
-                    <Copy size={13} />
-                  </button>
-                </div>
+
+              <div className="text-center text-white">
+                <h2 className="text-lg font-black mb-0.5">
+                  {qrStep === 1 ? "Quét mã QR thanh toán" : "Nhập mã xác nhận"}
+                </h2>
+                <p className="text-blue-100 text-xs">
+                  {qrStep === 1 ? "Dùng app ngân hàng quét mã bên dưới" : "Nhập 6 số cuối trong nội dung chuyển khoản"}
+                </p>
               </div>
             </div>
 
-            <button
-              onClick={handleConfirmQr}
-              disabled={isProcessing}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl transition-all text-sm uppercase tracking-wider disabled:opacity-50"
-            >
-              {isProcessing ? "Đang xác nhận..." : "Tôi đã chuyển khoản xong"}
-            </button>
-            <p className="text-xs text-slate-400 mt-3">
-              Nhấn xác nhận sau khi chuyển khoản thành công
-            </p>
+            {/* Step 1: QR + bank info */}
+            {qrStep === 1 && (
+              <div className="p-6">
+                <div className="bg-blue-50 rounded-2xl p-3 mb-4 border border-blue-100 flex justify-center">
+                  <img src={qrModal.qrUrl} alt="VietQR" className="w-44 h-44 rounded-xl"
+                    onError={(e) => { e.target.src = `https://api.qrserver.com/v1/create-qr-code/?size=176x176&data=${encodeURIComponent(`${QR_BANK.bankId} ${QR_BANK.accountNo} ${qrModal.amount} ${qrModal.bookingCode}`)}`; }} />
+                </div>
+
+                <div className="space-y-2 mb-4 bg-slate-50 rounded-2xl p-4 border border-slate-100 text-sm">
+                  {[
+                    { label: "Ngân hàng", value: `${QR_BANK.bankId} Bank`, copy: null },
+                    { label: "Số tài khoản", value: QR_BANK.accountNo, copy: QR_BANK.accountNo },
+                    { label: "Chủ tài khoản", value: QR_BANK.accountName, copy: null },
+                    { label: "Số tiền", value: `${qrModal.amount.toLocaleString()}đ`, copy: null, highlight: true },
+                    { label: "Nội dung CK", value: `5CINE ${qrModal.bookingCode}`, copy: `5CINE ${qrModal.bookingCode}` },
+                  ].map(({ label, value, copy, highlight }) => (
+                    <div key={label} className="flex justify-between items-center">
+                      <span className="text-slate-400">{label}</span>
+                      <div className="flex items-center gap-1">
+                        <span className={`font-bold ${highlight ? "text-blue-600" : "text-slate-800"}`}>{value}</span>
+                        {copy && (
+                          <button onClick={() => { navigator.clipboard.writeText(copy); toast.success("Đã sao chép!"); }}
+                            className="text-blue-400 hover:text-blue-600 ml-1"><Copy size={12} /></button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* OTP hint box */}
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 mb-4 flex items-start gap-2">
+                  <ShieldCheck size={16} className="text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-amber-700 text-xs font-medium">
+                    Ghi nhớ <span className="font-black">{getExpectedOtp(qrModal.bookingCode)}</span> — mã xác nhận gồm 6 số cuối nội dung chuyển khoản, dùng ở bước tiếp theo.
+                  </p>
+                </div>
+
+                <button onClick={() => setQrStep(2)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-2xl transition-all text-sm uppercase tracking-wider">
+                  Tôi đã chuyển khoản xong →
+                </button>
+              </div>
+            )}
+
+            {/* Step 2: OTP input */}
+            {qrStep === 2 && (
+              <div className="p-6">
+                <div className="flex items-center justify-center w-16 h-16 bg-blue-50 rounded-full mx-auto mb-4 border border-blue-100">
+                  <ShieldCheck size={28} className="text-blue-600" />
+                </div>
+
+                <p className="text-center text-slate-500 text-sm mb-6">
+                  Nhập <span className="font-bold text-slate-800">6 số cuối</span> trong nội dung chuyển khoản để xác nhận thanh toán
+                </p>
+
+                {/* 6-box OTP */}
+                <div className="flex justify-center gap-2 mb-3">
+                  {otpDigits.map((d, i) => (
+                    <input key={i} ref={el => otpRefs.current[i] = el}
+                      type="text" inputMode="numeric" maxLength={1} value={d}
+                      onChange={e => handleOtpInput(i, e.target.value)}
+                      onKeyDown={e => handleOtpKeyDown(i, e)}
+                      onPaste={i === 0 ? handleOtpPaste : undefined}
+                      className={`w-11 h-14 text-center text-xl font-black border-2 rounded-xl outline-none transition-all ${
+                        otpError ? "border-red-400 bg-red-50 text-red-600" :
+                        d ? "border-blue-500 bg-blue-50 text-blue-700" :
+                        "border-slate-200 bg-slate-50 text-slate-800 focus:border-blue-400 focus:bg-blue-50"
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                {otpError && (
+                  <p className="text-center text-red-500 text-xs font-bold mb-4">{otpError}</p>
+                )}
+                {!otpError && <div className="mb-4" />}
+
+                <button onClick={handleConfirmOtp} disabled={isProcessing}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-black py-3.5 rounded-2xl transition-all text-sm uppercase tracking-wider flex items-center justify-center gap-2 mb-3">
+                  {isProcessing ? (
+                    <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Đang xác nhận...</>
+                  ) : "Xác nhận thanh toán"}
+                </button>
+
+                <button onClick={() => { setQrStep(1); setOtpDigits(["","","","","",""]); setOtpError(""); }}
+                  className="w-full flex items-center justify-center gap-1 text-slate-400 hover:text-slate-600 text-sm font-medium transition-colors">
+                  <ArrowLeft size={14} /> Quay lại
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
