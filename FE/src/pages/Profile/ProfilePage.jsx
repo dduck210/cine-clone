@@ -373,6 +373,29 @@ const HistoryTab = ({ navigate }) => {
   );
 };
 
+const PasswordField = ({ label, field, showKey, form, setForm, show, setShow }) => (
+  <div className="space-y-2">
+    <label className="text-sm font-semibold text-gray-700">{label}</label>
+    <div className="relative">
+      <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
+      <input
+        type={show[showKey] ? "text" : "password"}
+        value={form[field]}
+        onChange={(e) => setForm({ ...form, [field]: e.target.value })}
+        placeholder={`Nhập ${label.toLowerCase()}`}
+        className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#dc2626] focus:ring-2 focus:ring-red-100 transition-all text-sm"
+      />
+      <button
+        type="button"
+        onClick={() => setShow({ ...show, [showKey]: !show[showKey] })}
+        className="absolute right-3 top-3 text-gray-400 hover:text-gray-700"
+      >
+        {show[showKey] ? <EyeOff size={18} /> : <Eye size={18} />}
+      </button>
+    </div>
+  </div>
+);
+
 const ChangePasswordTab = () => {
   const [form, setForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [show, setShow] = useState({ current: false, newPass: false, confirm: false });
@@ -407,38 +430,15 @@ const ChangePasswordTab = () => {
     }
   };
 
-  const PasswordField = ({ label, field, showKey }) => (
-    <div className="space-y-2">
-      <label className="text-sm font-semibold text-gray-700">{label}</label>
-      <div className="relative">
-        <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
-        <input
-          type={show[showKey] ? "text" : "password"}
-          value={form[field]}
-          onChange={(e) => setForm({ ...form, [field]: e.target.value })}
-          placeholder={`Nhập ${label.toLowerCase()}`}
-          className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#dc2626] focus:ring-2 focus:ring-red-100 transition-all text-sm"
-        />
-        <button
-          type="button"
-          onClick={() => setShow({ ...show, [showKey]: !show[showKey] })}
-          className="absolute right-3 top-3 text-gray-400 hover:text-gray-700"
-        >
-          {show[showKey] ? <EyeOff size={18} /> : <Eye size={18} />}
-        </button>
-      </div>
-    </div>
-  );
-
   return (
     <div className="max-w-lg">
       <h2 className="text-xl font-bold text-gray-800 mb-1 border-l-4 border-red-600 pl-3">Đổi Mật Khẩu</h2>
       <p className="text-sm text-gray-500 mb-8 pl-4">Để bảo mật tài khoản, vui lòng không chia sẻ mật khẩu cho người khác</p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <PasswordField label="Mật khẩu hiện tại" field="currentPassword" showKey="current" />
-        <PasswordField label="Mật khẩu mới" field="newPassword" showKey="newPass" />
-        <PasswordField label="Xác nhận mật khẩu mới" field="confirmPassword" showKey="confirm" />
+        <PasswordField label="Mật khẩu hiện tại" field="currentPassword" showKey="current" form={form} setForm={setForm} show={show} setShow={setShow} />
+        <PasswordField label="Mật khẩu mới" field="newPassword" showKey="newPass" form={form} setForm={setForm} show={show} setShow={setShow} />
+        <PasswordField label="Xác nhận mật khẩu mới" field="confirmPassword" showKey="confirm" form={form} setForm={setForm} show={show} setShow={setShow} />
 
         <div className="pt-4">
           <button
