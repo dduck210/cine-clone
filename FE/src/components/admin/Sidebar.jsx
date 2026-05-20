@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import ReactDOM from "react-dom";
 import toast from "react-hot-toast";
 import {
   LayoutDashboard,
@@ -22,6 +23,7 @@ const Sidebar = ({ activeTab, onTabChange }) => {
   ];
 
   return (
+    <>
     <div className="flex flex-col h-full bg-white text-slate-800 font-sans">
       <div className="h-20 flex items-center justify-center border-b border-slate-50">
         <div className="flex items-center gap-2 group cursor-pointer select-none">
@@ -111,9 +113,10 @@ const Sidebar = ({ activeTab, onTabChange }) => {
         </button>
       </div>
 
-      {/* Logout Confirm Modal */}
-      {showLogoutConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    </div>
+
+      {showLogoutConfirm && ReactDOM.createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl p-6 mx-4 w-full max-w-sm">
             <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-50 mx-auto mb-4">
               <LogOut size={22} className="text-red-500" />
@@ -142,9 +145,10 @@ const Sidebar = ({ activeTab, onTabChange }) => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 };
 

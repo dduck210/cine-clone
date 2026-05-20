@@ -210,12 +210,12 @@ const ShowtimeDetailModal = ({ showtime: st, onClose }) => {
   );
 };
 
-const selectClass = "w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] appearance-none font-medium text-slate-700 cursor-pointer transition-colors";
-const inputClass = "w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] font-medium text-slate-700 transition-all";
+const selectClass = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] appearance-none font-medium text-slate-700 cursor-pointer transition-colors disabled:opacity-50";
+const inputClass = "w-full !bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] font-medium text-slate-700 transition-all disabled:opacity-50";
 
 export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({
-    defaultValues: { movieId: "", cinemaId: "", roomId: "", date: "", startTime: "", basePrice: "", dayType: "" },
+    defaultValues: { movieId: "", cinemaId: "", roomId: "", date: "", startTime: "", basePrice: "", dayType: "weekday" },
   });
 
   const [rooms, setRooms] = useState([]);
@@ -364,7 +364,7 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
           </div>
 
           {bulkMode ? (
-            <div className={`space-y-4 ${!selectedRoom ? "opacity-50 pointer-events-none" : ""}`}>
+            <div className={`space-y-4 ${!selectedRoom ? "pointer-events-none" : ""}`}>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Từ ngày <span className="text-red-500">*</span></label>
@@ -407,7 +407,7 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
               </div>
             </div>
           ) : (
-            <div className={`grid grid-cols-1 sm:grid-cols-2 gap-5 ${!selectedRoom ? "opacity-50 pointer-events-none" : ""}`}>
+            <div className={`grid grid-cols-1 sm:grid-cols-2 gap-5 ${!selectedRoom ? "pointer-events-none" : ""}`}>
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Ngày chiếu <span className="text-red-500">*</span></label>
                 <input
@@ -433,7 +433,7 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
           )}
 
           {/* Giá vé cơ bản */}
-          <div className={!selectedRoom ? "opacity-50 pointer-events-none" : ""}>
+          <div className={!selectedRoom ? "pointer-events-none" : ""}>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Giá vé cơ bản (VNĐ) <span className="text-red-500">*</span></label>
             <input
               type="number"
@@ -472,7 +472,7 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
           </div>
 
           {/* Loại ngày (tùy chọn) */}
-          <div className={!selectedRoom ? "opacity-50 pointer-events-none" : ""}>
+          <div className={!selectedRoom ? "pointer-events-none" : ""}>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Loại ngày</label>
             {getDayTypeFE(watchedDate) === "weekend" ? (
               <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
