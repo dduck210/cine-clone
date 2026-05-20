@@ -4,7 +4,7 @@ const Payment = require('../models/Payment');
 const Booking = require('../models/Booking');
 const Seat = require('../models/Seat');
 const { protect } = require('../middleware/auth');
-const { sendPaymentSuccessEmail, sendRefundEmail, sendOtpEmail } = require('../services/email-service');
+const { sendPaymentSuccessEmail, sendAdminPaymentNotificationEmail, sendRefundEmail, sendOtpEmail } = require('../services/email-service');
 const notificationService = require('../services/notification-service');
 
 async function getBookingContext(bookingId) {
@@ -93,6 +93,7 @@ router.post('/', protect, async (req, res) => {
         if (!isCash) {
             const bookingContext = await getBookingContext(booking._id);
             await sendPaymentSuccessEmail(bookingContext, method);
+            sendAdminPaymentNotificationEmail(bookingContext, method).catch(() => {});
             notificationService.createNotification({
                 type: 'payment_paid',
                 title: 'Thanh toán thành công',

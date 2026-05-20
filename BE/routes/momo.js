@@ -5,7 +5,7 @@ const Booking = require('../models/Booking');
 const Payment = require('../models/Payment');
 const Seat = require('../models/Seat');
 const { protect } = require('../middleware/auth');
-const { sendPaymentSuccessEmail } = require('../services/email-service');
+const { sendPaymentSuccessEmail, sendAdminPaymentNotificationEmail } = require('../services/email-service');
 const notificationService = require('../services/notification-service');
 
 const PARTNER_CODE = process.env.MOMO_PARTNER_CODE || 'MOMO';
@@ -170,6 +170,7 @@ async function processSuccessfulPayment(bookingId, transactionId, amount) {
         .populate('paymentId', 'method status');
 
     await sendPaymentSuccessEmail(bookingContext, 'momo');
+    sendAdminPaymentNotificationEmail(bookingContext, 'momo').catch(() => {});
     notificationService.createNotification({
         type: 'payment_paid',
         title: 'Thanh toán MoMo thành công',

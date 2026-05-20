@@ -158,6 +158,32 @@ async function sendShowtimeCancelledEmail(booking, reason) {
     });
 }
 
+async function sendAdminPaymentNotificationEmail(booking, paymentMethod = '') {
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+    const movieTitle = booking?.showtime?.movie?.title || 'Phim';
+    const cinemaName = booking?.showtime?.cinema?.name || '5Cine';
+    const methodLabel = paymentMethod === 'momo' ? 'MoMo' : paymentMethod === 'qr' ? 'QR Banking' : paymentMethod || 'Online';
+
+    return sendEmail({
+        to: adminEmail,
+        subject: `[5Cine] Đơn ${booking.bookingCode} vừa được thanh toán`,
+        html: wrapEmail(
+            'Thông báo thanh toán mới',
+            `
+                <p>Có đơn đặt vé mới vừa được thanh toán thành công.</p>
+                <p><strong>Khách hàng:</strong> ${booking?.user?.name || 'N/A'} (${booking?.user?.email || 'N/A'})<br/>
+                <strong>Mã đơn:</strong> ${booking.bookingCode}<br/>
+                <strong>Phim:</strong> ${movieTitle}<br/>
+                <strong>Rạp:</strong> ${cinemaName}<br/>
+                <strong>Suất chiếu:</strong> ${formatShowtime(booking)}<br/>
+                <strong>Ghế:</strong> ${(booking?.seatNumbers || []).join(', ') || '---'}<br/>
+                <strong>Tổng tiền:</strong> ${formatCurrency(booking?.totalPrice)} đ<br/>
+                <strong>Phương thức:</strong> ${methodLabel}</p>
+            `
+        ),
+    });
+}
+
 async function sendOtpEmail(booking, otpCode) {
     const movieTitle = booking?.showtime?.movie?.title || 'Phim';
     return sendEmail({
@@ -188,6 +214,7 @@ module.exports = {
     isEmailConfigured,
     sendEmail,
     sendPaymentSuccessEmail,
+    sendAdminPaymentNotificationEmail,
     sendRefundEmail,
     sendShowtimeCancelledEmail,
     sendShowtimeReminderEmail,
