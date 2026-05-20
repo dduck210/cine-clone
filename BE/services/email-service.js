@@ -97,8 +97,7 @@ async function sendPaymentSuccessEmail(booking, paymentMethod = '') {
                 <strong>Ghế:</strong> ${(booking?.seatNumbers || []).join(', ') || '---'}<br/>
                 <strong>Tổng tiền:</strong> ${formatCurrency(booking?.totalPrice)} đ<br/>
                 <strong>Phương thức:</strong> ${paymentMethod || booking?.paymentId?.method || 'online'}</p>
-                <p>Bạn có thể xem vé tại <a href="${orderUrl}">${orderUrl}</a>.</p>
-                <p>Link PDF sẽ hoạt động sau khi vé được nhân viên rạp xác nhận: <a href="${pdfUrl}">${pdfUrl}</a></p>
+                <p>Bạn có thể tải vé PDF tại: <a href="${pdfUrl}">${pdfUrl}</a></p>
             `
         ),
     });
