@@ -26,6 +26,8 @@ const bookingSchema = new mongoose.Schema({
         price: Number,
     }],
     notes: String,
+    otpCode: { type: String },
+    otpExpiry: { type: Date },
 }, { timestamps: true });
 
 bookingSchema.pre('save', async function () {

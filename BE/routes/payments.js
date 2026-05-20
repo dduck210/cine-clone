@@ -4,7 +4,7 @@ const Payment = require('../models/Payment');
 const Booking = require('../models/Booking');
 const Seat = require('../models/Seat');
 const { protect } = require('../middleware/auth');
-const { sendPaymentSuccessEmail, sendRefundEmail } = require('../services/email-service');
+const { sendPaymentSuccessEmail, sendRefundEmail, sendOtpEmail } = require('../services/email-service');
 const notificationService = require('../services/notification-service');
 
 async function getBookingContext(bookingId) {
@@ -21,9 +21,34 @@ async function getBookingContext(bookingId) {
         .populate('paymentId', 'method status');
 }
 
+// Send OTP for QR payment confirmation
+router.post('/qr/request-otp', protect, async (req, res) => {
+    const { bookingId } = req.body;
+    try {
+        const booking = await Booking.findById(bookingId)
+            .populate('user', 'name email')
+            .populate({ path: 'showtime', populate: [{ path: 'movie', select: 'title' }] });
+        if (!booking) return res.status(404).json({ message: 'Booking not found' });
+        if (booking.user._id.toString() !== req.user._id.toString())
+            return res.status(403).json({ message: 'Not authorized' });
+        if (booking.status === 'paid')
+            return res.status(400).json({ message: 'Booking already paid' });
+
+        const otp = String(Math.floor(100000 + Math.random() * 900000));
+        booking.otpCode = otp;
+        booking.otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        await booking.save();
+
+        await sendOtpEmail(booking, otp);
+        res.json({ message: 'OTP sent', email: booking.user.email.replace(/(.{2})(.*)(@.*)/, '$1***$3') });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // Create payment
 router.post('/', protect, async (req, res) => {
-    const { bookingId, method } = req.body;
+    const { bookingId, method, otp } = req.body;
     try {
         const booking = await Booking.findById(bookingId);
         if (!booking) return res.status(404).json({ message: 'Booking not found' });
@@ -31,6 +56,20 @@ router.post('/', protect, async (req, res) => {
             return res.status(403).json({ message: 'Not authorized' });
         if (booking.status === 'paid')
             return res.status(400).json({ message: 'Booking already paid' });
+
+        // Validate OTP for QR payments
+        if (method === 'qr') {
+            if (!otp) return res.status(400).json({ message: 'Vui lòng nhập mã OTP' });
+            if (!booking.otpCode || !booking.otpExpiry)
+                return res.status(400).json({ message: 'Chưa yêu cầu mã OTP, vui lòng thử lại' });
+            if (new Date() > booking.otpExpiry)
+                return res.status(400).json({ message: 'Mã OTP đã hết hạn, vui lòng yêu cầu mã mới' });
+            if (otp !== booking.otpCode)
+                return res.status(400).json({ message: 'Mã OTP không đúng' });
+            // Clear OTP after successful use
+            booking.otpCode = undefined;
+            booking.otpExpiry = undefined;
+        }
 
         const isCash = method === 'cash';
 

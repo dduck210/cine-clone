@@ -158,6 +158,32 @@ async function sendShowtimeCancelledEmail(booking, reason) {
     });
 }
 
+async function sendOtpEmail(booking, otpCode) {
+    const movieTitle = booking?.showtime?.movie?.title || 'Phim';
+    return sendEmail({
+        to: booking?.user?.email,
+        subject: `[5Cine] Mã xác nhận thanh toán QR - ${booking?.bookingCode}`,
+        html: `
+            <div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08)">
+              <div style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:32px 24px;text-align:center">
+                <h1 style="color:#fff;margin:0;font-size:22px;font-weight:900">5Cine</h1>
+                <p style="color:rgba(255,255,255,0.85);margin:6px 0 0;font-size:13px">Mã xác nhận thanh toán QR</p>
+              </div>
+              <div style="padding:28px 24px">
+                <p style="color:#374151;font-size:15px;margin:0 0 16px">Xin chào <strong>${booking?.user?.name || 'bạn'}</strong>,</p>
+                <p style="color:#374151;font-size:14px;margin:0 0 20px">Hệ thống nhận được yêu cầu xác nhận thanh toán QR cho đơn <strong>${booking?.bookingCode}</strong> — phim <strong>${movieTitle}</strong>.</p>
+                <div style="background:#f9fafb;border:2px dashed #dc2626;border-radius:12px;padding:20px;text-align:center;margin:0 0 20px">
+                  <p style="color:#6b7280;font-size:12px;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px;font-weight:700">Mã xác nhận OTP</p>
+                  <p style="color:#dc2626;font-size:40px;font-weight:900;letter-spacing:10px;margin:0">${otpCode}</p>
+                  <p style="color:#9ca3af;font-size:12px;margin:8px 0 0">Hiệu lực trong 10 phút</p>
+                </div>
+                <p style="color:#9ca3af;font-size:12px;margin:0">Nếu bạn không thực hiện giao dịch này, hãy bỏ qua email này.</p>
+              </div>
+            </div>
+        `,
+    });
+}
+
 module.exports = {
     isEmailConfigured,
     sendEmail,
@@ -165,4 +191,5 @@ module.exports = {
     sendRefundEmail,
     sendShowtimeCancelledEmail,
     sendShowtimeReminderEmail,
+    sendOtpEmail,
 };

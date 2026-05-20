@@ -190,10 +190,6 @@ const PaymentPage = () => {
     }
   };
 
-  // Derive 6-digit OTP from bookingCode (last 6 numeric chars)
-  const getExpectedOtp = (bookingCode = "") =>
-    bookingCode.replace(/\D/g, "").slice(-6).padStart(6, "0");
-
   const handleOtpInput = (idx, val) => {
     const digit = val.replace(/\D/g, "").slice(-1);
     const next = [...otpDigits];
@@ -218,19 +214,32 @@ const PaymentPage = () => {
     otpRefs.current[Math.min(pasted.length, 5)]?.focus();
   };
 
+  // Request OTP from backend then advance to step 2
+  const handleRequestOtp = async () => {
+    if (!qrModal) return;
+    setIsProcessing(true);
+    const t = toast.loading("Đang gửi mã OTP...");
+    try {
+      const res = await axiosInstance.post("/payments/qr/request-otp", { bookingId: qrModal.bookingId });
+      toast.dismiss(t);
+      toast.success(`Đã gửi OTP tới ${res.data.email}`);
+      setQrStep(2);
+      setTimeout(() => otpRefs.current[0]?.focus(), 100);
+    } catch (err) {
+      toast.dismiss(t);
+      toast.error(err.response?.data?.message || "Gửi OTP thất bại, thử lại");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleConfirmOtp = () => {
     const entered = otpDigits.join("");
     if (entered.length < 6) { setOtpError("Vui lòng nhập đủ 6 số"); return; }
-    if (entered !== getExpectedOtp(qrModal.bookingCode)) {
-      setOtpError("Mã xác nhận không đúng. Vui lòng kiểm tra lại.");
-      setOtpDigits(["", "", "", "", "", ""]);
-      otpRefs.current[0]?.focus();
-      return;
-    }
-    handleConfirmQr();
+    handleConfirmQr(entered);
   };
 
-  const handleConfirmQr = async () => {
+  const handleConfirmQr = async (otp) => {
     if (!qrModal) return;
     setIsProcessing(true);
     const loadingToast = toast.loading("Đang xác nhận...");
@@ -238,6 +247,7 @@ const PaymentPage = () => {
       await axiosInstance.post("/payments", {
         bookingId: qrModal.bookingId,
         method: "qr",
+        otp,
       });
       toast.dismiss(loadingToast);
       const savedModal = qrModal;
@@ -384,17 +394,18 @@ const PaymentPage = () => {
                   ))}
                 </div>
 
-                {/* OTP hint box */}
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 mb-4 flex items-start gap-2">
-                  <ShieldCheck size={16} className="text-amber-500 shrink-0 mt-0.5" />
-                  <p className="text-amber-700 text-xs font-medium">
-                    Ghi nhớ <span className="font-black">{getExpectedOtp(qrModal.bookingCode)}</span> — mã xác nhận gồm 6 số cuối nội dung chuyển khoản, dùng ở bước tiếp theo.
+                <div className="bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 mb-4 flex items-start gap-2">
+                  <ShieldCheck size={16} className="text-blue-500 shrink-0 mt-0.5" />
+                  <p className="text-blue-700 text-xs font-medium">
+                    Sau khi chuyển khoản, bấm nút bên dưới để nhận mã OTP xác nhận qua email.
                   </p>
                 </div>
 
-                <button onClick={() => setQrStep(2)}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-2xl transition-all text-sm uppercase tracking-wider">
-                  Tôi đã chuyển khoản xong →
+                <button onClick={handleRequestOtp} disabled={isProcessing}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-black py-3.5 rounded-2xl transition-all text-sm uppercase tracking-wider flex items-center justify-center gap-2">
+                  {isProcessing ? (
+                    <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Đang gửi OTP...</>
+                  ) : "Tôi đã chuyển khoản xong →"}
                 </button>
               </div>
             )}
@@ -407,7 +418,7 @@ const PaymentPage = () => {
                 </div>
 
                 <p className="text-center text-slate-500 text-sm mb-6">
-                  Nhập <span className="font-bold text-slate-800">6 số cuối</span> trong nội dung chuyển khoản để xác nhận thanh toán
+                  Nhập mã <span className="font-bold text-slate-800">6 chữ số</span> đã được gửi về email của bạn
                 </p>
 
                 {/* 6-box OTP */}
