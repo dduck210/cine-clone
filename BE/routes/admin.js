@@ -684,7 +684,25 @@ router.get('/showtimes', protect, admin, async (req, res) => {
             }
         }));
 
-        res.json(showtimes);
+        // Compute actual availableSeats from Seat collection (ignores stale cached value)
+        const showtimeIds = showtimes.map(s => s._id);
+        const seatCounts = await Seat.aggregate([
+            { $match: { showtime: { $in: showtimeIds } } },
+            { $group: { _id: '$showtime', available: { $sum: { $cond: [{ $eq: ['$status', 'available'] }, 1, 0] } }, total: { $sum: 1 } } },
+        ]);
+        const seatMap = Object.fromEntries(seatCounts.map(s => [s._id.toString(), s]));
+
+        const result = showtimes.map(st => {
+            const obj = st.toObject();
+            const counts = seatMap[st._id.toString()];
+            if (counts) {
+                obj.availableSeats = counts.available;
+                obj.totalSeats = counts.total;
+            }
+            return obj;
+        });
+
+        res.json(result);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
