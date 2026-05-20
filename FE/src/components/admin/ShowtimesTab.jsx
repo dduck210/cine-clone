@@ -243,14 +243,10 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
       .finally(() => setLoadingRooms(false));
   }, [selectedCinema]);
 
-  // Lock dayType to "weekend" for Sat/Sun; reset to "" for weekday dates
+  // Lock dayType to "weekend" for Sat/Sun; default to "weekday" for T2-T6
   useEffect(() => {
     if (!watchedDate || bulkMode) return;
-    if (getDayTypeFE(watchedDate) === "weekend") {
-      setValue("dayType", "weekend");
-    } else {
-      setValue("dayType", "");
-    }
+    setValue("dayType", getDayTypeFE(watchedDate) === "weekend" ? "weekend" : "weekday");
   }, [watchedDate, bulkMode]);
 
   const toggleDay = (day) => {
@@ -476,28 +472,23 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
           </div>
 
           {/* Loại ngày (tùy chọn) */}
-          {getDayTypeFE(watchedDate) === "weekend" ? (
-            <div className={!selectedRoom ? "opacity-50 pointer-events-none" : ""}>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Loại ngày</label>
+          <div className={!selectedRoom ? "opacity-50 pointer-events-none" : ""}>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Loại ngày</label>
+            {getDayTypeFE(watchedDate) === "weekend" ? (
               <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
                 <span className="text-sm font-bold text-amber-600">Cuối tuần (×1.2)</span>
                 <span className="text-xs text-amber-400">— Tự động theo ngày đã chọn</span>
               </div>
-            </div>
-          ) : (
-            <div className={!selectedRoom ? "opacity-50 pointer-events-none" : ""}>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Loại ngày</label>
+            ) : (
               <div className="relative">
                 <select {...register("dayType")} className={selectClass} disabled={!selectedRoom}>
-                  <option value="">-- Tự động theo ngày --</option>
                   <option value="weekday">Ngày thường (×1.0)</option>
-                  <option value="weekend">Cuối tuần (×1.2)</option>
                   <option value="holiday">Ngày lễ (×1.5)</option>
                 </select>
                 <ChevronDown className="absolute right-4 top-3.5 text-slate-400 pointer-events-none" size={18} />
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
             <button type="button" onClick={onClose} className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-semibold transition-all text-sm">
