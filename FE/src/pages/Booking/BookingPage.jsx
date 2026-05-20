@@ -150,11 +150,9 @@ const BookingPage = () => {
     setCombos(combos.map((c) => (c.id === comboId ? { ...c, quantity: Math.max(0, c.quantity + delta) } : c)));
 
   const checkMixTypeViolation = (currentSelected, addingType) => {
-    const isDeselecting = currentSelected.every(sn => seatMap[sn]?.type !== addingType || currentSelected.includes(sn));
     const existingTypes = new Set(currentSelected.map(sn => seatMap[sn]?.type || "normal"));
-    if (existingTypes.has(addingType)) return null; // same type already selected, no new type added
-    if (existingTypes.size >= 2) return "Không thể chọn quá 2 loại ghế khác nhau trong cùng một đơn";
-    return null;
+    if (existingTypes.size === 0 || existingTypes.has(addingType)) return null;
+    return "Chỉ được chọn 1 loại ghế trong cùng một đơn";
   };
 
   const handleSeatClick = (seatNum) => {
