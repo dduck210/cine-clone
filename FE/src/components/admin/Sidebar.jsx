@@ -9,6 +9,7 @@ import {
   ShoppingCart,
   LogOut,
   Grid,
+  Star,
 } from "lucide-react";
 
 const Sidebar = ({ activeTab, onTabChange }) => {
@@ -20,6 +21,7 @@ const Sidebar = ({ activeTab, onTabChange }) => {
     { id: "rooms", label: "Phòng & Ghế", icon: Grid },
     { id: "orders", label: "Đơn đặt vé", icon: ShoppingCart },
     { id: "users", label: "Người dùng", icon: Users },
+    { id: "reviews", label: "Đánh giá", icon: Star },
   ];
 
   return (

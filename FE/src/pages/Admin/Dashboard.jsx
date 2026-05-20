@@ -12,6 +12,7 @@ import { MoviesManager, MovieModal } from "../../components/admin/MoviesTab";
 import { ShowtimesManager, ShowtimeModal } from "../../components/admin/ShowtimesTab";
 import { UsersManager } from "../../components/admin/UsersTab";
 import { RoomsManager } from "../../components/admin/RoomsTab";
+import { ReviewsManager } from "../../components/admin/ReviewsTab";
 
 const toastConfig = {
   position: "top-right",
@@ -240,16 +241,15 @@ const Dashboard = () => {
   }, []);
 
   const buildNotificationStreamUrl = () => {
-    const token = localStorage.getItem("token");
-    if (!token) return null;
+    if (!localStorage.getItem("token")) return null;
 
     const baseURL = axiosInstance.defaults.baseURL || "/api";
     const normalizedBase = baseURL.replace(/\/$/, "");
-    const streamPath = `${normalizedBase}/admin/notifications/stream?token=${encodeURIComponent(token)}`;
+    const streamPath = `${normalizedBase}/admin/notifications/stream`;
 
     if (/^https?:\/\//i.test(normalizedBase)) return streamPath;
     const relativeBase = normalizedBase.startsWith("/") ? normalizedBase : `/${normalizedBase}`;
-    return `${window.location.origin}${relativeBase}/admin/notifications/stream?token=${encodeURIComponent(token)}`;
+    return `${window.location.origin}${relativeBase}/admin/notifications/stream`;
   };
 
   const markNotificationsRead = useCallback(async (ids = []) => {
@@ -317,41 +317,77 @@ const Dashboard = () => {
     const streamUrl = buildNotificationStreamUrl();
     if (!streamUrl) return undefined;
 
-    const source = new EventSource(streamUrl);
-    source.onmessage = (event) => {
+    let aborted = false;
+    const controller = new AbortController();
+
+    const connectSSE = async () => {
       try {
-        const incoming = JSON.parse(event.data);
-        const shouldMarkRead = notificationsOpenRef.current;
-        const nextItem = shouldMarkRead ? { ...incoming, read: true } : incoming;
+        const token = localStorage.getItem("token");
+        const response = await fetch(streamUrl, {
+          signal: controller.signal,
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "ngrok-skip-browser-warning": "true",
+            Accept: "text/event-stream",
+          },
+        });
 
-        setNotifications((prev) => [
-          nextItem,
-          ...prev.filter((item) => item.id !== incoming.id),
-        ].slice(0, 20));
+        if (!response.ok || !response.body) {
+          void loadNotifications();
+          return;
+        }
 
-        if (shouldMarkRead) {
-          markNotificationsRead([incoming.id]);
-        } else {
-          setUnreadCount((prev) => prev + 1);
-          toast.success(incoming.title || "Có thông báo mới", {
-            id: incoming.id,
-          });
-          // If showtimes were expired on the server, refresh the showtimes list in background
-          if (incoming.type === 'showtime_expired' && activeTab === 'showtimes') {
-            axiosInstance.get('/admin/showtimes')
-              .then((r) => setShowtimes(r.data))
-              .catch(() => { });
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (!aborted) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            if (!line.startsWith("data:")) continue;
+            try {
+              const incoming = JSON.parse(line.slice(5).trim());
+              const shouldMarkRead = notificationsOpenRef.current;
+              const nextItem = shouldMarkRead ? { ...incoming, read: true } : incoming;
+
+              setNotifications((prev) => [
+                nextItem,
+                ...prev.filter((item) => item.id !== incoming.id),
+              ].slice(0, 20));
+
+              if (shouldMarkRead) {
+                markNotificationsRead([incoming.id]);
+              } else {
+                setUnreadCount((prev) => prev + 1);
+                toast.success(incoming.title || "Có thông báo mới", { id: incoming.id });
+                if (incoming.type === "showtime_expired" && activeTab === "showtimes") {
+                  axiosInstance.get("/admin/showtimes")
+                    .then((r) => setShowtimes(r.data))
+                    .catch(() => {});
+                }
+              }
+            } catch {
+              // Ignore malformed SSE payloads.
+            }
           }
         }
       } catch {
-        // Ignore malformed SSE payloads.
+        if (!aborted) void loadNotifications();
       }
     };
-    source.onerror = () => {
-      void loadNotifications();
-    };
 
-    return () => source.close();
+    void connectSSE();
+
+    return () => {
+      aborted = true;
+      controller.abort();
+    };
   }, [loadNotifications, markNotificationsRead]);
 
   useEffect(() => {
@@ -673,6 +709,7 @@ const Dashboard = () => {
     rooms: "Phòng & Ghế",
     orders: "Đơn Hàng",
     users: "Thành Viên",
+    reviews: "Đánh Giá Phim",
   };
 
   return (
@@ -812,6 +849,7 @@ const Dashboard = () => {
             {activeTab === "orders" && (
               <OrdersManager orders={orders} loading={ordersLoading} onViewTicket={handleViewTicket} onConfirm={handleConfirmOrder} onPrint={handlePrintTicket} />
             )}
+            {activeTab === "reviews" && <ReviewsManager />}
           </div>
         </div>
       </main>

@@ -15,7 +15,14 @@ import {
   ChevronUp,
   Info,
   Ticket,
+  Play,
 } from "lucide-react";
+
+function getYoutubeId(url) {
+  if (!url) return null;
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([^&\s?]+)/);
+  return m ? m[1] : null;
+}
 
 // Always use Vietnam timezone (UTC+7) for date strings, regardless of system timezone
 const toVNDateStr = (d = new Date()) => {
@@ -284,6 +291,23 @@ const MovieDetailPage = () => {
             )}
           </div>
         </div>
+
+        {getYoutubeId(movie.trailer) && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 border-l-4 border-[#dc2626] pl-3 flex items-center gap-2">
+              <Play size={20} className="text-[#dc2626]" /> Trailer
+            </h2>
+            <div className="rounded-xl overflow-hidden shadow-lg aspect-video bg-black">
+              <iframe
+                src={`https://www.youtube.com/embed/${getYoutubeId(movie.trailer)}?autoplay=1&mute=1&rel=0&modestbranding=1`}
+                title={`Trailer - ${movie.title}`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              />
+            </div>
+          </div>
+        )}
 
         <div ref={showtimeSectionRef}>
           <h2 className="text-2xl font-bold text-gray-900 mb-4 border-l-4 border-[#dc2626] pl-3">
