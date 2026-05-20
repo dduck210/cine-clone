@@ -11,6 +11,40 @@ const DAYS_VI = [
   { label: "T5", value: 4 }, { label: "T6", value: 5 }, { label: "T7", value: 6 }, { label: "CN", value: 0 },
 ];
 
+const TIME_SLOT_MULTS = { morning: 1.0, evening: 1.1, night: 1.2 };
+const DAY_TYPE_MULTS = { weekday: 1.0, weekend: 1.2, holiday: 1.5 };
+const SEAT_MULTS = { normal: 1.0, vip: 1.5, couple: 2.0 };
+
+function getTimeSlotFE(startTime) {
+  if (!startTime) return null;
+  const hour = parseInt(startTime.split(":")[0], 10);
+  if (hour < 12) return "morning";
+  if (hour < 18) return "evening";
+  return "night";
+}
+
+function getDayTypeFE(dateStr) {
+  if (!dateStr) return null;
+  const day = new Date(dateStr).getDay();
+  return day === 0 || day === 6 ? "weekend" : "weekday";
+}
+
+function computePreview(basePrice, startTime, dayType, dateStr) {
+  const bp = Number(basePrice);
+  if (!bp || bp < 1000 || !startTime) return null;
+  const timeSlot = getTimeSlotFE(startTime);
+  const effectiveDayType = dayType || getDayTypeFE(dateStr) || "weekday";
+  const tsm = TIME_SLOT_MULTS[timeSlot] || 1.0;
+  const dtm = DAY_TYPE_MULTS[effectiveDayType] || 1.0;
+  return {
+    normal: Math.round(bp * SEAT_MULTS.normal * tsm * dtm),
+    vip: Math.round(bp * SEAT_MULTS.vip * tsm * dtm),
+    couple: Math.round(bp * SEAT_MULTS.couple * tsm * dtm),
+    timeSlot,
+    dayType: effectiveDayType,
+  };
+}
+
 function generateDateRange(from, to, allowedDays) {
   const result = [];
   const end = new Date(to);
@@ -67,7 +101,7 @@ const ErrorMsg = ({ msg }) => (
 );
 
 const DAY_TYPE_LABEL = { weekday: "Ngày thường", weekend: "Cuối tuần", holiday: "Ngày lễ" };
-const TIME_SLOT_LABEL = { morning: "Buổi sáng", afternoon: "Buổi chiều", evening: "Buổi tối", night: "Buổi đêm" };
+const TIME_SLOT_LABEL = { morning: "Buổi sáng", evening: "Buổi chiều/tối", night: "Buổi đêm" };
 const SHOWTIME_STATUS_META = {
   active: {
     label: "Đang chiếu",
@@ -195,6 +229,10 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
   const selectedMovie = watch("movieId");
   const selectedCinema = watch("cinemaId");
   const selectedRoom = watch("roomId");
+  const watchedBasePrice = watch("basePrice");
+  const watchedStartTime = watch("startTime");
+  const watchedDayType = watch("dayType");
+  const watchedDate = watch("date");
 
   useEffect(() => {
     if (!selectedCinema) { setRooms([]); return; }
@@ -400,6 +438,31 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
             />
             {errors.basePrice && <ErrorMsg msg={errors.basePrice.message} />}
             <p className="text-xs text-slate-400 mt-1">Giá tự động tính theo loại ghế × khung giờ × loại ngày</p>
+            {(() => {
+              const preview = computePreview(watchedBasePrice, watchedStartTime, watchedDayType, watchedDate);
+              if (!preview) return null;
+              const timeLabel = { morning: "Sáng ×1.0", evening: "Chiều/Tối ×1.1", night: "Đêm ×1.2" }[preview.timeSlot];
+              const dayLabel = { weekday: "Ngày thường ×1.0", weekend: "Cuối tuần ×1.2", holiday: "Ngày lễ ×1.5" }[preview.dayType];
+              return (
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-blue-400 mb-2">
+                    Giá dự tính · {timeLabel} · {dayLabel}
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { label: "Thường", key: "normal", cls: "text-slate-700" },
+                      { label: "VIP ×1.5", key: "vip", cls: "text-amber-600" },
+                      { label: "Đôi ×2.0", key: "couple", cls: "text-pink-600" },
+                    ].map((p) => (
+                      <div key={p.key} className="bg-white rounded-lg p-2 text-center border border-blue-100">
+                        <p className="text-[9px] font-bold text-slate-400 mb-0.5">{p.label}</p>
+                        <p className={`font-black text-xs ${p.cls}`}>{preview[p.key].toLocaleString()}đ</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Loại ngày (tùy chọn) */}
