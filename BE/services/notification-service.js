@@ -59,4 +59,5 @@ module.exports = {
     listNotifications,
     markRead,
     subscribe,
+    initNotificationService: () => {}, // no-op, legacy socket.io init
 };

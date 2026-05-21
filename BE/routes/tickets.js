@@ -8,6 +8,7 @@ const User = require('../models/User');
 const { protect } = require('../middleware/auth');
 const { sendEmail } = require('../services/email-service');
 const { createTicketAccessToken, verifyTicketAccessToken } = require('../utils/ticket-access');
+const ticketEvents = require('../services/ticket-event-emitter');
 
 // Design tokens — mirrors electronic ticket UI
 const DARK  = '#0f172a';
@@ -294,6 +295,69 @@ router.post('/:bookingId/email', protect, async (req, res) => {
         res.json({
             message: result.sent ? 'Ticket email sent' : 'Ticket email skipped',
             result,
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Self-service scan: quét QR ở quầy, tự in vé, hiển thị thông tin
+router.post('/scan', async (req, res) => {
+    try {
+        let { bookingCode } = req.body;
+        if (!bookingCode) return res.status(400).json({ message: 'Thiếu mã vé' });
+
+        bookingCode = bookingCode.trim();
+
+        // Extract booking code from admin URL if QR encodes a URL instead of raw code
+        const urlMatch = bookingCode.match(/[?&]booking=([A-Za-z0-9]+)/);
+        if (urlMatch) bookingCode = urlMatch[1];
+
+        // Normalize: uppercase, remove any surrounding whitespace/quotes
+        bookingCode = bookingCode.replace(/^["']|["']$/g, '').toUpperCase();
+
+        if (!/^BK\d+$/i.test(bookingCode)) {
+            return res.status(400).json({ message: 'Mã QR không hợp lệ. Vui lòng quét mã vé từ email hoặc ứng dụng 5Cine.' });
+        }
+
+        const booking = await Booking.findOne({ bookingCode })
+            .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }, { path: 'room', select: 'name' }] })
+            .populate('user', 'name email phone')
+            .populate('seats');
+
+        if (!booking) return res.status(404).json({ message: 'Không tìm thấy vé với mã này' });
+        if (booking.status !== 'paid') return res.status(400).json({ message: 'Vé chưa được thanh toán' });
+
+        const wasJustPrinted = booking.ticketStatus !== 'printed';
+        if (wasJustPrinted) {
+            booking.ticketStatus = 'printed';
+            await booking.save();
+
+            ticketEvents.emit(booking._id, 'ticket_printed', {
+                bookingId: booking._id.toString(),
+                bookingCode: booking.bookingCode,
+                ticketStatus: 'printed',
+                status: booking.status,
+            });
+        }
+
+        res.json({
+            message: wasJustPrinted ? 'Vé đã được in thành công!' : 'Vé đã được in trước đó',
+            booking: {
+                _id: booking._id,
+                bookingCode: booking.bookingCode,
+                status: booking.status,
+                ticketStatus: booking.ticketStatus,
+                movieTitle: booking.showtime?.movie?.title || '',
+                cinemaName: booking.showtime?.cinema?.name || '',
+                roomName: booking.showtime?.room?.name || '',
+                showDate: booking.showtime?.date || '',
+                showTime: booking.showtime?.startTime || '',
+                seatNumbers: booking.seatNumbers || [],
+                totalPrice: booking.totalPrice,
+                userName: booking.user?.name || '',
+                userEmail: booking.user?.email || '',
+            },
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

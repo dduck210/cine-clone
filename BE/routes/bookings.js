@@ -7,6 +7,8 @@ const Payment = require('../models/Payment');
 const { protect } = require('../middleware/auth');
 const { sendRefundEmail } = require('../services/email-service');
 
+const ticketEvents = require('../services/ticket-event-emitter');
+
 const HOLD_MINUTES = 5;
 
 // Validate no available seat gaps between selected seats in same row
@@ -116,6 +118,18 @@ router.get('/user/all', protect, async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
+});
+
+// SSE stream for real-time ticket status updates (user side)
+router.get('/:bookingId/stream', async (req, res) => {
+    const { bookingId } = req.params;
+    try {
+        const booking = await Booking.findById(bookingId);
+        if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    } catch {
+        return res.status(400).json({ message: 'Invalid booking ID' });
+    }
+    ticketEvents.subscribe(bookingId, res);
 });
 
 // Get booking by ID

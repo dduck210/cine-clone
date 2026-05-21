@@ -296,7 +296,14 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
     const found = orders.find((o) => o.orderId?.toLowerCase() === trimmed.toLowerCase());
     if (!found) { toast.error(`Không tìm thấy đơn hàng: ${trimmed}`); return; }
     if (found.status !== "Đã thanh toán") { toast.error("Đơn hàng này chưa được thanh toán"); return; }
-    if (found.ticketStatus === "printed") { toast("Vé này đã được xác nhận trước đó", { icon: "ℹ️" }); return; }
+    if (found.ticketStatus === "printed") {
+      toast("Vé này đã được xác nhận trước đó", { icon: "ℹ️" });
+      onViewTicket?.(found);
+      return;
+    }
+    // Optimistically update local state so modal shows "ĐÃ IN" immediately
+    found.ticketStatus = "printed";
+    onViewTicket?.(found);
     onPrint?.(found.bookingRawId);
   };
 

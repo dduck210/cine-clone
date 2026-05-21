@@ -30,6 +30,7 @@ const PaymentSuccessPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [liveTicketStatus, setLiveTicketStatus] = useState(location.state?.ticketStatus || null);
 
   const isMomoReturn = searchParams.has("resultCode");
   const isHistoryMode = location.state?.isHistoryMode;
@@ -39,7 +40,7 @@ const PaymentSuccessPage = () => {
   const ticketStatus = location.state?.ticketStatus;
 
   // Vé chỉ hiển thị QR/PDF sau khi admin xuất vé
-  const isTicketIssued = isHistoryMode && ticketStatus === "printed";
+  const isTicketIssued = isHistoryMode && liveTicketStatus === "printed";
   const isPendingCash =
     (isCash && !isHistoryMode) ||
     (isHistoryMode && paymentMethod === "cash" && bookingStatus !== "paid");
@@ -93,6 +94,31 @@ const PaymentSuccessPage = () => {
       navigate("/");
     }
   }, []);
+
+  // SSE listener: tự động cập nhật khi admin scan/in vé
+  useEffect(() => {
+    const bookingId = ticketData?.bookingId || location.state?.bookingId;
+    if (!bookingId || liveTicketStatus === "printed") return;
+
+    const baseURL = axiosInstance.defaults.baseURL || "/api";
+    const normalizedBase = baseURL.replace(/\/$/, "");
+    const streamPath = normalizedBase.startsWith("http")
+      ? `${normalizedBase}/bookings/${bookingId}/stream`
+      : `${window.location.origin}${normalizedBase}/bookings/${bookingId}/stream`;
+
+    const es = new EventSource(streamPath);
+
+    es.addEventListener("ticket_printed", () => {
+      setLiveTicketStatus("printed");
+      toast.success("Vé của bạn đã được xác nhận!", { duration: 4000 });
+    });
+
+    es.onerror = () => {
+      // Let EventSource auto-reconnect on network errors
+    };
+
+    return () => es.close();
+  }, [ticketData, liveTicketStatus]);
 
   // --- Loading ---
   if (loading) {

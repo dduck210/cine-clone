@@ -16,6 +16,7 @@ const {
     sendShowtimeCancelledEmail,
 } = require('../services/email-service');
 const notificationService = require('../services/notification-service');
+const ticketEvents = require('../services/ticket-event-emitter');
 
 function countSeatsFromMatrix(seatMatrix = []) {
     let totalSeats = 0;
@@ -546,6 +547,14 @@ router.put('/bookings/:id/print', protect, admin, async (req, res) => {
 
         booking.ticketStatus = 'printed';
         await booking.save();
+
+        // Emit real-time event so user's phone auto-updates
+        ticketEvents.emit(booking._id, 'ticket_printed', {
+            bookingId: booking._id.toString(),
+            bookingCode: booking.bookingCode,
+            ticketStatus: 'printed',
+            status: booking.status,
+        });
 
         notificationService.createNotification({
             type: 'ticket_printed',

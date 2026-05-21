@@ -233,8 +233,11 @@ router.post('/forgot-password', async (req, res) => {
     try {
         const user = await User.findOne({ email });
         if (!user) return res.status(404).json({ message: 'Email không tồn tại trong hệ thống' });
+        if (!isEmailConfigured()) {
+            return res.status(500).json({ message: 'Hệ thống email chưa được cấu hình. Vui lòng thử lại sau.' });
+        }
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = crypto.randomInt(100000, 999999).toString();
         user.resetOtp = otp;
         user.resetOtpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 min
         await user.save();
