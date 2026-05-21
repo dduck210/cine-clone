@@ -4,8 +4,8 @@ const mongoose = require('mongoose');
 const User = require('./models/User');
 
 const accounts = [
-    { name: 'Admin', email: 'admin@cinema.com', password: '123456', role: 'admin' },
-    { name: 'Nguyen Van A', email: 'user@cinema.com', password: '123456', role: 'user' },
+    { name: 'Admin', email: 'admin@cinema.com', password: '123456', role: 'admin', isVerified: true },
+    { name: 'Nguyen Van A', email: 'user@cinema.com', password: '123456', role: 'user', isVerified: true },
 ];
 
 mongoose.connect(process.env.MONGO_URI).then(async () => {

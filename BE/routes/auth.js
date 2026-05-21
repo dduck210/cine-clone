@@ -96,7 +96,7 @@ router.post('/login', async (req, res) => {
         if (!user || !(await user.matchPassword(password))) {
             return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng' });
         }
-        if (user.isVerified === false) {
+        if (user.isVerified === false && user.role !== 'admin') {
             return res.status(403).json({ message: 'Tài khoản chưa xác thực email. Vui lòng kiểm tra email hoặc yêu cầu gửi lại mã OTP.' });
         }
         res.json({
