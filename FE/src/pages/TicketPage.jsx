@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { QRCodeSVG } from "qrcode.react";
-import { CheckCircle } from "lucide-react";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import axiosInstance from "../api/axiosConfig";
 import toast, { Toaster } from "react-hot-toast";
 import { usePushSubscription } from "../hooks/usePushSubscription";
+import TicketCard from "../components/ticket/TicketCard";
 
 const TicketPage = () => {
   const { bookingCode } = useParams();
@@ -82,87 +81,17 @@ const TicketPage = () => {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
         <Toaster position="top-center" />
-        <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
-          <div className="bg-emerald-500 p-6 text-center">
-            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-              <CheckCircle className="w-10 h-10 text-white" />
-            </div>
-            <h2 className="text-white font-black text-xl">Vé hợp lệ</h2>
-            <p className="text-white/80 text-sm mt-1">
-              Chúc bạn xem phim vui vẻ!
-            </p>
-          </div>
-          <div className="p-6 space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">
-                Mã vé
-              </span>
-              <span className="font-mono font-bold text-[#dc2626] text-sm">
-                {ticket.bookingCode}
-              </span>
-            </div>
-            <hr className="border-dashed border-gray-200" />
-            <div className="flex justify-between">
-              <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">
-                Phim
-              </span>
-              <span className="font-bold text-gray-900 text-sm text-right max-w-[60%]">
-                {ticket.movieTitle}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">
-                Rạp
-              </span>
-              <span className="text-gray-700 text-sm">{ticket.cinemaName}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">
-                Suất chiếu
-              </span>
-              <span className="text-gray-700 text-sm">
-                {ticket.showDate} — {ticket.showTime}
-              </span>
-            </div>
-            {ticket.roomName && (
-              <div className="flex justify-between">
-                <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">
-                  Phòng
-                </span>
-                <span className="text-gray-700 text-sm">{ticket.roomName}</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">
-                Ghế
-              </span>
-              <span className="font-bold text-[#dc2626] text-sm">
-                {ticket.seatNumbers?.join(", ")}
-              </span>
-            </div>
-            <hr className="border-dashed border-gray-200" />
-            <div className="flex justify-between items-center pt-1">
-              <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">
-                Tổng tiền
-              </span>
-              <span className="font-black text-[#dc2626] text-lg">
-                {ticket.totalPrice?.toLocaleString()} đ
-              </span>
-            </div>
-            <div className="flex flex-col items-center pt-3">
-              <QRCodeSVG
-                value={ticket.bookingCode}
-                size={100}
-                bgColor="transparent"
-                fgColor="#111827"
-                level="M"
-              />
-              <p className="text-[10px] text-gray-400 mt-2">
-                {ticket.bookingCode}
-              </p>
-            </div>
-          </div>
-        </div>
+        <TicketCard
+          bookingCode={ticket.bookingCode}
+          movieTitle={ticket.movieTitle}
+          cinemaName={ticket.cinemaName}
+          roomName={ticket.roomName}
+          showDate={ticket.showDate}
+          showTime={ticket.showTime}
+          seats={ticket.seatNumbers}
+          totalPrice={ticket.totalPrice}
+          combos={ticket.extraItems}
+        />
       </div>
     );
   }

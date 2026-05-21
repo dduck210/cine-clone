@@ -15,12 +15,12 @@ import {
   ArrowLeft,
   XCircle,
   Clock,
-  Download,
 } from "lucide-react";
 import axiosInstance from "../../api/axiosConfig";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import toast, { Toaster } from "react-hot-toast";
 import { usePushSubscription } from "../../hooks/usePushSubscription";
+import TicketCard from "../../components/ticket/TicketCard";
 
 const PaymentSuccessPage = () => {
   const location = useLocation();
@@ -30,7 +30,6 @@ const PaymentSuccessPage = () => {
   const [ticketData, setTicketData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [liveTicketStatus, setLiveTicketStatus] = useState(location.state?.ticketStatus || null);
 
   const isMomoReturn = searchParams.has("resultCode");
@@ -164,28 +163,6 @@ const PaymentSuccessPage = () => {
     combos = [],
   } = ticketData;
 
-  const handleDownloadPdf = async () => {
-    if (!bookingId) return;
-    setDownloadingPdf(true);
-    try {
-      const response = await axiosInstance.get(`/tickets/${bookingId}/pdf`, {
-        responseType: "blob",
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `ticket-${bookingCode}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch {
-      toast.error("Không thể tải vé PDF. Vui lòng thử lại.");
-    } finally {
-      setDownloadingPdf(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
       <Navbar />
@@ -252,55 +229,17 @@ const PaymentSuccessPage = () => {
 
         {/* Main card: QR (chưa xác nhận) hoặc Vé hợp lệ (đã xác nhận) */}
         {isTicketIssued ? (
-          <div className="mx-auto w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden">
-            <div className="bg-emerald-500 p-6 text-center">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                <CheckCircle className="w-10 h-10 text-white" strokeWidth={2.5} />
-              </div>
-              <h2 className="text-white font-black text-xl">Vé hợp lệ</h2>
-              <p className="text-white/80 text-sm mt-1">Chúc bạn xem phim vui vẻ!</p>
-            </div>
-            <div className="p-6 space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">Mã vé</span>
-                <span className="font-mono font-bold text-[#dc2626] text-sm">{bookingCode}</span>
-              </div>
-              <hr className="border-dashed border-gray-200" />
-              <div className="flex justify-between">
-                <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">Phim</span>
-                <span className="font-bold text-gray-900 text-sm text-right max-w-[60%]">{movieTitle}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">Rạp</span>
-                <span className="text-gray-700 text-sm">{cinemaName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">Suất chiếu</span>
-                <span className="text-gray-700 text-sm">{showDate} — {showTime}</span>
-              </div>
-              {roomName && (
-                <div className="flex justify-between">
-                  <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">Phòng</span>
-                  <span className="text-gray-700 text-sm">{roomName}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">Ghế</span>
-                <span className="font-bold text-[#dc2626] text-sm">
-                  {Array.isArray(selectedSeats) ? selectedSeats.join(", ") : selectedSeats}
-                </span>
-              </div>
-              <hr className="border-dashed border-gray-200" />
-              <div className="flex justify-between items-center pt-1">
-                <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">Tổng tiền</span>
-                <span className="font-black text-[#dc2626] text-lg">{finalTotalPrice?.toLocaleString()} đ</span>
-              </div>
-              <div className="flex flex-col items-center pt-3">
-                <QRCodeSVG value={bookingCode} size={100} bgColor="transparent" fgColor="#111827" level="M" />
-                <p className="text-[10px] text-gray-400 mt-2">{bookingCode}</p>
-              </div>
-            </div>
-          </div>
+          <TicketCard
+            bookingCode={bookingCode}
+            movieTitle={movieTitle}
+            cinemaName={cinemaName}
+            roomName={roomName}
+            showDate={showDate}
+            showTime={showTime}
+            seats={selectedSeats}
+            totalPrice={finalTotalPrice}
+            combos={combos}
+          />
         ) : isPendingCash ? (
           <div className="mx-auto w-full max-w-sm bg-white rounded-3xl shadow-2xl p-8 flex flex-col items-center gap-4">
             <Clock className="w-12 h-12 text-amber-400" />
@@ -351,16 +290,6 @@ const PaymentSuccessPage = () => {
                 <Ticket size={18} strokeWidth={3} /> Xem vé của tôi
               </button>
             </>
-          )}
-          {isTicketIssued && bookingId && (
-            <button
-              onClick={handleDownloadPdf}
-              disabled={downloadingPdf}
-              className="w-full sm:w-auto px-10 py-3.5 bg-slate-800 rounded-2xl font-black text-white hover:bg-slate-900 transition-all flex items-center justify-center gap-2 uppercase text-sm tracking-widest disabled:opacity-60"
-            >
-              <Download size={18} strokeWidth={3} />
-              {downloadingPdf ? "Đang tải..." : "Tải vé PDF"}
-            </button>
           )}
         </div>
       </main>

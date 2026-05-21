@@ -403,6 +403,7 @@ router.post('/scan', async (req, res) => {
                 showTime: booking.showtime?.startTime || '',
                 seatNumbers: booking.seatNumbers || [],
                 totalPrice: booking.totalPrice,
+                extraItems: (booking.extraItems || []).filter(c => c.quantity > 0),
                 userName: booking.user?.name || '',
                 userEmail: booking.user?.email || '',
             },
