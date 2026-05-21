@@ -47,15 +47,11 @@ const RegisterPage = () => {
         email: form.email,
         password: form.password,
       });
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("currentUser", JSON.stringify({
-        _id: res.data._id,
-        name: res.data.name,
-        email: res.data.email,
-        role: res.data.role,
-      }));
-      toast.success("Đăng ký thành công!");
-      setTimeout(() => navigate("/"), 1000);
+      // Clear any old session data to prevent auth conflicts
+      localStorage.removeItem("token");
+      localStorage.removeItem("currentUser");
+      toast.success(res.data.message || "Vui lòng kiểm tra email để xác thực tài khoản.");
+      navigate("/verify-email", { state: { email: res.data.email || form.email } });
     } catch (err) {
       toast.error(err.response?.data?.message || "Đăng ký thất bại, thử lại sau");
     } finally {
