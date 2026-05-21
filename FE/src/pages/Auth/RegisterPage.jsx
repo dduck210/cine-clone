@@ -50,7 +50,11 @@ const RegisterPage = () => {
       // Clear any old session data to prevent auth conflicts
       localStorage.removeItem("token");
       localStorage.removeItem("currentUser");
-      toast.success(res.data.message || "Vui lòng kiểm tra email để xác thực tài khoản.");
+      if (res.data.emailFailed) {
+        toast.error(res.data.message);
+      } else {
+        toast.success(res.data.message || "Vui lòng kiểm tra email để xác thực tài khoản.");
+      }
       navigate("/verify-email", { state: { email: res.data.email || form.email } });
     } catch (err) {
       toast.error(err.response?.data?.message || "Đăng ký thất bại, thử lại sau");
