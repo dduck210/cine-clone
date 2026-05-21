@@ -148,7 +148,7 @@ const TicketViewPage = () => {
           {/* QR Code */}
           <div className="border-t-2 border-dashed border-gray-300 px-5 py-4 flex flex-col items-center gap-2 bg-gray-50">
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Quét mã này tại quầy</p>
-            <QRCodeSVG value={ticket.bookingCode} size={120} bgColor="#ffffff" fgColor="#111827" level="M" />
+            <QRCodeSVG value={`${window.location.origin}/ticket/${ticket.bookingCode}`} size={120} bgColor="#ffffff" fgColor="#111827" level="M" />
             <p className="font-mono font-bold text-gray-500 text-[11px] tracking-[0.25em]">{ticket.bookingCode}</p>
           </div>
         </div>

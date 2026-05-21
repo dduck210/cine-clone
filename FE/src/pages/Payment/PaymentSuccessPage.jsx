@@ -397,7 +397,7 @@ const PaymentSuccessPage = () => {
               <>
                 <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black">Quét mã để xác thực vé</p>
                 <QRCodeSVG
-                  value={bookingCode}
+                  value={`${window.location.origin}/ticket/${bookingCode}`}
                   size={100}
                   bgColor="transparent"
                   fgColor="#111827"

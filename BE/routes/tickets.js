@@ -312,6 +312,7 @@ router.get('/code/:bookingCode', async (req, res) => {
         if (!booking) return res.status(404).json({ message: 'Không tìm thấy vé' });
 
         res.json({
+            _id: booking._id,
             bookingCode: booking.bookingCode,
             status: booking.status,
             ticketStatus: booking.ticketStatus,
