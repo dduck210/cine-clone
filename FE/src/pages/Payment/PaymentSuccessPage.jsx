@@ -100,13 +100,9 @@ const PaymentSuccessPage = () => {
     const bookingId = ticketData?.bookingId || location.state?.bookingId;
     if (!bookingId || liveTicketStatus === "printed") return;
 
-    const baseURL = axiosInstance.defaults.baseURL || "/api";
-    const normalizedBase = baseURL.replace(/\/$/, "");
-    const streamPath = normalizedBase.startsWith("http")
-      ? `${normalizedBase}/bookings/${bookingId}/stream`
-      : `${window.location.origin}${normalizedBase}/bookings/${bookingId}/stream`;
-
-    const es = new EventSource(streamPath);
+    // Connect directly to backend (Vite proxy buffers SSE, breaking EventSource)
+    const streamUrl = `http://${window.location.hostname}:5000/api/bookings/${bookingId}/stream`;
+    const es = new EventSource(streamUrl);
 
     es.addEventListener("ticket_printed", () => {
       setLiveTicketStatus("printed");

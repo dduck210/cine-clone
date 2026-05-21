@@ -362,18 +362,16 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
           <p className="text-sm text-slate-500">Kiểm tra và in vé cho khách</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          <button
-            onClick={handleScanClick}
-            className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all border shadow-sm shrink-0 ${
-              scanning
-                ? "bg-[#dc2626] text-white border-[#dc2626] animate-pulse"
-                : "bg-white border-slate-200 text-slate-600 hover:bg-red-50 hover:border-red-300 hover:text-[#dc2626]"
-            }`}
-            title="Quét mã vé bằng máy quét barcode"
+          <a
+            href="/scan"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all border shadow-sm shrink-0 bg-white border-slate-200 text-slate-600 hover:bg-red-50 hover:border-red-300 hover:text-[#dc2626]"
+            title="Mở trang quét vé ở tab mới"
           >
             <ScanLine size={16} />
-            <span className="hidden sm:inline">{scanning ? "Đang chờ quét..." : "Quét vé"}</span>
-          </button>
+            <span className="hidden sm:inline">Quét vé</span>
+          </a>
           <div className="relative flex-1 sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input

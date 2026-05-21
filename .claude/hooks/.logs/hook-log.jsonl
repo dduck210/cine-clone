@@ -674,3 +674,33 @@
 {"ts":"2026-05-21T05:36:15.759Z","hook":"usage-quota-cache-refresh","event":"UserPromptSubmit","tool":"","target":"","note":"fetched","dur":445,"status":"ok","exit":0,"error":""}
 {"ts":"2026-05-21T12:16:43.463Z","hook":"dev-rules-reminder","event":"UserPromptSubmit","tool":"","target":"","note":"context-injected","dur":119,"status":"ok","exit":0,"error":""}
 {"ts":"2026-05-21T12:16:43.837Z","hook":"usage-quota-cache-refresh","event":"UserPromptSubmit","tool":"","target":"","note":"fetched","dur":494,"status":"ok","exit":0,"error":""}
+{"ts":"2026-05-21T17:33:49.386Z","hook":"privacy-block","event":"PreToolUse","tool":"Edit","target":"","note":"","dur":9,"status":"ok","exit":0,"error":""}
+{"ts":"2026-05-21T17:33:49.397Z","hook":"scout-block","event":"PreToolUse","tool":"","target":"","note":"","dur":0,"status":"crash","exit":0,"error":"path should be a `path.relative()`d string, but got \"c:/Users/hoank/OneDrive/Máy tính/DATN/cine-clone/FE/src/pages/Payment/PaymentSuccessPage.jsx\""}
+{"ts":"2026-05-21T17:33:49.778Z","hook":"usage-quota-cache-refresh","event":"PostToolUse","tool":"Edit","target":"","note":"throttled","dur":1,"status":"skip","exit":0,"error":""}
+{"ts":"2026-05-21T17:33:49.779Z","hook":"plan-format-kanban","event":"PostToolUse","tool":"Edit","target":"","note":"non-plan-file","dur":0,"status":"skip","exit":0,"error":""}
+{"ts":"2026-05-21T17:34:02.181Z","hook":"privacy-block","event":"PreToolUse","tool":"Read","target":"","note":"","dur":8,"status":"ok","exit":0,"error":""}
+{"ts":"2026-05-21T17:34:02.190Z","hook":"scout-block","event":"PreToolUse","tool":"","target":"","note":"","dur":0,"status":"crash","exit":0,"error":"path should be a `path.relative()`d string, but got \"c:/Users/hoank/OneDrive/Máy tính/DATN/cine-clone/FE/src/components/admin/OrdersTab.jsx\""}
+{"ts":"2026-05-21T17:34:10.734Z","hook":"privacy-block","event":"PreToolUse","tool":"Grep","target":"","note":"","dur":8,"status":"ok","exit":0,"error":""}
+{"ts":"2026-05-21T17:34:10.747Z","hook":"scout-block","event":"PreToolUse","tool":"","target":"","note":"","dur":0,"status":"crash","exit":0,"error":"path should be a `path.relative()`d string, but got \"c:/Users/hoank/OneDrive/Máy tính/DATN/cine-clone/FE/src/components/admin/OrdersTab.jsx\""}
+{"ts":"2026-05-21T17:34:33.203Z","hook":"privacy-block","event":"PreToolUse","tool":"Edit","target":"","note":"","dur":10,"status":"ok","exit":0,"error":""}
+{"ts":"2026-05-21T17:34:33.213Z","hook":"scout-block","event":"PreToolUse","tool":"","target":"","note":"","dur":0,"status":"crash","exit":0,"error":"path should be a `path.relative()`d string, but got \"c:/Users/hoank/OneDrive/Máy tính/DATN/cine-clone/FE/src/components/admin/OrdersTab.jsx\""}
+{"ts":"2026-05-21T17:34:33.607Z","hook":"usage-quota-cache-refresh","event":"PostToolUse","tool":"Edit","target":"","note":"throttled","dur":1,"status":"skip","exit":0,"error":""}
+{"ts":"2026-05-21T17:34:33.611Z","hook":"plan-format-kanban","event":"PostToolUse","tool":"Edit","target":"","note":"non-plan-file","dur":0,"status":"skip","exit":0,"error":""}
+{"ts":"2026-05-21T17:34:50.709Z","hook":"privacy-block","event":"PreToolUse","tool":"Bash","target":"","note":"","dur":9,"status":"ok","exit":0,"error":""}
+{"ts":"2026-05-21T17:34:50.725Z","hook":"scout-block","event":"PreToolUse","tool":"","target":"","note":"","dur":0,"status":"crash","exit":0,"error":"path should be a `path.relative()`d string, but got \"c:/Users/hoank/OneDrive/Máy tính/DATN/cine-clone/FE\""}
+{"ts":"2026-05-21T17:43:34.438Z","hook":"usage-quota-cache-refresh","event":"UserPromptSubmit","tool":"","target":"","note":"runtime-override","dur":23,"status":"warn","exit":0,"error":""}
+{"ts":"2026-05-21T17:43:34.677Z","hook":"dev-rules-reminder","event":"UserPromptSubmit","tool":"","target":"","note":"context-injected","dur":257,"status":"ok","exit":0,"error":""}
+{"ts":"2026-05-21T17:43:44.885Z","hook":"privacy-block","event":"PreToolUse","tool":"Bash","target":"","note":"","dur":8,"status":"ok","exit":0,"error":""}
+{"ts":"2026-05-21T17:43:44.895Z","hook":"scout-block","event":"PreToolUse","tool":"Bash","target":"","note":"","dur":12,"status":"ok","exit":0,"error":""}
+{"ts":"2026-05-21T17:43:54.815Z","hook":"privacy-block","event":"PreToolUse","tool":"Bash","target":"","note":"","dur":8,"status":"ok","exit":0,"error":""}
+{"ts":"2026-05-21T17:43:54.826Z","hook":"scout-block","event":"PreToolUse","tool":"Bash","target":"","note":"","dur":11,"status":"ok","exit":0,"error":""}
+{"ts":"2026-05-21T17:43:55.482Z","hook":"usage-quota-cache-refresh","event":"PostToolUse","tool":"Bash","target":"","note":"throttled","dur":1,"status":"skip","exit":0,"error":""}
+{"ts":"2026-05-21T17:44:02.626Z","hook":"privacy-block","event":"PreToolUse","tool":"Bash","target":"","note":"","dur":7,"status":"ok","exit":0,"error":""}
+{"ts":"2026-05-21T17:44:02.638Z","hook":"scout-block","event":"PreToolUse","tool":"Bash","target":"","note":"","dur":12,"status":"ok","exit":0,"error":""}
+{"ts":"2026-05-21T17:44:05.969Z","hook":"usage-quota-cache-refresh","event":"PostToolUse","tool":"Bash","target":"","note":"throttled","dur":2,"status":"skip","exit":0,"error":""}
+{"ts":"2026-05-21T17:44:12.391Z","hook":"privacy-block","event":"PreToolUse","tool":"Bash","target":"","note":"","dur":8,"status":"ok","exit":0,"error":""}
+{"ts":"2026-05-21T17:44:12.401Z","hook":"scout-block","event":"PreToolUse","tool":"Bash","target":"","note":"","dur":11,"status":"ok","exit":0,"error":""}
+{"ts":"2026-05-21T17:44:16.364Z","hook":"usage-quota-cache-refresh","event":"PostToolUse","tool":"Bash","target":"","note":"throttled","dur":2,"status":"skip","exit":0,"error":""}
+{"ts":"2026-05-21T17:44:22.963Z","hook":"privacy-block","event":"PreToolUse","tool":"Bash","target":"","note":"","dur":8,"status":"ok","exit":0,"error":""}
+{"ts":"2026-05-21T17:44:22.976Z","hook":"scout-block","event":"PreToolUse","tool":"Bash","target":"","note":"","dur":13,"status":"ok","exit":0,"error":""}
+{"ts":"2026-05-21T17:44:23.635Z","hook":"usage-quota-cache-refresh","event":"PostToolUse","tool":"Bash","target":"","note":"throttled","dur":1,"status":"skip","exit":0,"error":""}
