@@ -49,7 +49,7 @@ function App() {
     <>
       {showSplash && <SplashScreen onDone={hideSplash} />}
       <ScrollToTop />
-      <Toaster position="top-center" toastOptions={{ duration: 2500 }} />
+      <Toaster position="top-center" toastOptions={{ duration: 2500 }} containerStyle={{ zIndex: 100000 }} />
       <Routes>
         {/* Public */}
         <Route path="/" element={<HomePage />} />
