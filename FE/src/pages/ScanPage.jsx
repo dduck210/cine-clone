@@ -1,63 +1,123 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Html5QrcodeScanner } from "html5-qrcode";
+import { Html5Qrcode } from "html5-qrcode";
 import { QRCodeSVG } from "qrcode.react";
 import toast, { Toaster } from "react-hot-toast";
-import { Camera, CheckCircle, XCircle, Ticket, Home, Clock, ScanLine } from "lucide-react";
+import { Camera, CheckCircle, XCircle, Ticket, Home, ScanLine, Keyboard, ImagePlus, CameraOff, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import axiosInstance from "../api/axiosConfig";
 
 const ScanPage = () => {
   const [ticket, setTicket] = useState(null);
-  const [scanning, setScanning] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const scannerRef = useRef(null);
+  const [cameraError, setCameraError] = useState(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [manualCode, setManualCode] = useState("");
+  const qrCodeRef = useRef(null);
+  const fileInputRef = useRef(null);
+  // Guard: prevents duplicate calls when QR stays in frame across multiple scan frames
+  const processingRef = useRef(false);
 
-  useEffect(() => {
-    if (!scanning) return;
-
-    const scanner = new Html5QrcodeScanner(
-      "qr-scanner",
-      { fps: 10, qrbox: { width: 250, height: 250 }, rememberLastUsedCamera: true },
-      false
-    );
-    scannerRef.current = scanner;
-
-    scanner.render(
-      async (text) => {
-        const code = text.trim();
-        scanner.clear().catch(() => {});
-        setScanning(false);
-        setLoading(true);
-
-        try {
-          const res = await axiosInstance.post("/tickets/scan", { bookingCode: code });
-          setTicket(res.data.booking);
-          if (res.data.message.includes("thành công")) {
-            toast.success(res.data.message);
-          }
-        } catch (err) {
-          setError(err.response?.data?.message || "Không thể quét vé này");
-          toast.error(err.response?.data?.message || "Quét thất bại");
-        } finally {
-          setLoading(false);
-        }
-      },
-      () => {}
-    );
-
-    return () => {
-      scanner.clear().catch(() => {});
-    };
-  }, [scanning]);
-
-  const handleRetry = () => {
-    setTicket(null);
-    setError(null);
-    setScanning(true);
+  const processCode = async (rawCode) => {
+    const code = rawCode.trim();
+    if (!code) return;
+    setLoading(true);
+    try {
+      const res = await axiosInstance.post("/tickets/scan", { bookingCode: code });
+      setTicket(res.data.booking);
+      if (res.data.message.includes("thành công")) toast.success(res.data.message);
+    } catch (err) {
+      setError(err.response?.data?.message || "Không thể xử lý mã vé này");
+      toast.error(err.response?.data?.message || "Xử lý thất bại");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Loading
+  const stopCamera = async () => {
+    if (!qrCodeRef.current) return;
+    try { await qrCodeRef.current.stop(); } catch {}
+  };
+
+  const startCamera = async () => {
+    processingRef.current = false;
+    setCameraError(null);
+    await stopCamera();
+
+    const container = document.getElementById("qr-scanner");
+    if (container) container.innerHTML = "";
+
+    const html5QrCode = new Html5Qrcode("qr-scanner");
+    qrCodeRef.current = html5QrCode;
+
+    try {
+      await html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        async (text) => {
+          // Html5Qrcode fires this callback every frame the QR is visible — only process once
+          if (processingRef.current) return;
+          processingRef.current = true;
+          await stopCamera();
+          await processCode(text);
+        },
+        () => {}
+      );
+    } catch (err) {
+      setCameraError(err?.message || "Không thể mở camera");
+    }
+  };
+
+  useEffect(() => {
+    startCamera();
+    return () => { stopCamera(); };
+  }, []);
+
+  // Scan QR from uploaded image — works even without camera
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    setLoading(true);
+    const tempScanner = new Html5Qrcode("qr-file-reader");
+    try {
+      const text = await tempScanner.scanFile(file, false);
+      await processCode(text.trim());
+    } catch {
+      toast.error("Không tìm thấy mã QR trong ảnh. Vui lòng thử ảnh khác.");
+      setLoading(false);
+    }
+  };
+
+  const handleManualSubmit = async (e) => {
+    e.preventDefault();
+    if (processingRef.current) return;
+    processingRef.current = true;
+    await stopCamera();
+    await processCode(manualCode);
+    setManualCode("");
+    processingRef.current = false;
+  };
+
+  const handleRetry = async () => {
+    setTicket(null);
+    setError(null);
+    await startCamera();
+  };
+
+  const handleSendHardCopy = async () => {
+    if (!ticket?._id) return;
+    setDownloadingPdf(true);
+    try {
+      const res = await axiosInstance.post(`/tickets/${ticket._id}/hard-copy`);
+      toast.success(`Đã gửi vé đến email ${res.data.to || "khách hàng"}!`, { duration: 4000 });
+    } catch {
+      toast.error("Không thể gửi vé. Vui lòng thử lại.");
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 gap-4">
@@ -67,7 +127,6 @@ const ScanPage = () => {
     );
   }
 
-  // Error
   if (error) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
@@ -90,14 +149,12 @@ const ScanPage = () => {
     );
   }
 
-  // Show ticket result
   if (ticket) {
     const isPrinted = ticket.ticketStatus === "printed";
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
         <Toaster position="top-center" />
         <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
-          {/* Header */}
           <div className={`p-6 text-center ${isPrinted ? "bg-emerald-500" : "bg-[#dc2626]"}`}>
             <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
               {isPrinted ? <CheckCircle className="w-10 h-10 text-white" /> : <Ticket className="w-10 h-10 text-white" />}
@@ -105,8 +162,6 @@ const ScanPage = () => {
             <h2 className="text-white font-black text-xl">{isPrinted ? "Vé hợp lệ" : "Vé đã được in"}</h2>
             <p className="text-white/80 text-sm mt-1">{isPrinted ? "Chúc bạn xem phim vui vẻ!" : "Vé này đã được xác nhận trước đó"}</p>
           </div>
-
-          {/* Ticket card */}
           <div className="p-6 space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">Mã vé</span>
@@ -144,54 +199,128 @@ const ScanPage = () => {
               <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">Tổng tiền</span>
               <span className="font-black text-[#dc2626] text-lg">{ticket.totalPrice?.toLocaleString()} đ</span>
             </div>
-
-            {/* QR code */}
             <div className="flex flex-col items-center pt-3">
               <QRCodeSVG value={ticket.bookingCode} size={100} bgColor="transparent" fgColor="#111827" level="M" />
               <p className="text-[10px] text-gray-400 mt-2">{ticket.bookingCode}</p>
             </div>
           </div>
-
-          {/* Actions */}
-          <div className="p-4 border-t border-gray-100 flex gap-3">
+          <div className="p-4 border-t border-gray-100 flex flex-col gap-2">
             <button
-              onClick={handleRetry}
-              className="flex-1 bg-[#dc2626] hover:bg-red-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2"
+              onClick={handleSendHardCopy}
+              disabled={downloadingPdf}
+              className="w-full bg-slate-800 hover:bg-slate-900 disabled:opacity-60 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2"
             >
-              <Camera size={18} /> Quét vé khác
+              <Mail size={18} /> {downloadingPdf ? "Đang gửi..." : "Gửi vé cứng qua email"}
             </button>
-            <Link
-              to="/"
-              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl flex items-center justify-center gap-2"
-            >
-              <Home size={18} /> Trang chủ
-            </Link>
+            <div className="flex gap-2">
+              <button
+                onClick={handleRetry}
+                className="flex-1 bg-[#dc2626] hover:bg-red-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2"
+              >
+                <Camera size={18} /> Quét vé khác
+              </button>
+              <Link
+                to="/"
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl flex items-center justify-center gap-2"
+              >
+                <Home size={18} /> Trang chủ
+              </Link>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  // Scanner view (default)
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
       <Toaster position="top-center" />
+
+      {/* Hidden div required by Html5Qrcode.scanFile() */}
+      <div id="qr-file-reader" className="hidden" />
+
       <div className="text-center mb-8">
         <div className="w-20 h-20 bg-[#dc2626]/20 rounded-full flex items-center justify-center mx-auto mb-4">
           <ScanLine className="w-10 h-10 text-[#dc2626]" />
         </div>
-        <h1 className="text-3xl font-black text-white mb-2">Quét vé tự động</h1>
-        <p className="text-gray-400">Đưa mã QR trên email hoặc điện thoại vào camera</p>
+        <h1 className="text-3xl font-black text-white mb-2">Quét vé</h1>
+        <p className="text-gray-400">Quét QR, tải ảnh, hoặc nhập mã thủ công</p>
       </div>
 
       <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden">
-        <div className="p-4">
+
+        {/* Camera area */}
+        {cameraError && (
+          <div className="p-6 text-center border-b border-gray-100">
+            <div className="w-14 h-14 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-3">
+              <CameraOff className="w-7 h-7 text-amber-500" />
+            </div>
+            <p className="text-sm font-bold text-gray-700 mb-1">Camera không khả dụng</p>
+            <p className="text-xs text-gray-400 mb-4">
+              {cameraError.includes("in use") || cameraError.includes("NotReadable")
+                ? "Camera đang bị ứng dụng khác sử dụng"
+                : cameraError.includes("NotAllowed") || cameraError.includes("Permission")
+                ? "Trình duyệt chưa được cấp quyền camera"
+                : "Không thể mở camera"}
+            </p>
+            <button
+              onClick={startCamera}
+              className="text-xs text-[#dc2626] hover:underline font-bold flex items-center gap-1 mx-auto"
+            >
+              <Camera size={12} /> Thử lại camera
+            </button>
+          </div>
+        )}
+        {/* Always in DOM so Html5Qrcode can find #qr-scanner regardless of cameraError state */}
+        <div className={cameraError ? "hidden" : "p-4"}>
           <div id="qr-scanner" className="w-full rounded-xl overflow-hidden" />
-        </div>
-        <div className="px-4 pb-4">
-          <p className="text-xs text-gray-400 text-center">
-            Hệ thống sẽ tự động in vé và hiển thị thông tin
+          <p className="text-xs text-gray-400 text-center mt-2">
+            Đưa mã QR vào khung để tự động nhận diện
           </p>
+        </div>
+
+        {/* Upload QR image */}
+        <div className="px-4 py-3 border-t border-gray-100">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileUpload}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full flex items-center justify-center gap-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-bold py-3 rounded-xl text-sm transition-colors"
+          >
+            <ImagePlus size={16} className="text-[#dc2626]" />
+            Tải ảnh chụp mã QR
+          </button>
+          <p className="text-[10px] text-gray-400 text-center mt-1.5">
+            Chụp màn hình QR của khách rồi upload
+          </p>
+        </div>
+
+        {/* Manual input */}
+        <div className="px-4 pb-4 border-t border-gray-100 pt-3">
+          <p className="text-xs text-gray-400 text-center mb-2 flex items-center justify-center gap-1">
+            <Keyboard size={11} /> Hoặc nhập mã vé thủ công
+          </p>
+          <form onSubmit={handleManualSubmit} className="flex gap-2">
+            <input
+              type="text"
+              value={manualCode}
+              onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+              placeholder="VD: BK1234567890"
+              className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#dc2626]/30 focus:border-[#dc2626] uppercase"
+            />
+            <button
+              type="submit"
+              disabled={!manualCode.trim()}
+              className="bg-[#dc2626] hover:bg-red-700 disabled:opacity-40 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-colors"
+            >
+              OK
+            </button>
+          </form>
         </div>
       </div>
 

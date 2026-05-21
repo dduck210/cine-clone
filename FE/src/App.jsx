@@ -14,6 +14,7 @@ import RegisterPage from "./pages/Auth/RegisterPage";
 import ForgotPasswordPage from "./pages/Auth/ForgotPasswordPage";
 import VerifyEmailPage from "./pages/Auth/VerifyEmailPage";
 import ScanPage from "./pages/ScanPage";
+import TicketPage from "./pages/TicketPage";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import MoviesPage from "./pages/MoviesPage";
 import CinemasPage from "./pages/CinemasPage";
@@ -75,6 +76,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/scan" element={<ScanPage />} />
+        <Route path="/ticket/:bookingCode" element={<TicketPage />} />
 
         {/* Yêu cầu đăng nhập */}
         <Route path="/booking/:id" element={<PrivateRoute><BookingPage /></PrivateRoute>} />

@@ -85,7 +85,11 @@ async function sendPaymentSuccessEmail(booking, paymentMethod = '') {
     const cinemaName = booking?.showtime?.cinema?.name || '5Cine';
     const rawMethod = paymentMethod || booking?.paymentId?.method || '';
     const methodLabel = rawMethod === 'momo' ? 'MoMo' : rawMethod === 'qr' ? 'QR Banking' : rawMethod || 'Online';
-    const qrBuffer = await QRCode.toBuffer(booking.bookingCode, { width: 200, margin: 2 });
+
+    // QR encodes ticket URL — user can scan to open TicketPage, admin can scan at entrance
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const ticketUrl = `${frontendUrl}/ticket/${booking.bookingCode}`;
+    const qrBuffer = await QRCode.toBuffer(ticketUrl, { width: 200, margin: 2 });
 
     const body = `
         <p style="color:#374151;font-size:15px;margin:0 0 6px">Xin chào <strong>${booking?.user?.name || 'bạn'}</strong>,</p>
@@ -99,10 +103,12 @@ async function sendPaymentSuccessEmail(booking, paymentMethod = '') {
             <div><span style="color:#6b7280">Tổng tiền:</span> <strong>${formatCurrency(booking?.totalPrice)} đ</strong></div>
             <div><span style="color:#6b7280">Phương thức:</span> ${methodLabel}</div>
         </div>
-        <div style="margin:24px 0 8px;text-align:center">
-            <p style="margin:0 0 12px;font-weight:700;color:#111827;font-size:15px">Mã QR vé của bạn</p>
-            <img src="cid:ticket-qr" alt="QR vé" style="width:180px;height:180px;border:1px solid #e5e7eb;border-radius:12px;padding:8px"/>
-            <p style="margin:12px 0 0;color:#6b7280;font-size:13px">Xuất trình mã QR này tại quầy — nhân viên rạp sẽ quét để xác nhận và in vé cho bạn.</p>
+        <div style="margin:28px 0 8px;text-align:center">
+            <p style="margin:0 0 16px;font-weight:700;color:#111827;font-size:15px">Vé điện tử của bạn</p>
+            <img src="cid:ticket-qr" alt="QR vé" style="width:180px;height:180px;border:1px solid #e5e7eb;border-radius:12px;padding:8px;display:block;margin:0 auto"/>
+            <p style="margin:12px 0 20px;color:#6b7280;font-size:13px">Xuất trình mã QR này tại quầy rạp — nhân viên sẽ quét để xác nhận vé.</p>
+            <a href="${ticketUrl}" style="display:inline-block;background:#dc2626;color:#ffffff;font-weight:700;padding:14px 32px;border-radius:12px;text-decoration:none;font-size:15px">Mở vé điện tử →</a>
+            <p style="margin:12px 0 0;color:#9ca3af;font-size:12px">Nhấn nút trên để xem vé trên điện thoại — vé sẽ tự cập nhật khi được xác nhận tại rạp.</p>
         </div>`;
 
     return sendEmail({
@@ -216,11 +222,45 @@ async function sendShowtimeCancelledEmail(booking, reason) {
     });
 }
 
+async function sendConfirmedTicketEmail(booking, pdfBuffer) {
+    const movieTitle = booking?.showtime?.movie?.title || 'Phim';
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const ticketUrl = `${frontendUrl}/ticket/${booking.bookingCode}`;
+    const qrBuffer = await QRCode.toBuffer(ticketUrl, { width: 200, margin: 2 });
+
+    const body = `
+        <p style="color:#374151;font-size:15px;margin:0 0 6px">Xin chào <strong>${booking?.user?.name || 'bạn'}</strong>,</p>
+        <p style="color:#374151;font-size:14px;margin:0 0 20px">Vé của bạn đã được nhân viên rạp xác nhận thành công. File PDF đính kèm trong email này là <strong>vé cứng điện tử</strong> của bạn — lưu lại để sử dụng khi cần.</p>
+        <div style="background:#f9fafb;border-radius:12px;padding:20px;font-size:14px;color:#374151;line-height:2">
+            <div><span style="color:#6b7280">Mã vé:</span> <strong style="color:#dc2626">${booking.bookingCode}</strong></div>
+            <div><span style="color:#6b7280">Phim:</span> <strong>${movieTitle}</strong></div>
+            <div><span style="color:#6b7280">Rạp:</span> ${booking?.showtime?.cinema?.name || '5Cine'}</div>
+            <div><span style="color:#6b7280">Suất chiếu:</span> ${formatShowtime(booking)}</div>
+            <div><span style="color:#6b7280">Ghế:</span> ${(booking?.seatNumbers || []).join(', ') || '---'}</div>
+        </div>
+        <div style="margin:28px 0 8px;text-align:center">
+            <p style="margin:0 0 16px;font-weight:700;color:#111827;font-size:15px">Mã QR vé của bạn</p>
+            <img src="cid:ticket-qr" alt="QR vé" style="width:180px;height:180px;border:1px solid #e5e7eb;border-radius:12px;padding:8px;display:block;margin:0 auto"/>
+            <p style="margin:12px 0 0;color:#6b7280;font-size:13px">File PDF vé cứng đã được đính kèm bên dưới email này.</p>
+        </div>`;
+
+    return sendEmail({
+        to: booking?.user?.email,
+        subject: `5Cine - Vé điện tử đã xác nhận — ${booking.bookingCode}`,
+        attachments: [
+            { filename: 'qr.png', content: qrBuffer, cid: 'ticket-qr' },
+            { filename: `ticket-${booking.bookingCode}.pdf`, content: pdfBuffer, contentType: 'application/pdf' },
+        ],
+        html: styledWrapper('Vé điện tử đã xác nhận', body),
+    });
+}
+
 module.exports = {
     isEmailConfigured,
     sendEmail,
     sendPaymentSuccessEmail,
     sendAdminPaymentNotificationEmail,
+    sendConfirmedTicketEmail,
     sendRefundEmail,
     sendShowtimeCancelledEmail,
     sendShowtimeReminderEmail,
