@@ -78,113 +78,144 @@ async function ensureTicketAccess(req, booking) {
 }
 
 async function generateTicketPdfBuffer(booking) {
-    const { seatNumbers, totalPrice, bookingCode, extraItems = [] } = booking;
+    const { seatNumbers = [], totalPrice, bookingCode } = booking;
     const showtime = booking.showtime || {};
     const movie    = showtime.movie   || {};
     const cinema   = showtime.cinema  || {};
     const roomName = showtime.room?.name || '';
     const showDate = showtime.date ? new Date(showtime.date).toLocaleDateString('vi-VN') : '';
     const showTime = showtime.startTime || '';
-    const combos   = extraItems.filter(c => c.quantity > 0);
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const qrUrl = `${frontendUrl}/admin?tab=orders&booking=${bookingCode}`;
-    const qrBuffer = await QRCode.toBuffer(qrUrl, { type: 'png', width: 120, margin: 1 });
+    const qrBuffer = await QRCode.toBuffer(`${frontendUrl}/ticket/${bookingCode}`, { type: 'png', width: 160, margin: 1 });
 
-    const W = 400, PAD = 20, HEADER_H = 112, FOOTER_H = 54, SEP_H = 22, QR_SIZE = 82;
-    const COMBO_H = combos.length > 0 ? 16 + combos.length * 20 + 8 : 0;
-    const BODY_H  = 18 + 62 + 62 + 72 + COMBO_H + QR_SIZE + 18;
-    const H       = HEADER_H + SEP_H + BODY_H + SEP_H + FOOTER_H;
+    const W = 360, PAD = 20;
+
+    // Section heights
+    const HEADER_H = 46, CINEMA_H = 78, TEAR_H = 22, MOVIE_H = 130, QR_H = 150, FOOTER_H = 50;
+    const H = HEADER_H + CINEMA_H + TEAR_H + MOVIE_H + QR_H + FOOTER_H;
+
+    // Absolute section tops
+    const CINEMA_TOP = HEADER_H;
+    const TEAR_TOP   = CINEMA_TOP + CINEMA_H;
+    const MOVIE_TOP  = TEAR_TOP + TEAR_H;
+    const QR_TOP     = MOVIE_TOP + MOVIE_H;
+    const FOOTER_TOP = H - FOOTER_H;
+
+    // Palette
+    const BG     = '#fdf8f0';
+    const G900   = '#111827';
+    const G800   = '#1f2937';
+    const G500   = '#6b7280';
+    const G400   = '#9ca3af';
+    const BORDER = '#e5e0d5';
+    const NOTCH  = '#e8e3d8';
+    const REDD   = '#dc2626';
 
     return new Promise((resolve, reject) => {
         const doc = new PDFDocument({ size: [W, H], margin: 0 });
         const chunks = [];
-        doc.on('data', chunk => chunks.push(chunk));
+        doc.on('data', c => chunks.push(c));
         doc.on('end', () => resolve(Buffer.concat(chunks)));
         doc.on('error', reject);
 
-        doc.rect(0, 0, W, HEADER_H).fill(DARK);
-        doc.save().fillColor(GOLD).fillOpacity(0.08).circle(W - 5, 5, 74).fill().restore();
+        // Background
+        doc.rect(0, 0, W, H).fill(BG);
 
-        let y = 20;
-        doc.font('Helvetica-Bold').fontSize(8).fillColor(GOLD)
-           .text('* V.I.P ADMISSION', PAD, y, { characterSpacing: 2.5, lineBreak: false });
-        y += 17;
-
-        const titleText = (movie.title || 'MOVIE').toUpperCase();
-        doc.font('Helvetica-Bold').fontSize(18).fillColor(WHITE).text(titleText, PAD, y, { width: W - PAD * 2 });
-        y += doc.heightOfString(titleText, { width: W - PAD * 2, fontSize: 18 }) + 8;
-
-        const badgeText = (roomName || '2D').toUpperCase();
-        doc.save().fillColor(GOLD).fillOpacity(0.12).rect(PAD, y, badgeText.length * 7 + 16, 18).fill().restore();
-        doc.font('Helvetica-Bold').fontSize(8).fillColor(GOLD)
-           .text(badgeText, PAD + 8, y + 5, { characterSpacing: 1.5, lineBreak: false });
-
-        const sep1Y = HEADER_H;
-        doc.rect(0, sep1Y, W, SEP_H).fill(WHITE);
-        doc.circle(-2, sep1Y + SEP_H / 2, SEP_H / 2 + 2).fill(DARK);
-        doc.circle(W + 2, sep1Y + SEP_H / 2, SEP_H / 2 + 2).fill(DARK);
-        dashedLine(doc, SEP_H + 4, sep1Y + SEP_H / 2, W - SEP_H - 4);
-
-        const bodyY = HEADER_H + SEP_H;
-        doc.rect(0, bodyY, W, BODY_H).fill(WHITE);
-        y = bodyY + 18;
-
-        doc.fillColor(S50).rect(PAD, y, W - PAD * 2, 50).fill();
-        doc.strokeColor(S200).lineWidth(0.7).rect(PAD, y, W - PAD * 2, 50).stroke();
-        doc.font('Helvetica-Bold').fontSize(8).fillColor(S400).text('CINEMA', PAD + 10, y + 8, { characterSpacing: 2, lineBreak: false });
-        doc.font('Helvetica-Bold').fontSize(13).fillColor(DARK).text((cinema.name || 'CINEMA').toUpperCase(), PAD + 10, y + 24, { lineBreak: false });
-        y += 62;
-
-        const colW = (W - PAD * 2 - 10) / 2, col2X = PAD + colW + 10;
-        doc.fillColor(S50).rect(PAD, y, colW, 50).fill();
-        doc.strokeColor(S200).lineWidth(0.7).rect(PAD, y, colW, 50).stroke();
-        doc.font('Helvetica-Bold').fontSize(8).fillColor(S400).text('DATE', PAD + 10, y + 8, { characterSpacing: 2, lineBreak: false });
-        doc.font('Helvetica-Bold').fontSize(13).fillColor(DARK).text(showDate, PAD + 10, y + 24, { lineBreak: false });
-
-        doc.fillColor(S50).rect(col2X, y, colW, 50).fill();
-        doc.strokeColor(S200).lineWidth(0.7).rect(col2X, y, colW, 50).stroke();
-        doc.font('Helvetica-Bold').fontSize(8).fillColor(S400).text('TIME', col2X + 10, y + 8, { characterSpacing: 2, lineBreak: false });
-        doc.font('Helvetica-Bold').fontSize(13).fillColor(DARK).text(showTime, col2X + 10, y + 24, { lineBreak: false });
-        y += 62;
-
-        doc.fillColor(R50).rect(PAD, y, W - PAD * 2, 60).fill();
-        doc.strokeColor(R200).lineWidth(0.7).rect(PAD, y, W - PAD * 2, 60).stroke();
-        doc.font('Helvetica-Bold').fontSize(8).fillColor(RED).text('SEAT(S)', PAD + 10, y + 8, { characterSpacing: 2, lineBreak: false });
-        doc.font('Helvetica-Bold').fontSize(22).fillColor(RED).text(seatNumbers.join(', '), PAD + 10, y + 24, { lineBreak: false });
-        y += 72;
-
-        if (combos.length > 0) {
-            doc.font('Helvetica-Bold').fontSize(8).fillColor(S400).text('F&B / COMBO', PAD, y, { characterSpacing: 2, lineBreak: false });
-            y += 16;
-            combos.forEach(c => {
-                doc.font('Helvetica').fontSize(10).fillColor(DARK).text(`${c.name} × ${c.quantity}`, PAD, y, { lineBreak: false });
-                doc.font('Helvetica-Bold').fontSize(10).fillColor(DARK).text(`${(c.price * c.quantity).toLocaleString()}đ`, W - PAD - 64, y, { width: 64, align: 'right', lineBreak: false });
-                y += 20;
-            });
-            y += 8;
+        // Diagonal watermark
+        doc.save();
+        doc.fillColor('#000000').fillOpacity(0.055).font('Helvetica-Bold').fontSize(11);
+        for (let r = -1; r < 7; r++) {
+            for (let c = -1; c < 4; c++) {
+                const wx = c * 180 + 90, wy = r * 100 + 50;
+                doc.save().rotate(-28, { origin: [wx, wy] });
+                doc.text('5CINE TICKET', wx - 60, wy - 7, { lineBreak: false, characterSpacing: 2 });
+                doc.restore();
+            }
         }
-
-        doc.image(qrBuffer, PAD, y, { width: QR_SIZE, height: QR_SIZE });
-        const bars = [2,3,1,4,2,1,3,2,1,2,4,1,2,3,1,1,4,2,3,1,2,3,1,4,2,1,3,1,2,4,1,2];
-        const barcodeX = PAD + QR_SIZE + 14, barcodeW = W - PAD - barcodeX;
-        const scale = barcodeW / bars.reduce((s, w) => s + w + 2, 0);
-        let bx = barcodeX;
-        doc.save().fillOpacity(0.75);
-        bars.forEach(w => { doc.rect(bx, y + (QR_SIZE - 44) / 2, w * scale, 44).fill(DARK); bx += (w + 2) * scale; });
         doc.restore();
-        doc.font('Helvetica-Bold').fontSize(8).fillColor(S600).text(bookingCode, barcodeX, y + QR_SIZE - 14, { width: barcodeW, align: 'center', characterSpacing: 1.2, lineBreak: false });
 
-        const sep2Y = bodyY + BODY_H;
-        doc.rect(0, sep2Y, W, SEP_H).fill(DARK);
-        doc.circle(-2, sep2Y + SEP_H / 2, SEP_H / 2 + 2).fill(WHITE);
-        doc.circle(W + 2, sep2Y + SEP_H / 2, SEP_H / 2 + 2).fill(WHITE);
-        dashedLine(doc, SEP_H + 4, sep2Y + SEP_H / 2, W - SEP_H - 4, S400);
+        // ── Header ──
+        doc.font('Helvetica-Bold').fontSize(8).fillColor(G500)
+           .text('CINEMA ENTRY PASS', 0, 18, { width: W, align: 'center', characterSpacing: 4, lineBreak: false });
+        dashedLine(doc, PAD, CINEMA_TOP, W - PAD, BORDER);
 
-        const footerY = sep2Y + SEP_H;
-        doc.rect(0, footerY, W, FOOTER_H).fill(DARK);
-        doc.font('Helvetica-Bold').fontSize(11).fillColor(GOLD).text('TOTAL PAID', PAD, footerY + 20, { characterSpacing: 1.5, lineBreak: false });
-        doc.font('Helvetica-Bold').fontSize(18).fillColor(WHITE).text(`${totalPrice.toLocaleString()} ₫`, 0, footerY + 19, { width: W - PAD, align: 'right', lineBreak: false });
+        // ── Cinema block ──
+        let y = CINEMA_TOP + 14;
+        doc.font('Helvetica-Bold').fontSize(13).fillColor(G900)
+           .text((cinema.name || '5Cine').toUpperCase(), PAD, y, { lineBreak: false });
+        y += 18;
+        if (roomName) {
+            doc.font('Helvetica-Bold').fontSize(8).fillColor(G500)
+               .text(roomName.toUpperCase(), PAD, y, { characterSpacing: 1.5, lineBreak: false });
+            y += 14;
+        }
+        doc.font('Helvetica').fontSize(9).fillColor(G400)
+           .text('Code: ' + bookingCode, PAD, y, { lineBreak: false });
+        y += 13;
+        doc.font('Helvetica').fontSize(9).fillColor(G400)
+           .text(showDate + '   —   ' + showTime, PAD, y, { lineBreak: false });
+
+        dashedLine(doc, PAD, TEAR_TOP, W - PAD, BORDER);
+
+        // ── Tear line (half-circle notches + dashed centre) ──
+        const TEAR_MID = TEAR_TOP + TEAR_H / 2;
+        doc.save().fillColor(NOTCH).circle(-1, TEAR_MID, 13).fill().restore();
+        doc.save().fillColor(NOTCH).circle(W + 1, TEAR_MID, 13).fill().restore();
+        dashedLine(doc, 18, TEAR_MID, W - 18, BORDER);
+
+        // ── Movie section ──
+        y = MOVIE_TOP + 12;
+        doc.font('Helvetica-Bold').fontSize(17).fillColor(G900)
+           .text((movie.title || 'MOVIE').toUpperCase(), PAD, y, { width: W - PAD * 2, lineBreak: false });
+        y += 28;
+
+        const COL_W = (W - PAD * 2 - 16) / 2;
+        const COL2  = PAD + COL_W + 16;
+
+        // Row 1: Showtime | Date
+        doc.font('Helvetica-Bold').fontSize(7).fillColor(G400)
+           .text('SHOWTIME', PAD, y, { characterSpacing: 2, lineBreak: false });
+        doc.font('Helvetica-Bold').fontSize(7).fillColor(G400)
+           .text('DATE', COL2, y, { characterSpacing: 2, lineBreak: false });
+        y += 10;
+        doc.font('Helvetica-Bold').fontSize(12).fillColor(G800)
+           .text(showTime || '---', PAD, y, { lineBreak: false });
+        doc.font('Helvetica-Bold').fontSize(12).fillColor(G800)
+           .text(showDate || '---', COL2, y, { lineBreak: false });
+        y += 22;
+
+        // Row 2: Room | Seat
+        doc.font('Helvetica-Bold').fontSize(7).fillColor(G400)
+           .text('ROOM', PAD, y, { characterSpacing: 2, lineBreak: false });
+        doc.font('Helvetica-Bold').fontSize(7).fillColor(G400)
+           .text('SEAT', COL2, y, { characterSpacing: 2, lineBreak: false });
+        y += 10;
+        doc.font('Helvetica-Bold').fontSize(12).fillColor(G800)
+           .text((roomName || '---').toUpperCase(), PAD, y, { lineBreak: false });
+        doc.font('Helvetica-Bold').fontSize(18).fillColor(REDD)
+           .text(seatNumbers.join(', '), COL2, y - 3, { lineBreak: false });
+
+        // ── QR section ──
+        dashedLine(doc, PAD, QR_TOP, W - PAD, BORDER);
+        y = QR_TOP + 14;
+        doc.font('Helvetica-Bold').fontSize(7).fillColor(G400)
+           .text('SCAN QR TO VERIFY', 0, y, { width: W, align: 'center', characterSpacing: 2, lineBreak: false });
+        y += 14;
+
+        const QR_SIZE = 100;
+        doc.image(qrBuffer, (W - QR_SIZE) / 2, y, { width: QR_SIZE, height: QR_SIZE });
+        y += QR_SIZE + 10;
+        doc.font('Helvetica-Bold').fontSize(8).fillColor(G500)
+           .text(bookingCode, 0, y, { width: W, align: 'center', characterSpacing: 3.5, lineBreak: false });
+
+        // ── Footer ──
+        doc.rect(0, FOOTER_TOP, W, FOOTER_H).fill(G900);
+        doc.font('Helvetica-Bold').fontSize(8).fillColor(G400)
+           .text('TOTAL PAID', PAD, FOOTER_TOP + 18, { characterSpacing: 3, lineBreak: false });
+        doc.font('Helvetica-Bold').fontSize(18).fillColor('#ffffff')
+           .text(Number(totalPrice || 0).toLocaleString() + ' VND',
+                 0, FOOTER_TOP + 15, { width: W - PAD, align: 'right', lineBreak: false });
 
         doc.end();
     });
