@@ -2,20 +2,31 @@ const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 const User = require('../models/User');
+const PendingRegistration = require('../models/PendingRegistration');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
 const { protect } = require('../middleware/auth');
+const { isEmailConfigured, sendEmail } = require('../services/email-service');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function isEmailConfigured() {
-    return !!(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+function otpHtml(title, name, otp, expireMin = 15) {
+    return `
+        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08)">
+            <div style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:32px 24px;text-align:center">
+                <h1 style="color:#fff;margin:0;font-size:22px;font-weight:900">5Cine</h1>
+                <p style="color:rgba(255,255,255,0.85);margin:6px 0 0;font-size:13px">${title}</p>
+            </div>
+            <div style="background:#fff;padding:28px 24px">
+                <p style="color:#374151;font-size:15px;margin:0 0 16px">Xin chào <strong>${name || 'bạn'}</strong>,</p>
+                <div style="background:#f9fafb;border:2px dashed #dc2626;border-radius:12px;padding:20px;text-align:center;margin:0 0 20px">
+                    <p style="color:#6b7280;font-size:12px;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px;font-weight:700">Mã xác nhận OTP</p>
+                    <p style="color:#dc2626;font-size:40px;font-weight:900;letter-spacing:10px;margin:0">${otp}</p>
+                    <p style="color:#9ca3af;font-size:12px;margin:8px 0 0">Hiệu lực trong ${expireMin} phút</p>
+                </div>
+                <p style="color:#9ca3af;font-size:12px;margin:0">Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email này.</p>
+            </div>
+        </div>`;
 }
-
-const mailer = isEmailConfigured() ? nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-}) : null;
 
 // Generate JWT
 const generateToken = (id) => {
@@ -36,37 +47,26 @@ router.post('/register', async (req, res) => {
         if (userExists) {
             return res.status(400).json({ message: 'Email đã được sử dụng' });
         }
+
         const otp = crypto.randomInt(100000, 999999).toString();
-        const user = await User.create({
-            name,
-            email,
-            password,
-            phone: phone || '',
-            isVerified: false,
-            verifyOtp: otp,
-            verifyOtpExpiry: new Date(Date.now() + 15 * 60 * 1000),
+        const otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+
+        // Replace any previous pending entry for this email (re-register scenario)
+        await PendingRegistration.deleteOne({ email });
+        const pending = new PendingRegistration({ name, email, password, phone: phone || '', otp, otpExpiry });
+        await pending.save();
+
+        const emailResult = await sendEmail({
+            to: email,
+            subject: '[5Cine] Mã xác thực tài khoản',
+            html: otpHtml('Xác thực tài khoản', name, otp, 15),
         });
 
-        try {
-            await mailer.sendMail({
-                from: `"5Cine" <${process.env.EMAIL_USER}>`,
-                to: email,
-                subject: 'Xác thực tài khoản - 5Cine',
-                html: `
-                    <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fff;border-radius:12px;border:1px solid #e5e7eb">
-                        <h2 style="color:#dc2626;margin:0 0 8px">5Cine</h2>
-                        <p style="color:#374151;margin:0 0 8px">Xin chào <strong>${name}</strong>,</p>
-                        <p style="color:#374151;margin:0 0 24px">Cảm ơn bạn đã đăng ký tài khoản. Sử dụng mã OTP bên dưới để xác thực email:</p>
-                        <div style="text-align:center;padding:20px;background:#fef2f2;border-radius:8px;margin-bottom:24px">
-                            <span style="font-size:36px;font-weight:900;letter-spacing:8px;color:#dc2626">${otp}</span>
-                        </div>
-                        <p style="color:#6b7280;font-size:13px;margin:0">Mã có hiệu lực trong <strong>15 phút</strong>. Nếu bạn không đăng ký tài khoản, hãy bỏ qua email này.</p>
-                    </div>`,
-            });
-        } catch (emailErr) {
-            console.error('[auth] register email failed:', emailErr.message);
+        if (emailResult.skipped || emailResult.sent === false) {
+            console.error('[auth] register email failed:', emailResult.reason || emailResult.error);
             return res.status(201).json({
-                message: 'Tài khoản đã được tạo nhưng không gửi được email xác thực. Vui lòng thử "Gửi lại mã" sau.',
+                emailFailed: true,
+                message: 'Mã OTP chưa gửi được qua email. Vui lòng nhấn "Gửi lại mã" trên trang xác thực.',
                 email,
             });
         }
@@ -105,19 +105,27 @@ router.post('/login', async (req, res) => {
 router.post('/verify-email', async (req, res) => {
     const { email, otp } = req.body;
     try {
-        const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ message: 'Email không tồn tại' });
-        if (user.isVerified !== false) return res.status(400).json({ message: 'Email đã được xác thực' });
-        if (!user.verifyOtp || user.verifyOtp !== otp) {
-            return res.status(400).json({ message: 'OTP không đúng' });
-        }
-        if (new Date() > new Date(user.verifyOtpExpiry)) {
+        // Check if already verified (re-submit case)
+        const existingUser = await User.findOne({ email });
+        if (existingUser) return res.status(400).json({ message: 'Email đã được xác thực' });
+
+        const pending = await PendingRegistration.findOne({ email });
+        if (!pending) return res.status(404).json({ message: 'Yêu cầu đăng ký không tồn tại hoặc đã hết hạn' });
+        if (pending.otp !== otp) return res.status(400).json({ message: 'OTP không đúng' });
+        if (new Date() > new Date(pending.otpExpiry)) {
             return res.status(400).json({ message: 'OTP đã hết hạn' });
         }
-        user.isVerified = true;
-        user.verifyOtp = null;
-        user.verifyOtpExpiry = null;
-        await user.save();
+
+        // Create real account — User pre-save hook hashes the plaintext password
+        await User.create({
+            name: pending.name,
+            email: pending.email,
+            password: pending.password,
+            phone: pending.phone,
+            isVerified: true,
+        });
+        await PendingRegistration.deleteOne({ email });
+
         res.json({ message: 'Đăng ký thành công! Bạn có thể đăng nhập ngay.' });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -131,40 +139,32 @@ router.post('/resend-verify-otp', async (req, res) => {
         if (!isEmailConfigured()) {
             return res.status(500).json({ message: 'Hệ thống email chưa được cấu hình. Vui lòng thử lại sau.' });
         }
-        const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ message: 'Email không tồn tại' });
-        if (user.isVerified !== false) return res.status(400).json({ message: 'Email đã được xác thực' });
+        const existingUser = await User.findOne({ email });
+        if (existingUser) return res.status(400).json({ message: 'Email đã được xác thực' });
+
+        const pending = await PendingRegistration.findOne({ email });
+        if (!pending) return res.status(404).json({ message: 'Yêu cầu đăng ký không tồn tại hoặc đã hết hạn. Vui lòng đăng ký lại.' });
 
         // Cooldown 60s to prevent spam
-        if (user.verifyOtpExpiry) {
-            const otpCreatedAt = new Date(user.verifyOtpExpiry).getTime() - 15 * 60 * 1000;
+        if (pending.otpExpiry) {
+            const otpCreatedAt = new Date(pending.otpExpiry).getTime() - 15 * 60 * 1000;
             if (Date.now() - otpCreatedAt < 60000) {
                 return res.status(429).json({ message: 'Vui lòng đợi 1 phút trước khi yêu cầu gửi lại mã' });
             }
         }
 
         const otp = crypto.randomInt(100000, 999999).toString();
-        user.verifyOtp = otp;
-        user.verifyOtpExpiry = new Date(Date.now() + 15 * 60 * 1000);
-        await user.save();
+        pending.otp = otp;
+        pending.otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+        await pending.save();
 
-        try {
-            await mailer.sendMail({
-                from: `"5Cine" <${process.env.EMAIL_USER}>`,
-                to: email,
-                subject: 'Mã OTP xác thực tài khoản - 5Cine',
-                html: `
-                    <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fff;border-radius:12px;border:1px solid #e5e7eb">
-                        <h2 style="color:#dc2626;margin:0 0 8px">5Cine</h2>
-                        <p style="color:#374151;margin:0 0 24px">Sử dụng mã OTP bên dưới để xác thực tài khoản:</p>
-                        <div style="text-align:center;padding:20px;background:#fef2f2;border-radius:8px;margin-bottom:24px">
-                            <span style="font-size:36px;font-weight:900;letter-spacing:8px;color:#dc2626">${otp}</span>
-                        </div>
-                        <p style="color:#6b7280;font-size:13px;margin:0">Mã có hiệu lực trong <strong>15 phút</strong>.</p>
-                    </div>`,
-            });
-        } catch (emailErr) {
-            console.error('[auth] resend email failed:', emailErr.message);
+        const emailResult = await sendEmail({
+            to: email,
+            subject: '[5Cine] Mã xác thực tài khoản (gửi lại)',
+            html: otpHtml('Xác thực tài khoản', pending.name, otp, 15),
+        });
+
+        if (emailResult.skipped || emailResult.sent === false) {
             return res.status(500).json({ message: 'Không thể gửi email. Vui lòng thử lại sau.' });
         }
 
@@ -228,19 +228,10 @@ router.post('/forgot-password', async (req, res) => {
         user.resetOtpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 min
         await user.save();
 
-        await mailer.sendMail({
-            from: `"5Cine" <${process.env.EMAIL_USER}>`,
+        await sendEmail({
             to: email,
-            subject: 'Mã OTP đặt lại mật khẩu - 5Cine',
-            html: `
-                <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fff;border-radius:12px;border:1px solid #e5e7eb">
-                    <h2 style="color:#dc2626;margin:0 0 8px">5Cine</h2>
-                    <p style="color:#374151;margin:0 0 24px">Bạn đã yêu cầu đặt lại mật khẩu. Sử dụng mã OTP bên dưới:</p>
-                    <div style="text-align:center;padding:20px;background:#fef2f2;border-radius:8px;margin-bottom:24px">
-                        <span style="font-size:36px;font-weight:900;letter-spacing:8px;color:#dc2626">${otp}</span>
-                    </div>
-                    <p style="color:#6b7280;font-size:13px;margin:0">Mã có hiệu lực trong <strong>15 phút</strong>. Nếu bạn không yêu cầu, hãy bỏ qua email này.</p>
-                </div>`,
+            subject: '[5Cine] Mã OTP đặt lại mật khẩu',
+            html: otpHtml('Đặt lại mật khẩu', user.name, otp, 15),
         });
 
         res.json({ message: 'OTP đã được gửi đến email của bạn' });
