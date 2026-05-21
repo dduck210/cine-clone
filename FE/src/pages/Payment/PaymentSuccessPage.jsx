@@ -38,7 +38,7 @@ const PaymentSuccessPage = () => {
   const bookingStatus = location.state?.bookingStatus;
   const paymentMethod = location.state?.paymentMethod;
 
-  const isTicketIssued = liveTicketStatus === "printed";
+  const isTicketIssued = liveTicketStatus === "printed" && bookingStatus === "paid";
   const isPendingCash =
     (isCash && !isHistoryMode) ||
     (isHistoryMode && paymentMethod === "cash" && bookingStatus !== "paid");

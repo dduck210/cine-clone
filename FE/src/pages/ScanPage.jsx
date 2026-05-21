@@ -73,6 +73,15 @@ const ScanPage = () => {
     return () => { stopCamera(); };
   }, []);
 
+  // Auto-restart camera when returning to scanner view from ticket/error
+  useEffect(() => {
+    if (!ticket && !error && !loading) {
+      // Delay to let React render the #qr-scanner element first
+      const t = setTimeout(() => startCamera(), 100);
+      return () => clearTimeout(t);
+    }
+  }, [ticket, error, loading]);
+
   // Scan QR from uploaded image — works even without camera
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -99,10 +108,9 @@ const ScanPage = () => {
     processingRef.current = false;
   };
 
-  const handleRetry = async () => {
+  const handleRetry = () => {
     setTicket(null);
     setError(null);
-    await startCamera();
   };
 
   const handleSendHardCopy = async () => {

@@ -328,6 +328,7 @@ router.get('/view/:bookingCode', async (req, res) => {
         res.json({
             bookingId: booking._id,
             bookingCode: booking.bookingCode,
+            status: booking.status,
             ticketStatus: booking.ticketStatus || null,
             movieTitle: booking.showtime?.movie?.title || '',
             cinemaName: booking.showtime?.cinema?.name || '',

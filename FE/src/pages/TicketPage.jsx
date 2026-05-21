@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { QRCodeSVG } from "qrcode.react";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import axiosInstance from "../api/axiosConfig";
 import toast, { Toaster } from "react-hot-toast";
@@ -13,7 +14,8 @@ const TicketPage = () => {
   const [error, setError] = useState(null);
   const [ticketStatus, setTicketStatus] = useState(null);
 
-  const isPrinted = ticketStatus === "printed";
+  const isPaid = ticket?.status === "paid";
+  const isPrinted = ticketStatus === "printed" && isPaid;
   usePushSubscription(isPrinted ? null : bookingCode);
 
   useEffect(() => {
