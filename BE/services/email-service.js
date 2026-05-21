@@ -222,36 +222,85 @@ async function sendShowtimeCancelledEmail(booking, reason) {
     });
 }
 
-async function sendConfirmedTicketEmail(booking, pdfBuffer) {
+async function sendConfirmedTicketEmail(booking, _pdfBuffer) {
     const movieTitle = booking?.showtime?.movie?.title || 'Phim';
+    const cinemaName = booking?.showtime?.cinema?.name || '5Cine';
+    const roomName = booking?.showtime?.room?.name || '';
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const ticketUrl = `${frontendUrl}/ticket/${booking.bookingCode}`;
     const qrBuffer = await QRCode.toBuffer(ticketUrl, { width: 200, margin: 2 });
+    const combos = (booking?.extraItems || []).filter(c => c.quantity > 0);
 
     const body = `
-        <p style="color:#374151;font-size:15px;margin:0 0 6px">Xin chào <strong>${booking?.user?.name || 'bạn'}</strong>,</p>
-        <p style="color:#374151;font-size:14px;margin:0 0 20px">Vé của bạn đã được nhân viên rạp xác nhận thành công. File PDF đính kèm trong email này là <strong>vé cứng điện tử</strong> của bạn — lưu lại để sử dụng khi cần.</p>
-        <div style="background:#f9fafb;border-radius:12px;padding:20px;font-size:14px;color:#374151;line-height:2">
-            <div><span style="color:#6b7280">Mã vé:</span> <strong style="color:#dc2626">${booking.bookingCode}</strong></div>
-            <div><span style="color:#6b7280">Phim:</span> <strong>${movieTitle}</strong></div>
-            <div><span style="color:#6b7280">Rạp:</span> ${booking?.showtime?.cinema?.name || '5Cine'}</div>
-            <div><span style="color:#6b7280">Suất chiếu:</span> ${formatShowtime(booking)}</div>
-            <div><span style="color:#6b7280">Ghế:</span> ${(booking?.seatNumbers || []).join(', ') || '---'}</div>
+        <!-- Ticket card — mirrors PDF hard-ticket design -->
+        <div style="max-width:400px;margin:0 auto;background:#fdf8f0;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.12)">
+            <!-- Header -->
+            <div style="padding:18px 20px 10px;text-align:center">
+                <p style="margin:0;font-family:Arial,sans-serif;font-size:9px;font-weight:700;color:#6b7280;letter-spacing:4px;text-transform:uppercase">Cinema Entry Pass</p>
+            </div>
+            <div style="margin:0 20px;border-top:2px dashed #e8e3d8"></div>
+
+            <!-- Cinema info -->
+            <div style="padding:14px 20px">
+                <p style="margin:0;font-family:Arial,sans-serif;font-size:16px;font-weight:900;color:#111827;text-transform:uppercase;letter-spacing:1px">${cinemaName}</p>
+                ${roomName ? '<p style="margin:2px 0 0;font-family:Arial,sans-serif;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1.5px">' + roomName + '</p>' : ''}
+                <p style="margin:6px 0 0;font-family:monospace;font-size:11px;color:#9ca3af">Code: ${booking.bookingCode}</p>
+                <p style="margin:2px 0 0;font-family:Arial,sans-serif;font-size:11px;color:#9ca3af">${formatShowtime(booking)}</p>
+            </div>
+            <div style="margin:0 20px;border-top:2px dashed #e8e3d8"></div>
+
+            <!-- Movie + Seats -->
+            <div style="padding:14px 20px">
+                <p style="margin:0;font-family:Arial,sans-serif;font-size:8px;font-weight:700;color:#9ca3af;letter-spacing:3px;text-transform:uppercase">Now Showing</p>
+                <p style="margin:4px 0 0;font-family:Arial,sans-serif;font-size:18px;font-weight:900;color:#111827;text-transform:uppercase;line-height:1.2">${movieTitle}</p>
+                <div style="display:inline-block;margin-top:8px;padding:3px 10px;background:#dc2626;border-radius:4px">
+                    <p style="margin:0;font-family:Arial,sans-serif;font-size:9px;font-weight:900;color:#ffffff;text-transform:uppercase;letter-spacing:1px">Admit One</p>
+                </div>
+            </div>
+            <div style="margin:0 20px;border-top:2px dashed #e8e3d8"></div>
+
+            <!-- Seats + Price -->
+            <div style="padding:14px 20px">
+                <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
+                    <tr>
+                        <td style="vertical-align:top;padding-right:16px">
+                            <p style="margin:0;font-family:Arial,sans-serif;font-size:8px;font-weight:700;color:#9ca3af;letter-spacing:3px;text-transform:uppercase">Seat(s)</p>
+                            <p style="margin:4px 0 0;font-family:Arial,sans-serif;font-size:26px;font-weight:900;color:#dc2626;line-height:1">${(booking?.seatNumbers || []).join(', ') || '---'}</p>
+                        </td>
+                        <td style="vertical-align:top;text-align:right">
+                            <p style="margin:0;font-family:Arial,sans-serif;font-size:8px;font-weight:700;color:#9ca3af;letter-spacing:3px;text-transform:uppercase">Total</p>
+                            <p style="margin:4px 0 0;font-family:monospace;font-size:22px;font-weight:900;color:#111827">${formatCurrency(booking?.totalPrice)}<span style="font-size:12px"> đ</span></p>
+                        </td>
+                    </tr>
+                </table>
+                ${combos.length ? '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #e8e3d8"><p style="margin:0;font-family:Arial,sans-serif;font-size:8px;font-weight:700;color:#9ca3af;letter-spacing:2px;text-transform:uppercase">F&B / Combo</p>' + combos.map(c => '<p style="margin:2px 0 0;font-family:Arial,sans-serif;font-size:10px;color:#6b7280">' + c.name + ' <span style="color:#9ca3af">×' + c.quantity + '</span>  <span style="float:right;font-weight:700;color:#111827">' + formatCurrency(c.price * c.quantity) + 'đ</span></p>').join('') + '</div>' : ''}
+            </div>
+            <div style="margin:0 20px;border-top:2px dashed #e8e3d8"></div>
+
+            <!-- QR Code -->
+            <div style="padding:16px 20px;text-align:center">
+                <p style="margin:0 0 12px;font-family:Arial,sans-serif;font-size:8px;font-weight:700;color:#9ca3af;letter-spacing:3px;text-transform:uppercase">Scan to Verify</p>
+                <img src="cid:ticket-qr" alt="QR" style="width:130px;height:130px;border:1px solid #e5e0d5;border-radius:8px;padding:6px;background:#ffffff;display:block;margin:0 auto"/>
+                <p style="margin:8px 0 0;font-family:monospace;font-size:9px;color:#9ca3af;letter-spacing:2px">${booking.bookingCode}</p>
+            </div>
+
+            <!-- Footer -->
+            <div style="background:#111827;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
+                <p style="margin:0;font-family:Arial,sans-serif;font-size:10px;font-weight:900;color:#6b7280;text-transform:uppercase;letter-spacing:2px">Total Paid</p>
+                <p style="margin:0;font-family:monospace;font-size:20px;font-weight:900;color:#ffffff">${formatCurrency(booking?.totalPrice)} ₫</p>
+            </div>
         </div>
-        <div style="margin:28px 0 8px;text-align:center">
-            <p style="margin:0 0 16px;font-weight:700;color:#111827;font-size:15px">Mã QR vé của bạn</p>
-            <img src="cid:ticket-qr" alt="QR vé" style="width:180px;height:180px;border:1px solid #e5e7eb;border-radius:12px;padding:8px;display:block;margin:0 auto"/>
-            <p style="margin:12px 0 0;color:#6b7280;font-size:13px">File PDF vé cứng đã được đính kèm bên dưới email này.</p>
+
+        <div style="text-align:center;margin-top:24px">
+            <a href="${ticketUrl}" style="display:inline-block;background:#dc2626;color:#ffffff;font-weight:700;padding:12px 28px;border-radius:8px;text-decoration:none;font-size:14px;font-family:Arial,sans-serif">Xem vé trên điện thoại →</a>
+            <p style="margin:10px 0 0;font-family:Arial,sans-serif;font-size:11px;color:#9ca3af">Vé sẽ tự động cập nhật trạng thái khi được xác nhận tại rạp.</p>
         </div>`;
 
     return sendEmail({
         to: booking?.user?.email,
         subject: `5Cine - Vé điện tử đã xác nhận — ${booking.bookingCode}`,
-        attachments: [
-            { filename: 'qr.png', content: qrBuffer, cid: 'ticket-qr' },
-            { filename: `ticket-${booking.bookingCode}.pdf`, content: pdfBuffer, contentType: 'application/pdf' },
-        ],
-        html: styledWrapper('Vé điện tử đã xác nhận', body),
+        attachments: [{ filename: 'qr.png', content: qrBuffer, cid: 'ticket-qr' }],
+        html: styledWrapper('Vé điện tử đã xác nhận', body.replace(/^\s+|\s+$/g, '')),
     });
 }
 

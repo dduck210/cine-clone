@@ -257,8 +257,7 @@ router.post('/:bookingId/hard-copy', protect, async (req, res) => {
         if (!booking) return res.status(404).json({ message: 'Booking not found' });
         if (booking.ticketStatus !== 'printed') return res.status(400).json({ message: 'Vé chưa được xác nhận' });
 
-        const pdfBuffer = await generateTicketPdfBuffer(booking);
-        const result = await sendConfirmedTicketEmail(booking, pdfBuffer);
+        const result = await sendConfirmedTicketEmail(booking);
 
         if (result.skipped) return res.status(503).json({ message: 'Email chưa được cấu hình trên server' });
 
