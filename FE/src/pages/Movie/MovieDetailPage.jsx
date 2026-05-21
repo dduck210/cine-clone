@@ -299,23 +299,6 @@ const MovieDetailPage = () => {
           </div>
         </div>
 
-        {getYoutubeId(movie.trailer) && (
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 border-l-4 border-[#dc2626] pl-3 flex items-center gap-2">
-              <Play size={20} className="text-[#dc2626]" /> Trailer
-            </h2>
-            <div className="rounded-xl overflow-hidden shadow-lg aspect-video bg-black">
-              <iframe
-                src={`https://www.youtube.com/embed/${getYoutubeId(movie.trailer)}?autoplay=1&mute=1&rel=0&modestbranding=1`}
-                title={`Trailer - ${movie.title}`}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full"
-              />
-            </div>
-          </div>
-        )}
-
         <div ref={showtimeSectionRef}>
           <h2 className="text-2xl font-bold text-gray-900 mb-4 border-l-4 border-[#dc2626] pl-3">
             Lịch Chiếu Phim
@@ -470,6 +453,24 @@ const MovieDetailPage = () => {
             </div>
           )}
         </div>
+
+        {getYoutubeId(movie.trailer) && (
+          <div className="mt-12 mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 border-l-4 border-[#dc2626] pl-3 flex items-center gap-2">
+              <Play size={20} className="text-[#dc2626]" /> Trailer
+            </h2>
+            <div className="rounded-xl overflow-hidden shadow-lg aspect-video bg-black">
+              <iframe
+                src={`https://www.youtube.com/embed/${getYoutubeId(movie.trailer)}?autoplay=1&mute=1&rel=0&modestbranding=1`}
+                title={`Trailer - ${movie.title}`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              />
+            </div>
+          </div>
+        )}
+
         <ReviewSection movieId={id} />
       </main>
       <Footer />
