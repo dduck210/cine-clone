@@ -98,7 +98,7 @@ router.get('/:bookingId/pdf', async (req, res) => {
 
         // QR code encodes admin URL for quick staff scanning
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-        const qrUrl = `${frontendUrl}/admin?tab=orders&booking=${bookingCode}`;
+        const qrUrl = `${frontendUrl}/ticket/${bookingCode}`;
         const qrBuffer = await QRCode.toBuffer(qrUrl, { type: 'png', width: 120, margin: 1 });
 
         const W        = 400;
@@ -301,6 +301,37 @@ router.post('/:bookingId/email', protect, async (req, res) => {
     }
 });
 
+// Public: get ticket info by booking code (for QR from email opening in app)
+router.get('/code/:bookingCode', async (req, res) => {
+    try {
+        const booking = await Booking.findOne({ bookingCode: req.params.bookingCode.toUpperCase() })
+            .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }, { path: 'room', select: 'name' }] })
+            .populate('user', 'name email phone')
+            .populate('seats');
+
+        if (!booking) return res.status(404).json({ message: 'Không tìm thấy vé' });
+
+        res.json({
+            bookingCode: booking.bookingCode,
+            status: booking.status,
+            ticketStatus: booking.ticketStatus,
+            movieTitle: booking.showtime?.movie?.title || '',
+            moviePoster: booking.showtime?.movie?.poster || '',
+            cinemaName: booking.showtime?.cinema?.name || '',
+            roomName: booking.showtime?.room?.name || '',
+            showDate: booking.showtime?.date || '',
+            showTime: booking.showtime?.startTime || '',
+            seatNumbers: booking.seatNumbers || [],
+            totalPrice: booking.totalPrice,
+            combos: booking.extraItems || [],
+            userName: booking.user?.name || '',
+            userEmail: booking.user?.email || '',
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // Self-service scan: quét QR ở quầy, tự in vé, hiển thị thông tin
 router.post('/scan', async (req, res) => {
     try {
@@ -309,12 +340,14 @@ router.post('/scan', async (req, res) => {
 
         bookingCode = bookingCode.trim();
 
-        // Extract booking code from admin URL if QR encodes a URL instead of raw code
+        // Extract booking code from URLs (admin, ticket page, or any booking=BK... param)
+        bookingCode = bookingCode.replace(/^["']|["']$/g, '');
         const urlMatch = bookingCode.match(/[?&]booking=([A-Za-z0-9]+)/);
         if (urlMatch) bookingCode = urlMatch[1];
+        const pathMatch = bookingCode.match(/\/ticket\/([A-Za-z0-9]+)/);
+        if (pathMatch) bookingCode = pathMatch[1];
 
-        // Normalize: uppercase, remove any surrounding whitespace/quotes
-        bookingCode = bookingCode.replace(/^["']|["']$/g, '').toUpperCase();
+        bookingCode = bookingCode.toUpperCase();
 
         if (!/^BK\d+$/i.test(bookingCode)) {
             return res.status(400).json({ message: 'Mã QR không hợp lệ. Vui lòng quét mã vé từ email hoặc ứng dụng 5Cine.' });
