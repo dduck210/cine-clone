@@ -289,16 +289,11 @@ async function sendConfirmedTicketEmail(booking, _pdfBuffer) {
                 <p style="margin:0;font-family:Arial,sans-serif;font-size:10px;font-weight:900;color:#6b7280;text-transform:uppercase;letter-spacing:2px">Total Paid</p>
                 <p style="margin:0;font-family:monospace;font-size:20px;font-weight:900;color:#ffffff">${formatCurrency(booking?.totalPrice)} ₫</p>
             </div>
-        </div>
-
-        <div style="text-align:center;margin-top:24px">
-            <a href="${ticketUrl}" style="display:inline-block;background:#dc2626;color:#ffffff;font-weight:700;padding:12px 28px;border-radius:8px;text-decoration:none;font-size:14px;font-family:Arial,sans-serif">Xem vé trên điện thoại →</a>
-            <p style="margin:10px 0 0;font-family:Arial,sans-serif;font-size:11px;color:#9ca3af">Vé sẽ tự động cập nhật trạng thái khi được xác nhận tại rạp.</p>
         </div>`;
 
     return sendEmail({
         to: booking?.user?.email,
-        subject: `5Cine - Vé điện tử đã xác nhận — ${booking.bookingCode}`,
+        subject: `5Cine - Vé cứng điện tử — ${booking.bookingCode}`,
         attachments: [{ filename: 'qr.png', content: qrBuffer, cid: 'ticket-qr' }],
         html: styledWrapper('Vé điện tử đã xác nhận', body.replace(/^\s+|\s+$/g, '')),
     });

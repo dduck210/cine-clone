@@ -6,8 +6,8 @@ const jwt = require('jsonwebtoken');
 const Booking = require('../models/Booking');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
-const { sendEmail, sendConfirmedTicketEmail } = require('../services/email-service');
-const { createTicketAccessToken, verifyTicketAccessToken } = require('../utils/ticket-access');
+const { sendConfirmedTicketEmail } = require('../services/email-service');
+const { verifyTicketAccessToken } = require('../utils/ticket-access');
 const ticketEvents = require('../services/ticket-event-emitter');
 const { sendTicketPushNotification } = require('../services/push-service');
 
@@ -279,33 +279,11 @@ router.post('/:bookingId/email', protect, async (req, res) => {
         if (!access.allowed) return res.status(access.status).json({ message: access.message });
         if (booking.status !== 'paid') return res.status(400).json({ message: 'Booking not paid yet' });
 
-        const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173';
-        const serverUrl = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 5000}`;
-        const accessToken = createTicketAccessToken(booking);
-        const pdfUrl = `${serverUrl}/api/tickets/${booking._id}/pdf?accessToken=${encodeURIComponent(accessToken)}`;
-
-        const result = await sendEmail({
-            to: booking.user?.email,
-            subject: `5Cine - Vé điện tử cho đơn ${booking.bookingCode}`,
-            html: `
-                <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#ffffff;border:1px solid #e5e7eb;border-radius:16px">
-                    <h2 style="margin:0 0 8px;color:#dc2626">5Cine</h2>
-                    <h3 style="margin:0 0 20px;color:#111827">Vé điện tử của bạn</h3>
-                    <p>Xin chào <strong>${booking.user?.name || 'bạn'}</strong>,</p>
-                    <p>Mã đơn <strong>${booking.bookingCode}</strong> đã sẵn sàng.</p>
-                    <p><strong>Phim:</strong> ${booking.showtime?.movie?.title || 'Phim'}<br/>
-                    <strong>Rạp:</strong> ${booking.showtime?.cinema?.name || '5Cine'}<br/>
-                    <strong>Phòng:</strong> ${booking.showtime?.room?.name || '---'}<br/>
-                    <strong>Ghế:</strong> ${(booking.seatNumbers || []).join(', ') || '---'}</p>
-                    <p>Xem đơn hàng tại: <a href="${frontendUrl}/my-tickets">${frontendUrl}/my-tickets</a></p>
-                    <p>PDF vé: <a href="${pdfUrl}">${pdfUrl}</a></p>
-                </div>
-            `,
-        });
+        const result = await sendConfirmedTicketEmail(booking);
 
         res.json({
             message: result.sent ? 'Ticket email sent' : 'Ticket email skipped',
-            result,
+            to: booking.user?.email,
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

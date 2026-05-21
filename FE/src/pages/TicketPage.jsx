@@ -13,6 +13,7 @@ const TicketPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [ticketStatus, setTicketStatus] = useState(null);
+  const [sseConnected, setSseConnected] = useState(false);
 
   const isPaid = ticket?.status === "paid";
   const isPrinted = ticketStatus === "printed" && isPaid;
@@ -39,6 +40,7 @@ const TicketPage = () => {
       import.meta.env.VITE_API_URL ||
       `http://${window.location.hostname}:5000/api`;
     const streamUrl = `${apiBase}/bookings/${ticket.bookingId}/stream`;
+    console.log('[SSE] connecting to:', streamUrl);
 
     const es = import.meta.env.VITE_API_URL
       ? new EventSourcePolyfill(streamUrl, {
@@ -46,12 +48,15 @@ const TicketPage = () => {
         })
       : new EventSource(streamUrl);
 
+    es.onopen = () => { console.log('[SSE] connected'); setSseConnected(true); };
     es.addEventListener("ticket_printed", () => {
       setTicketStatus("printed");
       toast.success("Vé của bạn đã được xác nhận!", { duration: 5000 });
     });
-
-    es.onerror = (err) => console.error("[SSE] error:", err);
+    es.onerror = (err) => {
+      console.error('[SSE] error:', streamUrl, err);
+      setSseConnected(false);
+    };
 
     return () => es.close();
   }, [ticket, ticketStatus]);
@@ -114,6 +119,9 @@ const TicketPage = () => {
         />
         <p className="font-mono font-bold text-gray-700 text-sm tracking-[0.2em] uppercase">
           {ticket.bookingCode}
+        </p>
+        <p className={`text-xs font-bold ${sseConnected ? 'text-emerald-500' : 'text-red-400'}`}>
+          {sseConnected ? '● Đã kết nối — vé sẽ tự cập nhật' : '○ Đang kết nối real-time...'}
         </p>
       </div>
     </div>
