@@ -88,24 +88,31 @@ async function sendPaymentSuccessEmail(booking, paymentMethod = '') {
         to: booking?.user?.email,
         subject: `5Cine - Thanh toán thành công cho đơn ${booking.bookingCode}`,
         attachments: [{ filename: 'qr.png', content: qrBuffer, cid: 'ticket-qr' }],
-        html: wrapEmail(
-            'Thanh toán thành công',
-            `
-                <p>Xin chào <strong>${booking?.user?.name || 'bạn'}</strong>, đơn vé của bạn đã được thanh toán thành công.</p>
-                <p><strong>Mã đơn:</strong> ${booking.bookingCode}<br/>
-                <strong>Phim:</strong> ${movieTitle}<br/>
-                <strong>Rạp:</strong> ${cinemaName}<br/>
-                <strong>Suất chiếu:</strong> ${formatShowtime(booking)}<br/>
-                <strong>Ghế:</strong> ${(booking?.seatNumbers || []).join(', ') || '---'}<br/>
-                <strong>Tổng tiền:</strong> ${formatCurrency(booking?.totalPrice)} đ<br/>
-                <strong>Phương thức:</strong> ${methodLabel}</p>
-                <div style="margin:20px 0;text-align:center">
-                    <img src="cid:ticket-qr" alt="QR vé" style="width:180px;height:180px;border:1px solid #e5e7eb;border-radius:8px;padding:8px"/>
-                    <p style="margin:10px 0 4px;font-weight:700;color:#111827">Mã QR vé của bạn</p>
-                    <p style="margin:0;color:#6b7280;font-size:13px">Xuất trình mã QR này tại quầy — nhân viên rạp sẽ quét để xác nhận và in vé cho bạn.</p>
+        html: `
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08)">
+                <div style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:32px 24px;text-align:center">
+                    <h1 style="color:#fff;margin:0;font-size:22px;font-weight:900">5Cine</h1>
+                    <p style="color:rgba(255,255,255,0.85);margin:6px 0 0;font-size:13px">Thanh toán thành công</p>
                 </div>
-            `
-        ),
+                <div style="background:#fff;padding:28px 24px">
+                    <p style="color:#374151;font-size:15px;margin:0 0 16px">Xin chào <strong>${booking?.user?.name || 'bạn'}</strong>, đơn vé của bạn đã được thanh toán thành công.</p>
+                    <div style="background:#f9fafb;border-radius:12px;padding:20px;font-size:14px;color:#374151;line-height:2">
+                        <div><span style="color:#6b7280">Mã đơn:</span> <strong style="color:#dc2626">${booking.bookingCode}</strong></div>
+                        <div><span style="color:#6b7280">Phim:</span> <strong>${movieTitle}</strong></div>
+                        <div><span style="color:#6b7280">Rạp:</span> ${cinemaName}</div>
+                        <div><span style="color:#6b7280">Suất chiếu:</span> ${formatShowtime(booking)}</div>
+                        <div><span style="color:#6b7280">Ghế:</span> ${(booking?.seatNumbers || []).join(', ') || '---'}</div>
+                        <div><span style="color:#6b7280">Tổng tiền:</span> <strong>${formatCurrency(booking?.totalPrice)} đ</strong></div>
+                        <div><span style="color:#6b7280">Phương thức:</span> ${methodLabel}</div>
+                    </div>
+                    <div style="margin:24px 0 8px;text-align:center">
+                        <p style="margin:0 0 12px;font-weight:700;color:#111827;font-size:15px">Mã QR vé của bạn</p>
+                        <img src="cid:ticket-qr" alt="QR vé" style="width:180px;height:180px;border:1px solid #e5e7eb;border-radius:12px;padding:8px"/>
+                        <p style="margin:12px 0 0;color:#6b7280;font-size:13px">Xuất trình mã QR này tại quầy — nhân viên rạp sẽ quét để xác nhận và in vé cho bạn.</p>
+                    </div>
+                </div>
+            </div>
+        `,
     });
 }
 
