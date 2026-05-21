@@ -177,9 +177,9 @@ const RegisterPage = () => {
                 />
                 <label htmlFor="terms" className="text-sm text-gray-500 leading-snug">
                   Tôi đồng ý với{" "}
-                  <a href="#" className="text-[#dc2626] font-semibold hover:underline">
+                  <Link to="/terms" target="_blank" className="text-[#dc2626] font-semibold hover:underline">
                     Điều khoản sử dụng
-                  </a>
+                  </Link>
                 </label>
               </div>
 
