@@ -9,7 +9,13 @@ const { isEmailConfigured, sendEmail } = require('../services/email-service');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function otpHtml(title, name, otp, expireMin = 15) {
+function otpHtml(title, name, otp, expireMin = 15, contextText = '') {
+    const defaultContext = title.includes('Đặt lại')
+        ? 'Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản 5Cine. Sử dụng mã OTP bên dưới để tiến hành đặt lại mật khẩu.'
+        : 'Bạn vừa đăng ký tài khoản tại 5Cine. Sử dụng mã OTP bên dưới để xác thực email và hoàn tất đăng ký.';
+    const bodyContext = contextText || defaultContext;
+    const supportEmail = process.env.EMAIL_USER || 'support@5cine.vn';
+
     return `
         <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08)">
             <div style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:32px 24px;text-align:center">
@@ -17,13 +23,18 @@ function otpHtml(title, name, otp, expireMin = 15) {
                 <p style="color:rgba(255,255,255,0.85);margin:6px 0 0;font-size:13px">${title}</p>
             </div>
             <div style="background:#fff;padding:28px 24px">
-                <p style="color:#374151;font-size:15px;margin:0 0 16px">Xin chào <strong>${name || 'bạn'}</strong>,</p>
+                <p style="color:#374151;font-size:15px;margin:0 0 6px">Xin chào <strong>${name || 'bạn'}</strong>,</p>
+                <p style="color:#374151;font-size:14px;margin:0 0 20px">${bodyContext}</p>
                 <div style="background:#f9fafb;border:2px dashed #dc2626;border-radius:12px;padding:20px;text-align:center;margin:0 0 20px">
                     <p style="color:#6b7280;font-size:12px;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px;font-weight:700">Mã xác nhận OTP</p>
                     <p style="color:#dc2626;font-size:40px;font-weight:900;letter-spacing:10px;margin:0">${otp}</p>
                     <p style="color:#9ca3af;font-size:12px;margin:8px 0 0">Hiệu lực trong ${expireMin} phút</p>
                 </div>
                 <p style="color:#9ca3af;font-size:12px;margin:0">Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email này.</p>
+                <div style="border-top:1px solid #f3f4f6;margin-top:28px;padding-top:16px;text-align:center">
+                    <p style="color:#9ca3af;font-size:12px;margin:0 0 4px">© 2025 5Cine. Tất cả các quyền được bảo lưu.</p>
+                    <p style="color:#9ca3af;font-size:12px;margin:0">Cần hỗ trợ? Liên hệ <a href="mailto:${supportEmail}" style="color:#dc2626;text-decoration:none">${supportEmail}</a></p>
+                </div>
             </div>
         </div>`;
 }

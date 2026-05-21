@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import axiosInstance from "../../api/axiosConfig";
 import toast from "react-hot-toast";
+import { isVietnameseHoliday } from "../../utils/vietnamese-holidays";
 
 const DAYS_VI = [
   { label: "T2", value: 1 }, { label: "T3", value: 2 }, { label: "T4", value: 3 },
@@ -25,6 +26,7 @@ function getTimeSlotFE(startTime) {
 
 function getDayTypeFE(dateStr) {
   if (!dateStr) return null;
+  if (isVietnameseHoliday(dateStr)) return "holiday";
   const day = new Date(dateStr).getDay();
   return day === 0 || day === 6 ? "weekend" : "weekday";
 }
@@ -243,10 +245,10 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
       .finally(() => setLoadingRooms(false));
   }, [selectedCinema]);
 
-  // Lock dayType to "weekend" for Sat/Sun; default to "weekday" for T2-T6
+  // Auto-detect dayType from date: holiday > weekend > weekday
   useEffect(() => {
     if (!watchedDate || bulkMode) return;
-    setValue("dayType", getDayTypeFE(watchedDate) === "weekend" ? "weekend" : "weekday");
+    setValue("dayType", getDayTypeFE(watchedDate));
   }, [watchedDate, bulkMode]);
 
   const toggleDay = (day) => {
@@ -474,7 +476,12 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
           {/* Loại ngày (tùy chọn) */}
           <div className={!selectedRoom ? "pointer-events-none" : ""}>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Loại ngày</label>
-            {getDayTypeFE(watchedDate) === "weekend" ? (
+            {getDayTypeFE(watchedDate) === "holiday" ? (
+              <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl">
+                <span className="text-sm font-bold text-red-600">Ngày lễ (×1.5)</span>
+                <span className="text-xs text-red-400">— Tự động phát hiện ngày lễ Việt Nam</span>
+              </div>
+            ) : getDayTypeFE(watchedDate) === "weekend" ? (
               <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
                 <span className="text-sm font-bold text-amber-600">Cuối tuần (×1.2)</span>
                 <span className="text-xs text-amber-400">— Tự động theo ngày đã chọn</span>

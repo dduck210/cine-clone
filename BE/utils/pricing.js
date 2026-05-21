@@ -1,3 +1,5 @@
+const { isVietnameseHoliday } = require('./vietnamese-holidays');
+
 const TIME_SLOT_MULTIPLIERS = {
     morning: 1.0,  // before 12:00
     evening: 1.1,  // 12:00 - 18:00
@@ -24,6 +26,7 @@ function getTimeSlot(startTime) {
 }
 
 function getDayTypeFromDate(date) {
+    if (isVietnameseHoliday(date)) return 'holiday';
     // Use UTC+7 (Vietnam) to determine day type regardless of server timezone
     const vnDate = new Date(new Date(date).getTime() + 7 * 60 * 60 * 1000);
     const day = vnDate.getUTCDay(); // 0=Sun, 6=Sat in VN local time
