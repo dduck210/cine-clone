@@ -2,17 +2,16 @@ import React, { useState } from "react";
 import { Edit, Trash2, X, Search, Shield, User } from "lucide-react";
 
 export const UserEditModal = ({ user, onClose, onSave }) => {
-  const [role, setRole] = useState(user.role);
   const [name, setName] = useState(user.name);
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
-    await onSave(user._id, { name, role });
+    await onSave(user._id, { name });
     setSaving(false);
   };
 
-  const unchanged = name === user.name && role === user.role;
+  const unchanged = name === user.name;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -28,7 +27,10 @@ export const UserEditModal = ({ user, onClose, onSave }) => {
             <div className="w-11 h-11 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-lg flex-shrink-0">
               {user.name?.charAt(0).toUpperCase()}
             </div>
-            <p className="text-sm text-slate-400">{user.email}</p>
+            <div>
+              <p className="text-sm font-medium text-slate-700">{user.email}</p>
+              <p className="text-xs text-slate-400 capitalize">{user.role === "admin" ? "Quản trị viên" : "Thành viên"}</p>
+            </div>
           </div>
 
           <div>
@@ -38,18 +40,6 @@ export const UserEditModal = ({ user, onClose, onSave }) => {
               onChange={(e) => setName(e.target.value)}
               className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-700 font-medium outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 text-sm"
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-slate-600 mb-1.5">Vai trò</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-700 font-medium outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 text-sm"
-            >
-              <option value="user">Thành viên</option>
-              <option value="admin">Quản trị viên</option>
-            </select>
           </div>
         </div>
 
@@ -127,7 +117,6 @@ export const UsersManager = ({ users, loading, onUpdate, onDelete }) => {
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50">
                     <th className="text-left px-6 py-3.5 font-bold text-slate-500 uppercase text-xs tracking-wider">Thành viên</th>
-                    <th className="text-left px-6 py-3.5 font-bold text-slate-500 uppercase text-xs tracking-wider hidden md:table-cell">SĐT</th>
                     <th className="text-left px-6 py-3.5 font-bold text-slate-500 uppercase text-xs tracking-wider">Vai trò</th>
                     <th className="text-left px-6 py-3.5 font-bold text-slate-500 uppercase text-xs tracking-wider hidden lg:table-cell">Tham gia</th>
                     <th className="text-right px-6 py-3.5 font-bold text-slate-500 uppercase text-xs tracking-wider">Thao tác</th>
@@ -147,7 +136,6 @@ export const UsersManager = ({ users, loading, onUpdate, onDelete }) => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-slate-500 hidden md:table-cell">{user.phone || "—"}</td>
                       <td className="px-6 py-4">
                         {user.role === "admin" ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600">
@@ -183,7 +171,7 @@ export const UsersManager = ({ users, loading, onUpdate, onDelete }) => {
                   ))}
                   {filtered.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="text-center py-12 text-slate-400 font-medium">Không tìm thấy thành viên nào.</td>
+                      <td colSpan={4} className="text-center py-12 text-slate-400 font-medium">Không tìm thấy thành viên nào.</td>
                     </tr>
                   )}
                 </tbody>

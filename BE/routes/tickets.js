@@ -324,9 +324,10 @@ router.post('/scan', async (req, res) => {
         const urlMatch = bookingCode.match(/\/ticket\/([A-Za-z0-9]+)/i)
                       || bookingCode.match(/[?&]booking=([A-Za-z0-9]+)/);
         if (urlMatch) bookingCode = urlMatch[1];
+        const pathMatch = bookingCode.match(/\/ticket\/([A-Za-z0-9]+)/);
+        if (pathMatch) bookingCode = pathMatch[1];
 
-        // Normalize: uppercase, remove any surrounding whitespace/quotes
-        bookingCode = bookingCode.replace(/^["']|["']$/g, '').toUpperCase();
+        bookingCode = bookingCode.toUpperCase();
 
         if (!/^BK\d+$/i.test(bookingCode)) {
             return res.status(400).json({ message: 'Mã QR không hợp lệ. Vui lòng quét mã vé từ email hoặc ứng dụng 5Cine.' });
