@@ -39,8 +39,17 @@ router.post('/qr/request-otp', protect, async (req, res) => {
         booking.otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
         await booking.save();
 
-        await sendOtpEmail(booking, otp);
-        res.json({ message: 'OTP sent', email: booking.user.email.replace(/(.{2})(.*)(@.*)/, '$1***$3') });
+        // Internal/fake domains can't receive mail — fall back to the configured system email
+        const recipientEmail = booking.user.email.endsWith('@cinema.com')
+            ? process.env.EMAIL_USER
+            : booking.user.email;
+        const displayEmail = recipientEmail || booking.user.email;
+
+        const emailResult = await sendOtpEmail({ ...booking.toObject(), user: { ...booking.user.toObject(), email: recipientEmail } }, otp);
+        if (emailResult?.skipped) {
+            return res.status(503).json({ message: 'Hệ thống email chưa được cấu hình. Vui lòng liên hệ quản trị viên hoặc dùng phương thức thanh toán khác.' });
+        }
+        res.json({ message: 'OTP sent', email: displayEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3') });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

@@ -365,6 +365,10 @@ router.post('/scan', async (req, res) => {
             sendTicketPushNotification(booking).catch(err =>
                 console.error('[push] notification failed:', err.message)
             );
+
+            sendConfirmedTicketEmail(booking).catch(err =>
+                console.error('[email] confirmed ticket email failed:', err.message)
+            );
         }
 
         res.json({

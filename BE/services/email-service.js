@@ -224,80 +224,107 @@ async function sendShowtimeCancelledEmail(booking, reason) {
     });
 }
 
-async function sendConfirmedTicketEmail(booking, _pdfBuffer) {
+async function sendConfirmedTicketEmail(booking) {
     const movieTitle = booking?.showtime?.movie?.title || 'Phim';
     const cinemaName = booking?.showtime?.cinema?.name || '5Cine';
     const roomName = booking?.showtime?.room?.name || '';
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const ticketUrl = `${frontendUrl}/ticket/${booking.bookingCode}`;
-    // Use base64 data URL — works in all email clients including Gmail mobile (CID blocks)
-    const qrDataUrl = await QRCode.toDataURL(booking.bookingCode, { width: 300, margin: 2, errorCorrectionLevel: 'M' });
+    const showtime = booking?.showtime;
+    const dateText = showtime?.date ? new Date(showtime.date).toLocaleDateString('vi-VN') : '---';
+    const timeText = showtime?.startTime || '---';
+    const seats = (booking?.seatNumbers || []).join(', ') || '---';
     const combos = (booking?.extraItems || []).filter(c => c.quantity > 0);
+    const watermark = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='100'%3E%3Ctext x='0' y='60' font-family='monospace' font-size='14' font-weight='900' letter-spacing='2' fill='%23000' opacity='0.07' transform='rotate(-28 90 50)'%3E5CINE%20TICKET%3C/text%3E%3C/svg%3E";
+    const qrDataUrl = await QRCode.toDataURL(booking.bookingCode, { width: 280, margin: 2, errorCorrectionLevel: 'M' });
 
-    const body = `
-        <!-- Ticket card — mirrors PDF hard-ticket design -->
-        <div style="max-width:400px;margin:0 auto;background:#fdf8f0;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.12)">
-            <!-- Header -->
-            <div style="padding:18px 20px 10px;text-align:center">
-                <p style="margin:0;font-family:Arial,sans-serif;font-size:9px;font-weight:700;color:#6b7280;letter-spacing:4px;text-transform:uppercase">Cinema Entry Pass</p>
-            </div>
-            <div style="margin:0 20px;border-top:2px dashed #e8e3d8"></div>
+    const comboRows = combos.map(c =>
+        `<p style="margin:3px 0 0;font-family:Arial,sans-serif;font-size:11px;font-weight:700;color:#1f2937">${c.quantity}&times; ${c.name}</p>`
+    ).join('');
 
-            <!-- Cinema info -->
-            <div style="padding:14px 20px">
-                <p style="margin:0;font-family:Arial,sans-serif;font-size:16px;font-weight:900;color:#111827;text-transform:uppercase;letter-spacing:1px">${cinemaName}</p>
-                ${roomName ? '<p style="margin:2px 0 0;font-family:Arial,sans-serif;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1.5px">' + roomName + '</p>' : ''}
-                <p style="margin:6px 0 0;font-family:monospace;font-size:11px;color:#9ca3af">Code: ${booking.bookingCode}</p>
-                <p style="margin:2px 0 0;font-family:Arial,sans-serif;font-size:11px;color:#9ca3af">${formatShowtime(booking)}</p>
-            </div>
-            <div style="margin:0 20px;border-top:2px dashed #e8e3d8"></div>
+    const ticket = `
+<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
+  <tr><td align="center" style="padding:20px 0">
+    <table width="360" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid #e5e0d5;border-radius:12px;overflow:hidden;background-color:#fdf8f0;background-image:url('${watermark}');background-size:180px 100px;font-family:Arial,sans-serif">
 
-            <!-- Movie + Seats -->
-            <div style="padding:14px 20px">
-                <p style="margin:0;font-family:Arial,sans-serif;font-size:8px;font-weight:700;color:#9ca3af;letter-spacing:3px;text-transform:uppercase">Now Showing</p>
-                <p style="margin:4px 0 0;font-family:Arial,sans-serif;font-size:18px;font-weight:900;color:#111827;text-transform:uppercase;line-height:1.2">${movieTitle}</p>
-                <div style="display:inline-block;margin-top:8px;padding:3px 10px;background:#dc2626;border-radius:4px">
-                    <p style="margin:0;font-family:Arial,sans-serif;font-size:9px;font-weight:900;color:#ffffff;text-transform:uppercase;letter-spacing:1px">Admit One</p>
-                </div>
-            </div>
-            <div style="margin:0 20px;border-top:2px dashed #e8e3d8"></div>
+      <!-- Header -->
+      <tr><td style="padding:18px 20px 16px;text-align:center;border-bottom:1px dashed #d1d5db">
+        <p style="margin:0;font-size:11px;font-weight:900;letter-spacing:5px;color:#374151;text-transform:uppercase">THẺ VÀO PHÒNG CHIẾU PHIM</p>
+      </td></tr>
 
-            <!-- Seats + Price -->
-            <div style="padding:14px 20px">
-                <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
-                    <tr>
-                        <td style="vertical-align:top;padding-right:16px">
-                            <p style="margin:0;font-family:Arial,sans-serif;font-size:8px;font-weight:700;color:#9ca3af;letter-spacing:3px;text-transform:uppercase">Seat(s)</p>
-                            <p style="margin:4px 0 0;font-family:Arial,sans-serif;font-size:26px;font-weight:900;color:#dc2626;line-height:1">${(booking?.seatNumbers || []).join(', ') || '---'}</p>
-                        </td>
-                        <td style="vertical-align:top;text-align:right">
-                            <p style="margin:0;font-family:Arial,sans-serif;font-size:8px;font-weight:700;color:#9ca3af;letter-spacing:3px;text-transform:uppercase">Total</p>
-                            <p style="margin:4px 0 0;font-family:monospace;font-size:22px;font-weight:900;color:#111827">${formatCurrency(booking?.totalPrice)}<span style="font-size:12px"> đ</span></p>
-                        </td>
-                    </tr>
-                </table>
-                ${combos.length ? '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #e8e3d8"><p style="margin:0;font-family:Arial,sans-serif;font-size:8px;font-weight:700;color:#9ca3af;letter-spacing:2px;text-transform:uppercase">F&B / Combo</p>' + combos.map(c => '<p style="margin:2px 0 0;font-family:Arial,sans-serif;font-size:10px;color:#6b7280">' + c.name + ' <span style="color:#9ca3af">×' + c.quantity + '</span>  <span style="float:right;font-weight:700;color:#111827">' + formatCurrency(c.price * c.quantity) + 'đ</span></p>').join('') + '</div>' : ''}
-            </div>
-            <div style="margin:0 20px;border-top:2px dashed #e8e3d8"></div>
+      <!-- Cinema info -->
+      <tr><td style="padding:16px 20px;border-bottom:1px dashed #d1d5db">
+        <p style="margin:0;font-size:14px;font-weight:900;color:#111827;text-transform:uppercase">${cinemaName}</p>
+        ${roomName ? `<p style="margin:2px 0 0;font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:2px">${roomName}</p>` : ''}
+        <p style="margin:8px 0 0;font-size:10px;color:#9ca3af">Mã ĐH: ${booking.bookingCode}</p>
+        <p style="margin:2px 0 0;font-size:10px;color:#9ca3af">${dateText} — ${timeText}</p>
+      </td></tr>
 
-            <!-- QR Code -->
-            <div style="padding:16px 20px;text-align:center">
-                <p style="margin:0 0 12px;font-family:Arial,sans-serif;font-size:8px;font-weight:700;color:#9ca3af;letter-spacing:3px;text-transform:uppercase">Scan to Verify</p>
-                <img src="${qrDataUrl}" alt="QR" style="width:180px;height:180px;border:1px solid #e5e0d5;border-radius:8px;padding:6px;background:#ffffff;display:block;margin:0 auto"/>
-                <p style="margin:8px 0 0;font-family:monospace;font-size:9px;color:#9ca3af;letter-spacing:2px">${booking.bookingCode}</p>
-            </div>
+      <!-- Movie title -->
+      <tr><td style="padding:16px 20px 4px">
+        <p style="margin:0;font-size:20px;font-weight:900;color:#111827;text-transform:uppercase;line-height:1.2">${movieTitle}</p>
+      </td></tr>
 
-            <!-- Footer -->
-            <div style="background:#111827;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
-                <p style="margin:0;font-family:Arial,sans-serif;font-size:10px;font-weight:900;color:#6b7280;text-transform:uppercase;letter-spacing:2px">Total Paid</p>
-                <p style="margin:0;font-family:monospace;font-size:20px;font-weight:900;color:#ffffff">${formatCurrency(booking?.totalPrice)} ₫</p>
-            </div>
-        </div>`;
+      <!-- 2x2 Info grid -->
+      <tr><td style="padding:12px 20px 16px">
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
+          <tr>
+            <td width="50%" style="vertical-align:top;padding-bottom:12px;padding-right:8px">
+              <p style="margin:0;font-size:8px;color:#9ca3af;text-transform:uppercase;letter-spacing:4px;font-weight:900">Suất chiếu</p>
+              <p style="margin:3px 0 0;font-size:12px;font-weight:900;color:#1f2937">${timeText}</p>
+            </td>
+            <td width="50%" style="vertical-align:top;padding-bottom:12px">
+              <p style="margin:0;font-size:8px;color:#9ca3af;text-transform:uppercase;letter-spacing:4px;font-weight:900">Ngày chiếu</p>
+              <p style="margin:3px 0 0;font-size:12px;font-weight:900;color:#1f2937">${dateText}</p>
+            </td>
+          </tr>
+          <tr>
+            <td width="50%" style="vertical-align:top;padding-right:8px">
+              <p style="margin:0;font-size:8px;color:#9ca3af;text-transform:uppercase;letter-spacing:4px;font-weight:900">Phòng</p>
+              <p style="margin:3px 0 0;font-size:12px;font-weight:900;color:#1f2937;text-transform:uppercase">${roomName || '---'}</p>
+            </td>
+            <td width="50%" style="vertical-align:top">
+              <p style="margin:0;font-size:8px;color:#9ca3af;text-transform:uppercase;letter-spacing:4px;font-weight:900">Ghế</p>
+              <p style="margin:3px 0 0;font-size:18px;font-weight:900;color:#dc2626;line-height:1">${seats}</p>
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+
+      ${combos.length ? `
+      <!-- Combo -->
+      <tr><td style="padding:12px 20px 14px;border-top:1px dashed #d1d5db">
+        <p style="margin:0;font-size:8px;color:#9ca3af;text-transform:uppercase;letter-spacing:4px;font-weight:900">Combo bỏng nước</p>
+        ${comboRows}
+      </td></tr>` : ''}
+
+      <!-- QR section -->
+      <tr><td style="padding:16px 20px;text-align:center;border-top:2px dashed #d1d5db">
+        <p style="margin:0 0 10px;font-size:8px;color:#9ca3af;text-transform:uppercase;letter-spacing:4px;font-weight:900">Quét mã để xác thực vé</p>
+        <img src="${qrDataUrl}" alt="QR" width="120" height="120" style="display:block;margin:0 auto;border:1px solid #e5e0d5;padding:6px;background:#ffffff"/>
+        <p style="margin:10px 0 0;font-family:monospace;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:4px;text-transform:uppercase">${booking.bookingCode}</p>
+      </td></tr>
+
+      <!-- Footer -->
+      <tr><td style="background:#111827;padding:14px 20px">
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
+          <tr>
+            <td style="vertical-align:middle">
+              <p style="margin:0;font-size:9px;font-weight:900;color:#9ca3af;text-transform:uppercase;letter-spacing:4px">Total Paid</p>
+            </td>
+            <td style="vertical-align:middle;text-align:right">
+              <p style="margin:0;font-family:monospace;font-size:20px;font-weight:900;color:#ffffff">${formatCurrency(booking?.totalPrice)} đ</p>
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+
+    </table>
+  </td></tr>
+</table>`;
 
     return sendEmail({
         to: booking?.user?.email,
-        subject: `5Cine - Vé cứng điện tử — ${booking.bookingCode}`,
-        html: styledWrapper('Vé điện tử đã xác nhận', body.replace(/^\s+|\s+$/g, '')),
+        subject: `5Cine - Vé điện tử — ${movieTitle} — ${booking.bookingCode}`,
+        html: ticket,
     });
 }
 
