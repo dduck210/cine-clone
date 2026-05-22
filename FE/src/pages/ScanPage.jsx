@@ -52,7 +52,7 @@ const ScanPage = () => {
     try {
       await html5QrCode.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
         async (text) => {
           // Html5Qrcode fires this callback every frame the QR is visible — only process once
           if (processingRef.current) return;
@@ -238,8 +238,9 @@ const ScanPage = () => {
           </div>
         )}
         {/* Always in DOM so Html5Qrcode can find #qr-scanner regardless of cameraError state */}
+        <style>{`#qr-scanner video { height: 270px !important; object-fit: cover; width: 100% !important; }`}</style>
         <div className={cameraError ? "hidden" : "p-4"}>
-          <div style={{ height: "260px", overflow: "hidden", borderRadius: "12px" }}>
+          <div style={{ height: "270px", overflow: "hidden", borderRadius: "12px" }}>
             <div id="qr-scanner" className="w-full" />
           </div>
           <p className="text-xs text-gray-400 text-center mt-2">

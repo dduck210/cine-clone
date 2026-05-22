@@ -88,7 +88,7 @@ const TicketViewPage = () => {
           </h1>
           {isPaid && !isPrinted && (
             <div className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-full text-amber-700 text-xs font-bold">
-              <Clock size={14} /> Vé đang chờ nhân viên rạp xác nhận
+              <Clock size={14} /> Vé điện tử đang chờ nhân viên rạp xác nhận
             </div>
           )}
           {isPrinted && (
