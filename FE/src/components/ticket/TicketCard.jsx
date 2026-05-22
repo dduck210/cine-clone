@@ -3,9 +3,16 @@ import { QRCodeSVG } from "qrcode.react";
 
 const WATERMARK = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='100'%3E%3Ctext x='0' y='60' font-family='monospace' font-size='14' font-weight='900' letter-spacing='2' fill='%23000' opacity='0.20' transform='rotate(-28 90 50)'%3E5CINE%20TICKET%3C/text%3E%3C/svg%3E")`;
 
+const formatDate = (d) => {
+  if (!d) return "---";
+  const date = new Date(d);
+  return isNaN(date) ? d : date.toLocaleDateString("vi-VN");
+};
+
 const TicketCard = ({ bookingCode, movieTitle, cinemaName, roomName, showDate, showTime, seats, totalPrice, combos }) => {
   const seatText = Array.isArray(seats) ? seats.join(", ") : seats;
   const validCombos = (combos || []).filter(c => c.quantity > 0);
+  const displayDate = formatDate(showDate);
 
   return (
     <div
@@ -24,7 +31,7 @@ const TicketCard = ({ bookingCode, movieTitle, cinemaName, roomName, showDate, s
         <p className="font-black text-[14px] text-gray-900 uppercase">{cinemaName}</p>
         {roomName && <p className="text-[11px] font-bold text-gray-500 uppercase">{roomName}</p>}
         <p className="text-[10px] text-gray-400 pt-1">Mã ĐH: {bookingCode}</p>
-        <p className="text-[10px] text-gray-400">{showDate} — {showTime}</p>
+        <p className="text-[10px] text-gray-400">{displayDate} — {showTime}</p>
       </div>
 
       {/* Tear line */}
@@ -44,7 +51,7 @@ const TicketCard = ({ bookingCode, movieTitle, cinemaName, roomName, showDate, s
           </div>
           <div>
             <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-0.5">Ngày chiếu</p>
-            <p className="font-black text-gray-800">{showDate}</p>
+            <p className="font-black text-gray-800">{displayDate}</p>
           </div>
           <div>
             <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-0.5">Phòng</p>

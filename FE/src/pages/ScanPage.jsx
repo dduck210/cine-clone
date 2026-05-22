@@ -37,6 +37,8 @@ const ScanPage = () => {
   const stopCamera = async () => {
     if (!qrCodeRef.current) return;
     try { await qrCodeRef.current.stop(); } catch {}
+    try { await qrCodeRef.current.clear(); } catch {}
+    qrCodeRef.current = null;
   };
 
   const startCamera = async () => {
@@ -44,16 +46,13 @@ const ScanPage = () => {
     setCameraError(null);
     await stopCamera();
 
-    const container = document.getElementById("qr-scanner");
-    if (container) container.innerHTML = "";
-
     const html5QrCode = new Html5Qrcode("qr-scanner");
     qrCodeRef.current = html5QrCode;
 
     try {
       await html5QrCode.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 },
         async (text) => {
           // Html5Qrcode fires this callback every frame the QR is visible — only process once
           if (processingRef.current) return;
@@ -240,7 +239,9 @@ const ScanPage = () => {
         )}
         {/* Always in DOM so Html5Qrcode can find #qr-scanner regardless of cameraError state */}
         <div className={cameraError ? "hidden" : "p-4"}>
-          <div id="qr-scanner" className="w-full rounded-xl overflow-hidden" />
+          <div style={{ height: "260px", overflow: "hidden", borderRadius: "12px" }}>
+            <div id="qr-scanner" className="w-full" />
+          </div>
           <p className="text-xs text-gray-400 text-center mt-2">
             Đưa mã QR vào khung để tự động nhận diện
           </p>
