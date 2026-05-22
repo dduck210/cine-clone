@@ -5,7 +5,7 @@ const Booking = require('../models/Booking');
 const Payment = require('../models/Payment');
 const Seat = require('../models/Seat');
 const { protect } = require('../middleware/auth');
-const { sendPaymentSuccessEmail, sendAdminPaymentNotificationEmail } = require('../services/email-service');
+const { sendPaymentSuccessEmail, sendAdminPaymentNotificationEmail, sendOtpEmail } = require('../services/email-service');
 const notificationService = require('../services/notification-service');
 
 const PARTNER_CODE = process.env.MOMO_PARTNER_CODE || 'MOMO';
@@ -79,8 +79,13 @@ router.post('/ipn', async (req, res) => {
     }
 
     if (resultCode === 0) {
-        const { bookingId } = JSON.parse(Buffer.from(extraData, 'base64').toString('utf8'));
-        await processSuccessfulPayment(bookingId, transId.toString(), parseInt(amount));
+        try {
+            const { bookingId } = JSON.parse(Buffer.from(extraData, 'base64').toString('utf8'));
+            // Only save MoMo transId, don't process payment yet — wait for OTP verification
+            await Booking.findByIdAndUpdate(bookingId, { momoTransId: transId.toString() });
+        } catch (e) {
+            console.error('[momo] IPN error saving transId:', e);
+        }
     }
 
     res.status(200).json({ message: 'ok' });
@@ -104,29 +109,109 @@ router.post('/confirm', protect, async (req, res) => {
     try {
         const { bookingId } = JSON.parse(Buffer.from(extraData, 'base64').toString('utf8'));
         const booking = await Booking.findById(bookingId)
-            .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }] });
+            .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }] })
+            .populate('user', 'name email');
 
         if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-        if (booking.status === 'pending') {
-            await processSuccessfulPayment(bookingId, transId.toString(), parseInt(amount));
+        // Save MoMo transId
+        booking.momoTransId = transId.toString();
+        await booking.save();
+
+        // If already paid (e.g. verified via OTP already), just return data
+        if (booking.status === 'paid') {
+            return res.json({
+                bookingId: booking._id,
+                bookingCode: booking.bookingCode,
+                movieTitle: booking.showtime?.movie?.title || '',
+                cinemaName: booking.showtime?.cinema?.name || '',
+                roomName: booking.showtime?.room?.name || '',
+                showTime: booking.showtime?.startTime || '',
+                showDate: booking.showtime?.date
+                    ? new Date(booking.showtime.date).toLocaleDateString('vi-VN') : '',
+                selectedSeats: booking.seatNumbers || [],
+                finalTotalPrice: booking.totalPrice,
+                poster: booking.showtime?.movie?.poster || '',
+                combos: booking.extraItems || [],
+                otpVerified: true,
+            });
         }
 
-        const updatedBooking = await Booking.findById(bookingId)
+        // Generate OTP and send email
+        const otp = String(Math.floor(100000 + Math.random() * 900000));
+        booking.otpCode = otp;
+        booking.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+        await booking.save();
+
+        // Send OTP to user's email
+        const recipientEmail = booking.user?.email?.endsWith('@cinema.com')
+            ? process.env.EMAIL_USER
+            : booking.user?.email;
+
+        await sendOtpEmail(
+            { ...booking.toObject(), user: { ...(booking.user?.toObject() || {}), email: recipientEmail } },
+            otp
+        );
+
+        res.json({
+            bookingId: booking._id,
+            bookingCode: booking.bookingCode,
+            movieTitle: booking.showtime?.movie?.title || '',
+            cinemaName: booking.showtime?.cinema?.name || '',
+            roomName: booking.showtime?.room?.name || '',
+            showTime: booking.showtime?.startTime || '',
+            showDate: booking.showtime?.date
+                ? new Date(booking.showtime.date).toLocaleDateString('vi-VN') : '',
+            selectedSeats: booking.seatNumbers || [],
+            finalTotalPrice: booking.totalPrice,
+            poster: booking.showtime?.movie?.poster || '',
+            combos: booking.extraItems || [],
+            otpVerified: false,
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// POST /api/payments/momo/verify-otp — Xác nhận OTP và kích hoạt vé
+router.post('/verify-otp', protect, async (req, res) => {
+    const { bookingId, otp } = req.body;
+    try {
+        const booking = await Booking.findById(bookingId);
+        if (!booking) return res.status(404).json({ message: 'Booking not found' });
+        if (booking.status === 'paid') return res.status(400).json({ message: 'Vé đã được kích hoạt' });
+        if (!booking.otpCode || !booking.otpExpiry)
+            return res.status(400).json({ message: 'Chưa yêu cầu mã OTP, vui lòng thử lại' });
+        if (new Date() > booking.otpExpiry)
+            return res.status(400).json({ message: 'Mã OTP đã hết hạn, vui lòng thử lại' });
+        if (otp !== booking.otpCode)
+            return res.status(400).json({ message: 'Mã OTP không đúng' });
+
+        // Clear OTP
+        booking.otpCode = undefined;
+        booking.otpExpiry = undefined;
+        await booking.save();
+
+        // Process payment
+        const transId = booking.momoTransId;
+        await processSuccessfulPayment(bookingId, transId || 'MOMO', booking.totalPrice);
+
+        const updated = await Booking.findById(bookingId)
             .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }] });
 
         res.json({
-            bookingId: updatedBooking._id,
-            bookingCode: updatedBooking.bookingCode,
-            movieTitle: updatedBooking.showtime?.movie?.title || '',
-            cinemaName: updatedBooking.showtime?.cinema?.name || '',
-            showTime: updatedBooking.showtime?.startTime || '',
-            showDate: updatedBooking.showtime?.date
-                ? new Date(updatedBooking.showtime.date).toLocaleDateString('vi-VN') : '',
-            selectedSeats: updatedBooking.seatNumbers || [],
-            finalTotalPrice: updatedBooking.totalPrice,
-            poster: updatedBooking.showtime?.movie?.poster || '',
-            combos: updatedBooking.extraItems || [],
+            bookingId: updated._id,
+            bookingCode: updated.bookingCode,
+            movieTitle: updated.showtime?.movie?.title || '',
+            cinemaName: updated.showtime?.cinema?.name || '',
+            roomName: updated.showtime?.room?.name || '',
+            showTime: updated.showtime?.startTime || '',
+            showDate: updated.showtime?.date
+                ? new Date(updated.showtime.date).toLocaleDateString('vi-VN') : '',
+            selectedSeats: updated.seatNumbers || [],
+            finalTotalPrice: updated.totalPrice,
+            poster: updated.showtime?.movie?.poster || '',
+            combos: updated.extraItems || [],
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   useLocation,
   useSearchParams,
@@ -15,6 +15,13 @@ import {
   ArrowLeft,
   XCircle,
   Clock,
+  ShieldCheck,
+  KeyRound,
+  Copy,
+  User,
+  Mail,
+  Smartphone,
+  Banknote,
 } from "lucide-react";
 import axiosInstance from "../../api/axiosConfig";
 import { EventSourcePolyfill } from "event-source-polyfill";
@@ -31,6 +38,14 @@ const PaymentSuccessPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [liveTicketStatus, setLiveTicketStatus] = useState(location.state?.ticketStatus || null);
+
+  // OTP state for MoMo flow
+  const [showOtpStep, setShowOtpStep] = useState(false);
+  const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
+  const [otpError, setOtpError] = useState("");
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const otpRefs = useRef([]);
 
   const isMomoReturn = searchParams.has("resultCode");
   const isHistoryMode = location.state?.isHistoryMode;
@@ -64,7 +79,13 @@ const PaymentSuccessPage = () => {
 
       axiosInstance
         .post("/payments/momo/confirm", params)
-        .then((res) => setTicketData(res.data))
+        .then((res) => {
+          setTicketData(res.data);
+          if (!res.data.otpVerified) {
+            setShowOtpStep(true);
+            setTimeout(() => otpRefs.current[0]?.focus(), 300);
+          }
+        })
         .catch((err) =>
           setError(err.response?.data?.message || "Xác nhận thanh toán thất bại"),
         )
@@ -126,6 +147,50 @@ const PaymentSuccessPage = () => {
       </div>
     );
   }
+
+  // OTP handlers
+  const handleOtpInput = (idx, val) => {
+    const digit = val.replace(/\D/g, "").slice(-1);
+    const next = [...otpDigits];
+    next[idx] = digit;
+    setOtpDigits(next);
+    setOtpError("");
+    if (digit && idx < 5) otpRefs.current[idx + 1]?.focus();
+  };
+
+  const handleOtpKeyDown = (idx, e) => {
+    if (e.key === "Backspace" && !otpDigits[idx] && idx > 0)
+      otpRefs.current[idx - 1]?.focus();
+  };
+
+  const handleOtpPaste = (e) => {
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!pasted) return;
+    e.preventDefault();
+    const next = [...otpDigits];
+    for (let i = 0; i < 6; i++) next[i] = pasted[i] || "";
+    setOtpDigits(next);
+    otpRefs.current[Math.min(pasted.length, 5)]?.focus();
+  };
+
+  const handleVerifyOtp = async () => {
+    const entered = otpDigits.join("");
+    if (entered.length < 6) { setOtpError("Vui lòng nhập đủ 6 số"); return; }
+    setIsVerifyingOtp(true);
+    try {
+      await axiosInstance.post("/payments/momo/verify-otp", {
+        bookingId: ticketData?.bookingId,
+        otp: entered,
+      });
+      toast.success("Xác thực thành công! Vé đã được kích hoạt.");
+      setOtpVerified(true);
+      setShowOtpStep(false);
+    } catch (err) {
+      setOtpError(err.response?.data?.message || "Mã OTP không đúng");
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
 
   if (error) {
     return (
@@ -227,8 +292,99 @@ const PaymentSuccessPage = () => {
           )}
         </div>
 
+        {/* OTP step for MoMo — verify before showing ticket */}
+        {showOtpStep && ticketData ? (
+          <div className="mx-auto w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#AE2070] to-[#dc2626] px-6 pt-5 pb-4 text-center text-white">
+              <div className="flex items-center justify-center w-14 h-14 bg-white/20 rounded-full mx-auto mb-3 ring-4 ring-white/20">
+                <ShieldCheck size={26} className="text-white" />
+              </div>
+              <h2 className="text-lg font-black mb-0.5">Xác nhận thanh toán</h2>
+              <p className="text-white/70 text-xs">
+                Nhập mã OTP được gửi về email của bạn
+              </p>
+            </div>
+
+            {/* Ticket info summary */}
+            <div className="p-5 space-y-2 border-b border-slate-100">
+              <div className="flex items-center gap-2 text-sm">
+                <Ticket size={15} className="text-[#AE2070] shrink-0" />
+                <span className="font-bold text-slate-800">{ticketData.movieTitle}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-slate-50 rounded-xl p-2.5">
+                  <span className="text-slate-400 block mb-0.5">Suất chiếu</span>
+                  <span className="font-bold text-slate-700">{ticketData.showTime} - {ticketData.showDate}</span>
+                </div>
+                <div className="bg-slate-50 rounded-xl p-2.5">
+                  <span className="text-slate-400 block mb-0.5">Ghế</span>
+                  <span className="font-bold text-[#AE2070]">{ticketData.selectedSeats?.join(", ")}</span>
+                </div>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-2.5 flex justify-between items-center text-xs">
+                <span className="text-slate-400">Tổng tiền</span>
+                <span className="font-black text-[#AE2070]">{ticketData.finalTotalPrice?.toLocaleString()}đ</span>
+              </div>
+            </div>
+
+            {/* OTP input */}
+            <div className="p-5">
+              <p className="text-center text-slate-500 text-xs mb-4">
+                Nhập mã <span className="font-bold text-slate-800">6 chữ số</span> từ email để hoàn tất
+              </p>
+
+              <div className="flex justify-center gap-2 mb-3">
+                {otpDigits.map((d, i) => (
+                  <input
+                    key={i}
+                    ref={(el) => (otpRefs.current[i] = el)}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={d}
+                    autoComplete="one-time-code"
+                    onChange={(e) => handleOtpInput(i, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                    onPaste={i === 0 ? handleOtpPaste : undefined}
+                    className={`w-11 h-14 text-center text-xl font-black border-2 rounded-xl outline-none transition-all ${
+                      otpError
+                        ? "border-red-400 bg-red-50 text-red-600"
+                        : d
+                        ? "border-[#AE2070] bg-red-50 text-[#AE2070]"
+                        : "border-slate-200 bg-slate-50 text-slate-800 focus:border-[#AE2070] focus:bg-red-50"
+                    }`}
+                  />
+                ))}
+              </div>
+
+              {otpError && (
+                <p className="text-center text-red-500 text-xs font-bold mb-3">{otpError}</p>
+              )}
+
+              <button
+                onClick={handleVerifyOtp}
+                disabled={isVerifyingOtp}
+                className="w-full bg-gradient-to-r from-[#AE2070] to-[#dc2626] hover:from-[#8B1A5C] hover:to-red-700 disabled:opacity-50 text-white font-black py-3.5 rounded-2xl transition-all text-sm uppercase tracking-wider flex items-center justify-center gap-2"
+              >
+                {isVerifyingOtp ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Đang xác nhận...
+                  </>
+                ) : (
+                  "Xác nhận thanh toán"
+                )}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         {/* Main card: QR (chưa xác nhận) hoặc Vé hợp lệ (đã xác nhận) */}
-        {isTicketIssued ? (
+        {!showOtpStep && (isTicketIssued ? (
           <TicketCard
             bookingCode={bookingCode}
             movieTitle={movieTitle}
@@ -264,7 +420,7 @@ const PaymentSuccessPage = () => {
             />
             <p className="font-mono font-bold text-gray-700 text-sm tracking-[0.2em] uppercase">{bookingCode}</p>
           </div>
-        ) : null}
+        ) : null)}
 
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 mt-12 justify-center px-4 flex-wrap">
