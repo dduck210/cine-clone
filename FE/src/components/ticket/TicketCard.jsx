@@ -5,8 +5,10 @@ const WATERMARK = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/
 
 const formatDate = (d) => {
   if (!d) return "---";
-  const date = new Date(d);
-  return isNaN(date) ? d : date.toLocaleDateString("vi-VN");
+  // Strip time part if it's a plain date string like "2026-05-23" or ISO "2026-05-23T..."
+  const datePart = typeof d === "string" ? d.split("T")[0] : d;
+  const date = new Date(datePart);
+  return isNaN(date.getTime()) ? String(datePart) : date.toLocaleDateString("vi-VN");
 };
 
 const TicketCard = ({ bookingCode, movieTitle, cinemaName, roomName, showDate, showTime, seats, totalPrice, combos }) => {

@@ -172,13 +172,6 @@ const ScanPage = () => {
           combos={ticket.extraItems}
         />
         <div className="w-full max-w-[360px] flex flex-col gap-2">
-          <button
-            onClick={handleSendHardCopy}
-            disabled={downloadingPdf}
-            className="w-full bg-slate-800 hover:bg-slate-900 disabled:opacity-60 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2"
-          >
-            <Mail size={18} /> {downloadingPdf ? "Đang gửi..." : "Gửi vé cứng qua email"}
-          </button>
           <div className="flex gap-2">
             <button
               onClick={handleRetry}
