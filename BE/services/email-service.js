@@ -86,10 +86,10 @@ async function sendPaymentSuccessEmail(booking, paymentMethod = '') {
     const rawMethod = paymentMethod || booking?.paymentId?.method || '';
     const methodLabel = rawMethod === 'momo' ? 'MoMo' : rawMethod === 'qr' ? 'QR Banking' : rawMethod || 'Online';
 
-    // QR encodes ticket URL — user can scan to open TicketPage, admin can scan at entrance
+    // QR encodes booking code directly — reliable scan regardless of domain/URL changes
+    const qrDataUrl = await QRCode.toDataURL(booking.bookingCode, { width: 300, margin: 2, errorCorrectionLevel: 'M' });
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const ticketUrl = `${frontendUrl}/ticket/${booking.bookingCode}`;
-    const qrBuffer = await QRCode.toBuffer(ticketUrl, { width: 200, margin: 2 });
 
     const body = `
         <p style="color:#374151;font-size:15px;margin:0 0 6px">Xin chào <strong>${booking?.user?.name || 'bạn'}</strong>,</p>
@@ -105,7 +105,7 @@ async function sendPaymentSuccessEmail(booking, paymentMethod = '') {
         </div>
         <div style="margin:28px 0 8px;text-align:center">
             <p style="margin:0 0 16px;font-weight:700;color:#111827;font-size:15px">Vé điện tử của bạn</p>
-            <img src="cid:ticket-qr" alt="QR vé" style="width:180px;height:180px;border:1px solid #e5e7eb;border-radius:12px;padding:8px;display:block;margin:0 auto"/>
+            <img src="${qrDataUrl}" alt="QR vé" style="width:200px;height:200px;border:1px solid #e5e7eb;border-radius:12px;padding:8px;display:block;margin:0 auto"/>
             <p style="margin:12px 0 20px;color:#6b7280;font-size:13px">Xuất trình mã QR này tại quầy rạp — nhân viên sẽ quét để xác nhận vé.</p>
             <a href="${ticketUrl}" style="display:inline-block;background:#dc2626;color:#ffffff;font-weight:700;padding:14px 32px;border-radius:12px;text-decoration:none;font-size:15px">Mở vé điện tử →</a>
             <p style="margin:12px 0 0;color:#9ca3af;font-size:12px">Nhấn nút trên để xem vé trên điện thoại — vé sẽ tự cập nhật khi được xác nhận tại rạp.</p>
@@ -114,7 +114,6 @@ async function sendPaymentSuccessEmail(booking, paymentMethod = '') {
     return sendEmail({
         to: booking?.user?.email,
         subject: `5Cine - Thanh toán thành công cho đơn ${booking.bookingCode}`,
-        attachments: [{ filename: 'qr.png', content: qrBuffer, cid: 'ticket-qr' }],
         html: styledWrapper('Thanh toán thành công', body),
     });
 }
@@ -228,7 +227,8 @@ async function sendConfirmedTicketEmail(booking, _pdfBuffer) {
     const roomName = booking?.showtime?.room?.name || '';
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const ticketUrl = `${frontendUrl}/ticket/${booking.bookingCode}`;
-    const qrBuffer = await QRCode.toBuffer(ticketUrl, { width: 200, margin: 2 });
+    // Use base64 data URL — works in all email clients including Gmail mobile (CID blocks)
+    const qrDataUrl = await QRCode.toDataURL(booking.bookingCode, { width: 300, margin: 2, errorCorrectionLevel: 'M' });
     const combos = (booking?.extraItems || []).filter(c => c.quantity > 0);
 
     const body = `
@@ -280,7 +280,7 @@ async function sendConfirmedTicketEmail(booking, _pdfBuffer) {
             <!-- QR Code -->
             <div style="padding:16px 20px;text-align:center">
                 <p style="margin:0 0 12px;font-family:Arial,sans-serif;font-size:8px;font-weight:700;color:#9ca3af;letter-spacing:3px;text-transform:uppercase">Scan to Verify</p>
-                <img src="cid:ticket-qr" alt="QR" style="width:130px;height:130px;border:1px solid #e5e0d5;border-radius:8px;padding:6px;background:#ffffff;display:block;margin:0 auto"/>
+                <img src="${qrDataUrl}" alt="QR" style="width:180px;height:180px;border:1px solid #e5e0d5;border-radius:8px;padding:6px;background:#ffffff;display:block;margin:0 auto"/>
                 <p style="margin:8px 0 0;font-family:monospace;font-size:9px;color:#9ca3af;letter-spacing:2px">${booking.bookingCode}</p>
             </div>
 
@@ -294,7 +294,6 @@ async function sendConfirmedTicketEmail(booking, _pdfBuffer) {
     return sendEmail({
         to: booking?.user?.email,
         subject: `5Cine - Vé cứng điện tử — ${booking.bookingCode}`,
-        attachments: [{ filename: 'qr.png', content: qrBuffer, cid: 'ticket-qr' }],
         html: styledWrapper('Vé điện tử đã xác nhận', body.replace(/^\s+|\s+$/g, '')),
     });
 }

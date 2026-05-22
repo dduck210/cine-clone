@@ -76,11 +76,19 @@ const MatrixEditor = ({ matrix, onChange }) => {
     const order = ["normal", "vip", "couple", "aisle"];
     const current = matrix[ri][ci]?.type || "normal";
     const next = order[(order.indexOf(current) + 1) % order.length];
-    const updated = matrix.map((row, r) =>
-      row.map((cell, c) =>
-        r === ri && c === ci ? { ...cell, type: next } : cell,
-      ),
-    );
+    const updated = matrix.map((row, r) => {
+      if (r !== ri) return row;
+      const newRow = row.map((cell, c) =>
+        c === ci ? { ...cell, type: next } : cell,
+      );
+      // Relabel: non-aisle seats get sequential numbers, aisle cells keep row letter only
+      const rowLetter = String.fromCharCode(65 + r);
+      let seatNum = 1;
+      return newRow.map((cell) => ({
+        ...cell,
+        label: cell.type === "aisle" ? rowLetter : `${rowLetter}${seatNum++}`,
+      }));
+    });
     onChange(updated);
   };
 
