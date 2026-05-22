@@ -108,6 +108,11 @@ const PaymentPage = () => {
   const [otpError, setOtpError] = useState("");
   const otpRefs = useRef([]);
 
+  // Dismiss all toasts when leaving this page
+  useEffect(() => {
+    return () => toast.dismiss();
+  }, []);
+
   useEffect(() => {
     window.scrollTo(0, 0);
     if (!location.state) navigate("/");

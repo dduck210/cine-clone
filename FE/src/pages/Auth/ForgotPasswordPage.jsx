@@ -18,6 +18,11 @@ const ForgotPasswordPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
+  // Cleanup toasts on unmount
+  useEffect(() => {
+    return () => { toast.dismiss("otp"); toast.dismiss("reset"); };
+  }, []);
+
   // Auto-fill from email link
   useEffect(() => {
     const codeFromUrl = searchParams.get("code");

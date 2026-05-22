@@ -23,6 +23,7 @@ const VerifyEmailPage = () => {
       setOtp(codeFromUrl);
       toast.success("Đã điền mã OTP từ email!", { duration: 2000 });
     }
+    return () => toast.dismiss();
   }, []);
 
   const handleVerify = async (e) => {
