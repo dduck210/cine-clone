@@ -343,14 +343,15 @@ router.post('/emergency-close/rooms', protect, admin, async (req, res) => {
             date: { $gte: getTodayFloor() },
         });
 
-        await Cinema.findByIdAndUpdate(cinemaId, { status: 'incident' });
-        console.log('[admin] Cinema marked incident:', cinemaId);
+        // Mark the selected rooms as maintenance
+        await CinemaRoom.updateMany({ _id: { $in: roomIds } }, { status: 'maintenance' });
 
-        // Mark the selected rooms as maintenance so UI shows correct status immediately
-        try {
-            await CinemaRoom.updateMany({ _id: { $in: roomIds } }, { status: 'maintenance' });
-        } catch (err) {
-            console.error('Failed to set selected rooms to maintenance:', err.message);
+        // Only set cinema to incident if ALL rooms are now in maintenance
+        const allRooms = await CinemaRoom.find({ cinema: cinemaId });
+        const anyActive = allRooms.some((r) => r.status === 'active');
+        if (!anyActive) {
+            await Cinema.findByIdAndUpdate(cinemaId, { status: 'incident' });
+            console.log('[admin] Cinema marked incident (all rooms in maintenance):', cinemaId);
         }
 
         // Do DB updates now and return quickly; process emails/refunds in background.
