@@ -58,7 +58,7 @@ export const UserEditModal = ({ user, onClose, onSave }) => {
   );
 };
 
-const USERS_PAGE_SIZE = 10;
+const USERS_PAGE_SIZE = 6;
 
 export const UsersManager = ({ users, loading, onUpdate, onDelete }) => {
   const [search, setSearch] = useState("");

@@ -270,7 +270,7 @@ export const OrderDetailModal = ({ order, onClose, onPrint }) => {
   );
 };
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 6;
 
 export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onConfirm, onPrint }) => {
   const [search, setSearch] = useState("");

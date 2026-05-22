@@ -521,7 +521,7 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
   );
 };
 
-const SHOWTIMES_PAGE_SIZE = 10;
+const SHOWTIMES_PAGE_SIZE = 6;
 
 export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew, onCancel }) => {
   const [filterMovie, setFilterMovie] = useState("");

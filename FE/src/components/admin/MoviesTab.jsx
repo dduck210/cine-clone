@@ -388,7 +388,7 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
   );
 };
 
-const MOVIES_PAGE_SIZE = 10;
+const MOVIES_PAGE_SIZE = 6;
 
 export const MoviesManager = ({
   movies,

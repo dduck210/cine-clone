@@ -3,7 +3,7 @@ import { Star, Trash2, Search, Filter, X } from "lucide-react";
 import toast from "react-hot-toast";
 import axiosInstance from "../../api/axiosConfig";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 6;
 
 const StarDisplay = ({ value }) => (
   <div className="flex gap-0.5">
