@@ -426,6 +426,7 @@ const PaymentPage = () => {
                   {otpDigits.map((d, i) => (
                     <input key={i} ref={el => otpRefs.current[i] = el}
                       type="text" inputMode="numeric" maxLength={1} value={d}
+                      autoComplete="one-time-code"
                       onChange={e => handleOtpInput(i, e.target.value)}
                       onKeyDown={e => handleOtpKeyDown(i, e)}
                       onPaste={i === 0 ? handleOtpPaste : undefined}

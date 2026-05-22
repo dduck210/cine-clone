@@ -152,8 +152,11 @@ async function sendOtpEmail(booking, otpCode) {
         <p style="color:#374151;font-size:14px;margin:0 0 20px">Hệ thống nhận được yêu cầu xác nhận thanh toán QR cho đơn <strong>${booking?.bookingCode}</strong> — phim <strong>${movieTitle}</strong>. Sử dụng mã OTP bên dưới để hoàn tất thanh toán.</p>
         <div style="background:#f9fafb;border:2px dashed #dc2626;border-radius:12px;padding:20px;text-align:center;margin:0 0 20px">
             <p style="color:#6b7280;font-size:12px;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px;font-weight:700">Mã xác nhận OTP</p>
-            <p style="color:#dc2626;font-size:40px;font-weight:900;letter-spacing:10px;margin:0">${otpCode}</p>
+            <p style="color:#dc2626;font-size:40px;font-weight:900;letter-spacing:10px;margin:0" data-autofill="one-time-code">${otpCode}</p>
             <p style="color:#9ca3af;font-size:12px;margin:8px 0 0">Hiệu lực trong 10 phút</p>
+        </div>
+        <div style="display:none;font-size:0;line-height:0;color:transparent;max-height:0">
+            @5Cine #${otpCode}
         </div>
         <p style="color:#9ca3af;font-size:12px;margin:0">Nếu bạn không thực hiện giao dịch này, hãy bỏ qua email này.</p>`;
 

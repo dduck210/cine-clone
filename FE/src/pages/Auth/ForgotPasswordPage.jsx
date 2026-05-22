@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Mail, Lock, ArrowLeft, KeyRound } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import axiosInstance from "../../api/axiosConfig";
@@ -9,13 +9,24 @@ const FieldError = ({ msg }) => msg ? <p className="text-red-500 text-xs mt-1 ml
 
 const ForgotPasswordPage = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1 = enter email, 2 = enter OTP + new password
-  const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
+  const [searchParams] = useSearchParams();
+  const [step, setStep] = useState(1);
+  const [email, setEmail] = useState(searchParams.get("email") || "");
+  const [otp, setOtp] = useState(searchParams.get("code") || "");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  // Auto-fill from email link
+  useEffect(() => {
+    const codeFromUrl = searchParams.get("code");
+    const emailFromUrl = searchParams.get("email");
+    if (codeFromUrl && emailFromUrl) {
+      setStep(2);
+      toast.success("Đã điền mã OTP từ email!", { duration: 2000 });
+    }
+  }, []);
 
   const validateStep1 = () => {
     const e = {};
@@ -154,6 +165,7 @@ const ForgotPasswordPage = () => {
                       value={otp}
                       onChange={(e) => { setOtp(e.target.value.replace(/\D/g, "").slice(0, 6)); if (errors.otp) setErrors((p) => ({ ...p, otp: "" })); }}
                       placeholder="123456"
+                      autocomplete="one-time-code"
                       className={`w-full bg-gray-50 border rounded-xl pl-12 pr-4 py-3 focus:ring-2 outline-none transition-all font-medium tracking-widest text-center text-lg ${errors.otp ? "border-red-400 focus:ring-red-100 focus:border-red-500" : "border-gray-200 focus:ring-red-100 focus:border-[#dc2626]"}`}
                       disabled={isLoading}
                       maxLength={6}

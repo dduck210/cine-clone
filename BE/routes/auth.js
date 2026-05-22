@@ -9,12 +9,16 @@ const { isEmailConfigured, sendEmail } = require('../services/email-service');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function otpHtml(title, name, otp, expireMin = 15, contextText = '') {
+function otpHtml(title, name, otp, email, expireMin = 15, contextText = '') {
     const defaultContext = title.includes('Đặt lại')
         ? 'Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản 5Cine. Sử dụng mã OTP bên dưới để tiến hành đặt lại mật khẩu.'
         : 'Bạn vừa đăng ký tài khoản tại 5Cine. Sử dụng mã OTP bên dưới để xác thực email và hoàn tất đăng ký.';
     const bodyContext = contextText || defaultContext;
     const supportEmail = process.env.EMAIL_USER || 'support@5cine.vn';
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const verifyUrl = title.includes('Đặt lại')
+        ? `${frontendUrl}/forgot-password?email=${encodeURIComponent(email)}&code=${otp}`
+        : `${frontendUrl}/verify-email?email=${encodeURIComponent(email)}&code=${otp}`;
 
     return `
         <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08)">
@@ -27,8 +31,21 @@ function otpHtml(title, name, otp, expireMin = 15, contextText = '') {
                 <p style="color:#374151;font-size:14px;margin:0 0 20px">${bodyContext}</p>
                 <div style="background:#f9fafb;border:2px dashed #dc2626;border-radius:12px;padding:20px;text-align:center;margin:0 0 20px">
                     <p style="color:#6b7280;font-size:12px;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px;font-weight:700">Mã xác nhận OTP</p>
-                    <p style="color:#dc2626;font-size:40px;font-weight:900;letter-spacing:10px;margin:0">${otp}</p>
+                    <p style="color:#dc2626;font-size:40px;font-weight:900;letter-spacing:10px;margin:0" data-autofill="one-time-code">${otp}</p>
                     <p style="color:#9ca3af;font-size:12px;margin:8px 0 0">Hiệu lực trong ${expireMin} phút</p>
+                </div>
+                <div style="display:none;font-size:0;line-height:0;color:transparent;max-height:0">
+                    @5Cine #${otp}
+                </div>
+                <div style="text-align:center;margin:0 0 20px">
+                    <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto">
+                        <tr>
+                            <td style="background-color:#dc2626;border-radius:8px;text-align:center;padding:14px 32px">
+                                <a href="${verifyUrl}" style="color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;font-family:Arial,sans-serif;display:inline-block;white-space:nowrap">Xác thực ngay →</a>
+                            </td>
+                        </tr>
+                    </table>
+                    <p style="color:#9ca3af;font-size:12px;margin:12px 0 0">Hoặc nhập thủ công mã OTP <strong>${otp}</strong> vào ứng dụng</p>
                 </div>
                 <p style="color:#9ca3af;font-size:12px;margin:0">Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email này.</p>
                 <div style="border-top:1px solid #f3f4f6;margin-top:28px;padding-top:16px;text-align:center">
@@ -70,7 +87,7 @@ router.post('/register', async (req, res) => {
         const emailResult = await sendEmail({
             to: email,
             subject: '[5Cine] Mã xác thực tài khoản',
-            html: otpHtml('Xác thực tài khoản', name, otp, 15),
+            html: otpHtml('Xác thực tài khoản', name, otp, email, 15),
         });
 
         if (emailResult.skipped || emailResult.sent === false) {
@@ -172,7 +189,7 @@ router.post('/resend-verify-otp', async (req, res) => {
         const emailResult = await sendEmail({
             to: email,
             subject: '[5Cine] Mã xác thực tài khoản (gửi lại)',
-            html: otpHtml('Xác thực tài khoản', pending.name, otp, 15),
+            html: otpHtml('Xác thực tài khoản', pending.name, otp, email, 15),
         });
 
         if (emailResult.skipped || emailResult.sent === false) {
@@ -245,7 +262,7 @@ router.post('/forgot-password', async (req, res) => {
         await sendEmail({
             to: email,
             subject: '[5Cine] Mã OTP đặt lại mật khẩu',
-            html: otpHtml('Đặt lại mật khẩu', user.name, otp, 15),
+            html: otpHtml('Đặt lại mật khẩu', user.name, otp, email, 15),
         });
 
         res.json({ message: 'OTP đã được gửi đến email của bạn' });

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Mail, ArrowLeft, KeyRound } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { ArrowLeft, KeyRound } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import axiosInstance from "../../api/axiosConfig";
 
@@ -9,11 +9,21 @@ const FieldError = ({ msg }) => msg ? <p className="text-red-500 text-xs mt-1 ml
 const VerifyEmailPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const email = location.state?.email || "";
-  const [otp, setOtp] = useState("");
+  const [searchParams] = useSearchParams();
+  const email = location.state?.email || searchParams.get("email") || "";
+  const [otp, setOtp] = useState(searchParams.get("code") || "");
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState("");
+
+  // Auto-verify if code comes from email link
+  useEffect(() => {
+    const codeFromUrl = searchParams.get("code");
+    if (codeFromUrl && email) {
+      setOtp(codeFromUrl);
+      toast.success("Đã điền mã OTP từ email!", { duration: 2000 });
+    }
+  }, []);
 
   const handleVerify = async (e) => {
     e.preventDefault();
@@ -107,6 +117,7 @@ const VerifyEmailPage = () => {
                     value={otp}
                     onChange={(e) => { setOtp(e.target.value.replace(/\D/g, "").slice(0, 6)); if (error) setError(""); }}
                     placeholder="123456"
+                    autocomplete="one-time-code"
                     className={`w-full bg-gray-50 border rounded-xl pl-12 pr-4 py-3 focus:ring-2 outline-none transition-all font-medium tracking-widest text-center text-lg ${error ? "border-red-400 focus:ring-red-100 focus:border-red-500" : "border-gray-200 focus:ring-red-100 focus:border-[#dc2626]"}`}
                     disabled={isLoading}
                     maxLength={6}
