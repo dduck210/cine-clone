@@ -1093,10 +1093,10 @@ export const RoomsManager = ({ cinemas }) => {
       setSelectedRoomIds((prev) =>
         prev.filter((id) => res.data.some((room) => room._id === id)),
       );
-      // Derive cinema status from rooms: all active → active, otherwise → incident
+      // Derive cinema status: incident only when ALL rooms are in maintenance
       if (res.data.length > 0) {
         setCinemaStatus(
-          res.data.every((r) => r.status === "active") ? "active" : "incident",
+          res.data.some((r) => r.status === "active") ? "active" : "incident",
         );
       }
     } catch {
