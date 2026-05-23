@@ -134,7 +134,7 @@ const MovieDetailPage = () => {
         <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 pt-20 pb-12 md:pt-28 md:pb-14 flex flex-col md:flex-row gap-6 lg:gap-12 items-start md:items-center">
 
           {/* Poster card */}
-          <div className="shrink-0 w-full md:w-[200px] lg:w-[240px] md:mx-0">
+          <div className="shrink-0 w-full md:w-[300px] lg:w-[400px] md:mx-0">
             <div className="rounded-2xl overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,0.8)] border border-white/15 ring-1 ring-white/5">
               <img
                 src={movie.poster}
@@ -171,7 +171,7 @@ const MovieDetailPage = () => {
                 <div className="flex items-center gap-1.5">
                   <Star size={15} className="text-yellow-400 fill-yellow-400" />
                   <span className="font-black text-white">{ratingVal}</span>
-                  <span className="text-white/30 text-xs">/10</span>
+                  <span className="text-white/30 text-xs">/5</span>
                 </div>
               )}
               <div className="w-px h-4 bg-white/15" />
@@ -262,11 +262,11 @@ const MovieDetailPage = () => {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 pb-24">
 
         {/* ── SHOWTIMES ── */}
-        <section ref={showtimeSectionRef} className="pt-12 mb-16">
+        <section ref={showtimeSectionRef} className="pt-6 mb-16">
           <div className="flex flex-col gap-4 mb-8">
             <div>
-              <h2 className="text-xl font-black text-slate-900 tracking-tight">Lịch chiếu</h2>
-              <p className="text-slate-400 text-xs font-medium mt-0.5">Chọn ngày và suất chiếu phù hợp</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1 border-l-4 border-[#dc2626] pl-3">Lịch chiếu</h2>
+              <p className="text-slate-400 text-xs font-medium mt-0.5 pl-3">Chọn ngày và suất chiếu phù hợp</p>
             </div>
 
             {/* Date tabs */}

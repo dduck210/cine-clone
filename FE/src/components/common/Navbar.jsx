@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { User, LogOut, Menu, X, ChevronDown, LayoutDashboard, Ticket } from "lucide-react";
+import axiosInstance from "../../api/axiosConfig";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -13,6 +14,17 @@ const Navbar = () => {
     const savedUser = localStorage.getItem("currentUser");
     return savedUser ? JSON.parse(savedUser) : null;
   });
+
+  // Sync user data from server on mount to catch admin-side changes
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    axiosInstance.get("/auth/profile").then((res) => {
+      const fresh = res.data;
+      setCurrentUser(fresh);
+      localStorage.setItem("currentUser", JSON.stringify(fresh));
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -104,26 +116,25 @@ const Navbar = () => {
               <div className="relative">
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className={`flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 rounded-2xl border transition-all duration-200 ${
-                    isDropdownOpen
-                      ? "bg-red-50 border-red-200 shadow-sm"
-                      : "bg-gray-50 border-gray-200 hover:border-red-200 hover:bg-red-50"
-                  }`}
+                  className="flex items-center gap-2.5 hover:opacity-80 active:scale-95 transition-all duration-200"
                 >
-                  <div className="w-7 h-7 md:w-8 md:h-8 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center bg-[#dc2626] shadow-sm">
+                  <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center bg-[#dc2626] shadow-md ring-2 ring-white">
                     {currentUser.avatar ? (
                       <img src={currentUser.avatar} alt="Avatar" className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-white font-black text-sm leading-none select-none">
+                      <span className="text-white font-bold text-sm leading-none select-none">
                         {currentUser.name?.charAt(0).toUpperCase() || "U"}
                       </span>
                     )}
                   </div>
-                  <span className="hidden lg:block text-sm font-bold text-gray-700 max-w-[100px] truncate">
-                    {currentUser.name}
-                  </span>
+                  <div className="hidden lg:block text-left">
+                    <p className="text-[10px] text-gray-400 leading-none mb-0.5">Xin chào</p>
+                    <p className="text-sm font-bold text-gray-800 leading-none max-w-[90px] truncate">
+                      {currentUser.name}
+                    </p>
+                  </div>
                   <ChevronDown
-                    size={14}
+                    size={13}
                     className={`hidden lg:block text-gray-400 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`}
                   />
                 </button>
