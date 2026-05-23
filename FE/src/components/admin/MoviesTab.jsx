@@ -153,6 +153,7 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
       duration: "",
       status: "now_showing",
       poster: "",
+      backdrop: "",
       description: "",
       director: "",
       cast: "",
@@ -347,6 +348,22 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
                 <Eye size={20} />
               </div>
             </div>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+              Banner ngang URL <span className="font-normal text-slate-400 normal-case">(ảnh 16:9 cho slider trang chủ)</span>
+            </label>
+            <input
+              {...register("backdrop", {
+                pattern: {
+                  value: /^https?:\/\/.+/,
+                  message: "Link phải bắt đầu bằng http/https",
+                },
+              })}
+              className={inputClass(errors.backdrop)}
+              placeholder="https://... (ngang 1920×1080, lấy từ TMDB hoặc nguồn chất lượng cao)"
+            />
+            {errors.backdrop && <ErrorMsg msg={errors.backdrop.message} />}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>

@@ -103,7 +103,7 @@ const HomePage = () => {
   return (
     <div className="min-h-screen bg-white font-bromega font-bold text-gray-900">
       <Navbar />
-      <Hero />
+      <Hero movies={nowShowingMovies} />
 
       <main className="container mx-auto px-4 sm:px-6 py-12 max-w-7xl">
         <div className="flex flex-col items-start mb-8 gap-5">
