@@ -16,10 +16,10 @@ const movieSchema = new mongoose.Schema({
     ageRestriction: { type: String, default: 'All ages' },
 }, { timestamps: true });
 
-movieSchema.pre('save', async function() {
+movieSchema.pre('save', function(next) {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
+
     const rd = this.releaseDate ? new Date(this.releaseDate) : null;
     const ed = this.screeningEndDate ? new Date(this.screeningEndDate) : null;
 
@@ -54,6 +54,7 @@ movieSchema.pre('save', async function() {
     }
 
     this.status = newStatus;
+    next();
 });
 
 module.exports = mongoose.model('Movie', movieSchema);

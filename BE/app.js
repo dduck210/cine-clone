@@ -25,7 +25,7 @@ const io = new Server(server, {
 });
 
 io.on('connection', (socket) => {
-    socket.on('admin:join', () => socket.join('admins')); ``
+    socket.on('admin:join', () => socket.join('admins'));
 });
 initNotificationService(io);
 

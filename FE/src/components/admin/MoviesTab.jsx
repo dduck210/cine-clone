@@ -165,28 +165,33 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
   const watchedReleaseDate = useWatch({ control, name: "releaseDate" });
   const watchedEndDate = useWatch({ control, name: "screeningEndDate" });
 
-  const getPreviewStatus = () => {
-    if (!watchedReleaseDate || !watchedEndDate) return null;
+  const calculateStatus = (releaseDateStr, endDateStr) => {
+    if (!releaseDateStr || !endDateStr) return "coming_soon";
     try {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      
-      // Date inputs are YYYY-MM-DD, new Date() on these might be UTC or Local depending on browser.
-      // We parse them and get local parts to be sure.
       const parseLocal = (dateStr) => {
-        const [y, m, d] = dateStr.split('-').map(Number);
+        const [y, m, d] = dateStr.split("-").map(Number);
         return new Date(y, m - 1, d);
       };
+      const start = parseLocal(releaseDateStr);
+      const end = parseLocal(endDateStr);
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) return "coming_soon";
 
-      const start = parseLocal(watchedReleaseDate);
-      const end = parseLocal(watchedEndDate);
-      
-      if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+      if (end < today) return "stopped";
+      if (start <= today) return "now_showing";
+      return "coming_soon";
+    } catch {
+      return "coming_soon";
+    }
+  };
 
-      if (end < today) return { label: "Ngừng chiếu", color: "text-slate-600", bg: "bg-slate-100", dot: "bg-slate-400" };
-      if (start <= today) return { label: "Đang chiếu", color: "text-emerald-600", bg: "bg-emerald-50", dot: "bg-emerald-500 animate-pulse" };
-      return { label: "Sắp chiếu", color: "text-amber-600", bg: "bg-amber-50", dot: "bg-amber-500" };
-    } catch { return null; }
+  const getPreviewStatus = () => {
+    if (!watchedReleaseDate || !watchedEndDate) return null;
+    const status = calculateStatus(watchedReleaseDate, watchedEndDate);
+    if (status === "stopped") return { label: "Ngừng chiếu", color: "text-slate-600", bg: "bg-slate-100", dot: "bg-slate-400" };
+    if (status === "now_showing") return { label: "Đang chiếu", color: "text-emerald-600", bg: "bg-emerald-50", dot: "bg-emerald-500 animate-pulse" };
+    return { label: "Sắp chiếu", color: "text-amber-600", bg: "bg-amber-50", dot: "bg-amber-500" };
   };
   const preview = getPreviewStatus();
 
@@ -196,7 +201,7 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
         ? currentMovie.genre.map((g) => (typeof g === "object" ? g._id : g))
         : [];
       setSelectedGenres(ids);
-      const toDateInput = (val) => val ? new Date(val).toISOString().split("T")[0] : "";
+      const toDateInput = (val) => (val ? new Date(val).toISOString().split("T")[0] : "");
       reset({
         ...currentMovie,
         genre: ids,
@@ -207,7 +212,11 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
   }, [currentMovie, reset]);
 
   const inputClass = (error) =>
-    `w-full bg-slate-50 border rounded-xl px-4 py-3 outline-none transition-all duration-300 font-medium text-slate-700 ${error ? "border-red-500 bg-red-50 focus:ring-4 focus:ring-red-100 placeholder-red-300 animate-shake" : "border-slate-200 focus:border-[#dc2626] focus:bg-white focus:ring-4 focus:ring-red-50 hover:border-slate-300"}`;
+    `w-full bg-slate-50 border rounded-xl px-4 py-3 outline-none transition-all duration-300 font-medium text-slate-700 ${
+      error
+        ? "border-red-500 bg-red-50 focus:ring-4 focus:ring-red-100 placeholder-red-300 animate-shake"
+        : "border-slate-200 focus:border-[#dc2626] focus:bg-white focus:ring-4 focus:ring-red-50 hover:border-slate-300"
+    }`;
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
@@ -215,16 +224,16 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
         onClick={() => setIsModalOpen(false)}
       ></div>
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-slate-100"
-        style={{ animation: "modalIn 0.25s cubic-bezier(0.22,1,0.36,1) both" }}>
+      <div
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-slate-100"
+        style={{ animation: "modalIn 0.25s cubic-bezier(0.22,1,0.36,1) both" }}
+      >
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 shrink-0">
           <div>
             <h3 className="font-bold text-lg text-slate-800 tracking-tight">
               {currentMovie ? "Chỉnh sửa Phim" : "Thêm Phim Mới"}
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Vui lòng nhập đầy đủ thông tin
-            </p>
+            <p className="text-xs text-slate-500 mt-0.5">Vui lòng nhập đầy đủ thông tin</p>
           </div>
           <button
             onClick={() => setIsModalOpen(false)}
@@ -236,9 +245,10 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
         <form
           onSubmit={handleSubmit((data) => {
             if (selectedGenres.length === 0) {
-                return;
+              return;
             }
-            handleSave({ ...data, genre: selectedGenres });
+            const finalStatus = calculateStatus(data.releaseDate, data.screeningEndDate);
+            handleSave({ ...data, genre: selectedGenres, status: finalStatus });
           })}
           className="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1"
         >
@@ -374,23 +384,19 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
               {errors.screeningEndDate && <ErrorMsg msg={errors.screeningEndDate.message} />}
               <p className="text-[11px] text-slate-400 mt-1 ml-1">Sau ngày này phim tự động chuyển sang <span className="font-bold">Ngừng chiếu</span></p>
             </div>
-            <div className="flex flex-col justify-end pb-1">
-              {preview && (
-                <div className={`rounded-xl p-3 border border-slate-100 ${preview.bg} flex flex-col gap-1 transition-all animate-in fade-in slide-in-from-top-2 duration-500`}>
-                   <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Trạng thái sẽ lưu:</span>
-                      <span className={`flex items-center gap-1.5 text-xs font-black ${preview.color}`}>
-                        <span className={`w-2 h-2 rounded-full ${preview.dot}`} />
-                        {preview.label}
-                      </span>
-                   </div>
-                   <p className="text-[10px] text-slate-400 font-medium italic leading-tight">
-                      Hệ thống tự động tính dựa trên ngày bạn đã chọn.
-                   </p>
-                </div>
-              )}
-            </div>
           </div>
+          {preview && (
+            <div>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                Trạng thái
+              </label>
+              <div className={`rounded-xl p-3 border ${preview.bg} flex items-center gap-3 transition-all animate-in fade-in slide-in-from-top-2 duration-500`}>
+                <span className={`w-2.5 h-2.5 rounded-full ${preview.dot}`} />
+                <span className={`text-sm font-black ${preview.color}`}>{preview.label}</span>
+                <span className="text-[11px] text-slate-400 font-medium ml-auto">Tự động xác định theo ngày</span>
+              </div>
+            </div>
+          )}
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
               Diễn viên chính
