@@ -157,6 +157,7 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
       description: "",
       director: "",
       cast: "",
+      language: "",
       releaseDate: "",
       screeningEndDate: "",
       ageRestriction: "T13",
@@ -414,15 +415,27 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
               </div>
             </div>
           )}
-          <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-              Diễn viên chính
-            </label>
-            <input
-              {...register("cast")}
-              className={inputClass(false)}
-              placeholder="VD: Tom Hanks, Scarlett Johansson..."
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                Diễn viên chính
+              </label>
+              <input
+                {...register("cast")}
+                className={inputClass(false)}
+                placeholder="VD: Tom Hanks, Scarlett Johansson..."
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                Ngôn ngữ
+              </label>
+              <input
+                {...register("language")}
+                className={inputClass(false)}
+                placeholder="VD: Tiếng Việt, Phụ đề Việt..."
+              />
+            </div>
           </div>
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
