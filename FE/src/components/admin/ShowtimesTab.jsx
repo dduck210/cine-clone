@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import {
-  Plus, X, Save, ChevronDown, Calendar, Clock, Film, MapPin, Ban, Layers, Eye,
+  Plus, X, Save, ChevronDown, Calendar, Clock, Film, MapPin, Ban, Layers, Eye, Search,
 } from "lucide-react";
 import axiosInstance from "../../api/axiosConfig";
 import toast from "react-hot-toast";
@@ -524,6 +524,7 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
 const SHOWTIMES_PAGE_SIZE = 6;
 
 export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew, onCancel }) => {
+  const [search, setSearch] = useState("");
   const [filterMovie, setFilterMovie] = useState("");
   const [filterCinema, setFilterCinema] = useState("");
   const [filterStatus, setFilterStatus] = useState("active");
@@ -551,12 +552,14 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
     const movieOk = !filterMovie || st.movie?._id === filterMovie;
     const cinemaOk = !filterCinema || st.cinema?._id === filterCinema;
     const statusOk = !filterStatus || st.effectiveStatus === filterStatus;
-    return movieOk && cinemaOk && statusOk;
+    const searchOk = !search.trim() || st.movie?.title?.toLowerCase().includes(search.trim().toLowerCase());
+    return movieOk && cinemaOk && statusOk && searchOk;
   });
 
   const totalPages = Math.ceil(filtered.length / SHOWTIMES_PAGE_SIZE);
   const pagedShowtimes = filtered.slice((currentPage - 1) * SHOWTIMES_PAGE_SIZE, currentPage * SHOWTIMES_PAGE_SIZE);
 
+  const handleSearch = (v) => { setSearch(v); setCurrentPage(1); };
   const handleFilterMovie = (v) => { setFilterMovie(v); setCurrentPage(1); };
   const handleFilterCinema = (v) => { setFilterCinema(v); setCurrentPage(1); };
   const handleFilterStatus = (v) => { setFilterStatus(v); setCurrentPage(1); };
@@ -665,7 +668,17 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
             </button>
           ))}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 text-slate-400" size={16} />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+              placeholder="Tìm theo tên phim..."
+              className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm font-medium text-slate-700 outline-none focus:border-[#dc2626] transition-all"
+            />
+          </div>
           <div className="relative">
             <Film className="absolute left-3 top-3 text-slate-400" size={16} />
             <select value={filterMovie} onChange={(e) => handleFilterMovie(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm font-medium text-slate-700 appearance-none outline-none focus:border-[#dc2626] cursor-pointer">

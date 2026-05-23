@@ -647,8 +647,8 @@ const Dashboard = () => {
         setMovies([res.data, ...movies]);
         toast.success("Đã thêm phim mới!");
       }
-    } catch {
-      toast.error("Có lỗi xảy ra, thử lại sau");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Có lỗi xảy ra, thử lại sau");
     }
     setIsModalOpen(false);
   };

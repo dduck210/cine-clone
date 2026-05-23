@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import {
   X,
   Eye,
@@ -13,6 +13,7 @@ import {
   Star,
   PlayCircle,
   Search,
+  Info,
 } from "lucide-react";
 
 export const ErrorMsg = ({ msg }) => (
@@ -141,6 +142,7 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     reset,
   } = useForm({
@@ -158,6 +160,28 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
       ageRestriction: "T13",
     },
   });
+
+  const watchedReleaseDate = useWatch({ control, name: "releaseDate" });
+  const watchedEndDate = useWatch({ control, name: "screeningEndDate" });
+
+  const getPreviewStatus = () => {
+    if (!watchedReleaseDate || !watchedEndDate) return null;
+    try {
+      const now = new Date();
+      // Set hours to 0 to compare dates only
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const start = new Date(watchedReleaseDate);
+      const end = new Date(watchedEndDate);
+      
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+
+      if (end < today) return { label: "Ngừng chiếu", color: "text-slate-600", bg: "bg-slate-100", dot: "bg-slate-400" };
+      if (start > today) return { label: "Sắp chiếu", color: "text-amber-600", bg: "bg-amber-50", dot: "bg-amber-500" };
+      return { label: "Đang chiếu", color: "text-emerald-600", bg: "bg-emerald-50", dot: "bg-emerald-500 animate-pulse" };
+    } catch { return null; }
+  };
+  const preview = getPreviewStatus();
+
   useEffect(() => {
     if (currentMovie) {
       const ids = Array.isArray(currentMovie.genre)
@@ -315,28 +339,45 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
             </div>
             <div>
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-                Ngày ra mắt
+                Ngày ra mắt <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
-                {...register("releaseDate")}
-                className={inputClass(false)}
+                {...register("releaseDate", { required: "Vui lòng chọn ngày ra mắt" })}
+                className={inputClass(errors.releaseDate)}
               />
+              {errors.releaseDate && <ErrorMsg msg={errors.releaseDate.message} />}
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-                Ngày kết thúc chiếu
+                Ngày kết thúc chiếu <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
-                {...register("screeningEndDate")}
-                className={inputClass(false)}
+                {...register("screeningEndDate", { required: "Vui lòng chọn ngày kết thúc" })}
+                className={inputClass(errors.screeningEndDate)}
               />
+              {errors.screeningEndDate && <ErrorMsg msg={errors.screeningEndDate.message} />}
               <p className="text-[11px] text-slate-400 mt-1 ml-1">Sau ngày này phim tự động chuyển sang <span className="font-bold">Ngừng chiếu</span></p>
             </div>
-            <div />
+            <div className="flex flex-col justify-end pb-1">
+              {preview && (
+                <div className={`rounded-xl p-3 border border-slate-100 ${preview.bg} flex flex-col gap-1 transition-all animate-in fade-in slide-in-from-top-2 duration-500`}>
+                   <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Trạng thái sẽ lưu:</span>
+                      <span className={`flex items-center gap-1.5 text-xs font-black ${preview.color}`}>
+                        <span className={`w-2 h-2 rounded-full ${preview.dot}`} />
+                        {preview.label}
+                      </span>
+                   </div>
+                   <p className="text-[10px] text-slate-400 font-medium italic leading-tight">
+                      Hệ thống tự động tính dựa trên ngày bạn đã chọn.
+                   </p>
+                </div>
+              )}
+            </div>
           </div>
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
@@ -373,22 +414,6 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
                   <option value="T13">T13 — Từ 13 tuổi</option>
                   <option value="T16">T16 — Từ 16 tuổi</option>
                   <option value="T18">T18 — Từ 18 tuổi</option>
-                </select>
-                <ChevronDown className="absolute right-4 top-3.5 text-slate-400 pointer-events-none" size={18} />
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-                Trạng thái
-              </label>
-              <div className="relative">
-                <select
-                  {...register("status")}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 appearance-none font-medium text-slate-700 cursor-pointer hover:bg-slate-100 transition-colors"
-                >
-                  <option value="now_showing">Đang chiếu</option>
-                  <option value="coming_soon">Sắp chiếu</option>
-                  <option value="stopped">Ngừng chiếu</option>
                 </select>
                 <ChevronDown className="absolute right-4 top-3.5 text-slate-400 pointer-events-none" size={18} />
               </div>

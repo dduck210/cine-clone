@@ -9,30 +9,31 @@ const movieSchema = new mongoose.Schema({
     description: { type: String },
     director: { type: String },
     cast: { type: String },
-    releaseDate: { type: Date },
+    releaseDate: { type: Date, required: true },
     rating: { type: Number, default: 0 },
     status: { type: String, enum: ['now_showing', 'coming_soon', 'stopped'], default: 'coming_soon' },
-    screeningEndDate: { type: Date },
+    screeningEndDate: { type: Date, required: true },
     ageRestriction: { type: String, default: 'All ages' },
 }, { timestamps: true });
 
 movieSchema.pre('save', function(next) {
     const now = new Date();
+    // Normalize now to start of day for comparison
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
-    // Auto update status based on dates
-    if (this.releaseDate) {
-        // If release date has passed and status is still coming_soon, move to now_showing
-        if (this.releaseDate <= now && this.status === 'coming_soon') {
+    // Ensure we are working with Date objects
+    const releaseDate = this.releaseDate ? new Date(this.releaseDate) : null;
+    const screeningEndDate = this.screeningEndDate ? new Date(this.screeningEndDate) : null;
+
+    if (screeningEndDate && screeningEndDate < today) {
+        this.status = 'stopped';
+    } 
+    else if (releaseDate) {
+        if (releaseDate <= today) {
             this.status = 'now_showing';
-        } 
-        // If release date is in the future and status is now_showing, move back to coming_soon
-        else if (this.releaseDate > now && this.status === 'now_showing') {
+        } else {
             this.status = 'coming_soon';
         }
-    }
-
-    if (this.screeningEndDate && this.screeningEndDate < now && this.status === 'now_showing') {
-        this.status = 'stopped';
     }
 
     next();

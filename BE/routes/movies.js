@@ -40,14 +40,34 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', protect, admin, async (req, res) => {
-    const { title, genre, duration, poster, trailer, description, status, ageRestriction, director, cast, releaseDate } = req.body;
+    console.log('--- CREATE MOVIE ATTEMPT ---');
+    console.log('Payload:', JSON.stringify(req.body, null, 2));
+    
     try {
-        const movie = new Movie({ title, genre, duration, poster, trailer, description, status, ageRestriction, director, cast, releaseDate });
+        // Sanitize genre: if it's an empty string or invalid, make it an empty array
+        if (req.body.genre === '' || (Array.isArray(req.body.genre) && req.body.genre.length === 0)) {
+            delete req.body.genre;
+        }
+
+        const movie = new Movie(req.body);
         const createdMovie = await movie.save();
-        await createdMovie.populate('genre');
+        console.log('Movie saved successfully:', createdMovie._id);
+
+        try {
+            await createdMovie.populate('genre');
+        } catch (popError) {
+            console.error('Populate Genre Error (Non-fatal):', popError.message);
+        }
+
         res.status(201).json(createdMovie);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('!!! CREATE MOVIE ERROR !!!');
+        console.error('Message:', error.message);
+        console.error('Stack:', error.stack);
+        res.status(400).json({ 
+            message: error.message,
+            details: error.errors ? Object.keys(error.errors).map(key => error.errors[key].message) : []
+        });
     }
 });
 
