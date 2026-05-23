@@ -3,3 +3,4 @@ node_modules/
 !FE/.env
 *.log
 dist/
+.claude/hooks/.logs/hook-log.jsonl
