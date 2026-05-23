@@ -51,7 +51,6 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
-      <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
       <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row">
         {/* Left panel — hidden on mobile */}
         <div className="hidden md:block md:w-1/2 bg-gray-900 relative min-h-[600px]">

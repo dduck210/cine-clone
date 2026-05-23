@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import Sidebar from "../../components/admin/Sidebar";
 import axiosInstance from "../../api/axiosConfig";
 import {
@@ -373,7 +373,17 @@ const Dashboard = () => {
               } else {
                 setUnreadCount((prev) => prev + 1);
                 // skip toast for admin-initiated actions that already show their own toast
-                if (incoming.type !== "showtime_cancelled") {
+                const skipToastTypes = [
+                  "showtime_cancelled", 
+                  "movie_created", 
+                  "movie_updated", 
+                  "movie_deleted", 
+                  "booking_paid", 
+                  "booking_refunded",
+                  "user_updated",
+                  "user_deleted"
+                ];
+                if (!skipToastTypes.includes(incoming.type)) {
                   toast.success(incoming.title || "Có thông báo mới", { id: incoming.id });
                 }
                 if (incoming.type === "showtime_expired" && activeTab === "showtimes") {
@@ -844,7 +854,6 @@ const Dashboard = () => {
         </header>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8">
-          <Toaster {...toastConfig} />
           <div key={activeTab} className="pb-10 tab-enter">
             {activeTab === "dashboard" && <DashboardView stats={stats} extStats={extStats} loading={statsLoading} />}
             {activeTab === "movies" && (

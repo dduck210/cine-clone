@@ -231,7 +231,6 @@ const PaymentSuccessPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
       <Navbar />
-      <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
 
       <main className="max-w-3xl mx-auto px-4 pt-28 pb-12">
         {/* Page title */}

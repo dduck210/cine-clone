@@ -44,8 +44,8 @@ const TicketPage = () => {
 
     const es = import.meta.env.VITE_API_URL
       ? new EventSourcePolyfill(streamUrl, {
-          headers: { "ngrok-skip-browser-warning": "true" },
-        })
+        headers: { "ngrok-skip-browser-warning": "true" },
+      })
       : new EventSource(streamUrl);
 
     es.onopen = () => { console.log('[SSE] connected'); setSseConnected(true); };
@@ -87,7 +87,6 @@ const TicketPage = () => {
   if (isPrinted) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-        <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
         <TicketCard
           bookingCode={ticket.bookingCode}
           movieTitle={ticket.movieTitle}
@@ -105,7 +104,6 @@ const TicketPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center py-8 px-4">
-      <Toaster position="top-center" />
       <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 flex flex-col items-center gap-5">
         <p className="text-xs text-gray-400 uppercase tracking-widest font-black text-center">
           Đưa mã QR này cho nhân viên rạp xác nhận

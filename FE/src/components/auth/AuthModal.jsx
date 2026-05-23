@@ -120,8 +120,6 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 font-sans">
-      <Toaster position="top-center" toastOptions={{ duration: 2000 }} containerStyle={{ zIndex: 100000 }} />
-
       <div
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
