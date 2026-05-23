@@ -18,6 +18,21 @@ const {
 const notificationService = require('../services/notification-service');
 const ticketEvents = require('../services/ticket-event-emitter');
 
+// Utility to handle common Mongoose errors
+const handleErrors = (res, error, defaultMsg = 'Internal Server Error') => {
+    console.error(`[Admin Error] ${defaultMsg}:`, error);
+    if (error.name === 'ValidationError') {
+        return res.status(400).json({ 
+            message: error.message, 
+            details: Object.keys(error.errors).map(key => error.errors[key].message) 
+        });
+    }
+    if (error.name === 'CastError') {
+        return res.status(400).json({ message: 'ID không hợp lệ' });
+    }
+    return res.status(500).json({ message: error.message || defaultMsg });
+};
+
 function countSeatsFromMatrix(seatMatrix = []) {
     let totalSeats = 0;
     for (const row of seatMatrix) {

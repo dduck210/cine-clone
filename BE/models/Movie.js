@@ -16,36 +16,28 @@ const movieSchema = new mongoose.Schema({
     ageRestriction: { type: String, default: 'All ages' },
 }, { timestamps: true });
 
-movieSchema.pre('save', function(next) {
-    try {
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        
-        const rd = this.releaseDate ? new Date(this.releaseDate) : null;
-        const ed = this.screeningEndDate ? new Date(this.screeningEndDate) : null;
+movieSchema.pre('save', async function() {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    const rd = this.releaseDate ? new Date(this.releaseDate) : null;
+    const ed = this.screeningEndDate ? new Date(this.screeningEndDate) : null;
 
-        let releaseDate = null;
-        if (rd && !isNaN(rd.getTime())) {
-            releaseDate = new Date(rd.getFullYear(), rd.getMonth(), rd.getDate());
-        }
+    let releaseDate = null;
+    if (rd && !isNaN(rd.getTime())) {
+        releaseDate = new Date(rd.getFullYear(), rd.getMonth(), rd.getDate());
+    }
 
-        let endDate = null;
-        if (ed && !isNaN(ed.getTime())) {
-            endDate = new Date(ed.getFullYear(), ed.getMonth(), ed.getDate());
-        }
+    let endDate = null;
+    if (ed && !isNaN(ed.getTime())) {
+        endDate = new Date(ed.getFullYear(), ed.getMonth(), ed.getDate());
+    }
 
-        let newStatus = 'coming_soon';
+    let newStatus = 'coming_soon';
 
-        if (endDate) {
-            if (endDate < today) {
-                newStatus = 'stopped';
-            } else if (releaseDate) {
-                if (releaseDate <= today) {
-                    newStatus = 'now_showing';
-                } else {
-                    newStatus = 'coming_soon';
-                }
-            }
+    if (endDate) {
+        if (endDate < today) {
+            newStatus = 'stopped';
         } else if (releaseDate) {
             if (releaseDate <= today) {
                 newStatus = 'now_showing';
@@ -53,12 +45,15 @@ movieSchema.pre('save', function(next) {
                 newStatus = 'coming_soon';
             }
         }
-
-        this.status = newStatus;
-        next();
-    } catch (err) {
-        next(err);
+    } else if (releaseDate) {
+        if (releaseDate <= today) {
+            newStatus = 'now_showing';
+        } else {
+            newStatus = 'coming_soon';
+        }
     }
+
+    this.status = newStatus;
 });
 
 module.exports = mongoose.model('Movie', movieSchema);

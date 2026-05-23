@@ -11,12 +11,27 @@ const { calcEndTime } = require('../utils/pricing');
 const { sendRefundEmail, sendShowtimeCancelledEmail } = require('../services/email-service');
 const notificationService = require('../services/notification-service');
 
+// Utility to handle common Mongoose errors
+const handleErrors = (res, error, defaultMsg = 'Internal Server Error') => {
+    console.error(`[Error] ${defaultMsg}:`, error);
+    if (error.name === 'ValidationError') {
+        return res.status(400).json({ 
+            message: error.message, 
+            details: Object.keys(error.errors).map(key => error.errors[key].message) 
+        });
+    }
+    if (error.name === 'CastError') {
+        return res.status(400).json({ message: 'ID không hợp lệ' });
+    }
+    return res.status(500).json({ message: error.message || defaultMsg });
+};
+
 router.get('/genres', async (req, res) => {
     try {
         const genres = await Genre.find({}).sort({ name: 1 });
         res.json(genres);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        handleErrors(res, error, 'Lỗi khi lấy danh sách thể loại');
     }
 });
 
@@ -25,23 +40,22 @@ router.get('/', async (req, res) => {
         const movies = await Movie.find({}).populate('genre');
         res.json(movies);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        handleErrors(res, error, 'Lỗi khi lấy danh sách phim');
     }
 });
 
 router.get('/:id', async (req, res) => {
     try {
         const movie = await Movie.findById(req.params.id).populate('genre');
-        if (!movie) return res.status(404).json({ message: 'Movie not found' });
+        if (!movie) return res.status(404).json({ message: 'Phim không tồn tại' });
         res.json(movie);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        handleErrors(res, error, 'Lỗi khi lấy thông tin phim');
     }
 });
 
 router.post('/', protect, admin, async (req, res) => {
     try {
-        // Sanitize genre
         if (req.body.genre === '' || (Array.isArray(req.body.genre) && req.body.genre.length === 0)) {
             delete req.body.genre;
         }
@@ -55,7 +69,6 @@ router.post('/', protect, admin, async (req, res) => {
             console.error('Populate Genre Error (Non-fatal):', popError.message);
         }
 
-        // Create notification for admin
         notificationService.createNotification({
             type: 'movie_created',
             title: 'Phim mới đã được thêm',
@@ -65,19 +78,14 @@ router.post('/', protect, admin, async (req, res) => {
 
         return res.status(201).json(createdMovie);
     } catch (error) {
-        console.error('Create movie error:', error);
-        return res.status(error.name === 'ValidationError' ? 400 : 500).json({ 
-            message: error.message || 'Lỗi khi thêm phim',
-            details: error.errors ? Object.keys(error.errors).map(key => error.errors[key].message) : []
-        });
+        handleErrors(res, error, 'Lỗi khi thêm phim');
     }
 });
 
-// Update movie — if duration changes, warn about affected showtimes
 router.put('/:id', protect, admin, async (req, res) => {
     try {
         const movie = await Movie.findById(req.params.id);
-        if (!movie) return res.status(404).json({ message: 'Movie not found' });
+        if (!movie) return res.status(404).json({ message: 'Phim không tồn tại' });
 
         const oldDuration = movie.duration;
         const newDuration = req.body.duration ? Number(req.body.duration) : oldDuration;
@@ -89,7 +97,6 @@ router.put('/:id', protect, admin, async (req, res) => {
         let affectedShowtimes = [];
 
         if (durationChanged) {
-            // Find upcoming active showtimes for this movie
             const upcoming = await Showtime.find({
                 movie: movie._id,
                 status: 'active',
@@ -98,10 +105,8 @@ router.put('/:id', protect, admin, async (req, res) => {
 
             for (const st of upcoming) {
                 const newEndTime = calcEndTime(st.startTime, newDuration);
-                // Update endTime in DB
                 await Showtime.findByIdAndUpdate(st._id, { endTime: newEndTime });
 
-                // Count pending/paid bookings affected
                 const bookingCount = await Booking.countDocuments({
                     showtime: st._id,
                     status: { $in: ['pending', 'paid'] },
@@ -130,17 +135,15 @@ router.put('/:id', protect, admin, async (req, res) => {
                 : null,
         });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        handleErrors(res, error, 'Lỗi khi cập nhật phim');
     }
 });
 
-// Bulk cancel affected showtimes when movie duration changes significantly
-// Admin calls this after reviewing warnings
 router.post('/:id/cancel-affected', protect, admin, async (req, res) => {
     try {
-        const { showtimeIds } = req.body; // array of showtime IDs to cancel + refund
+        const { showtimeIds } = req.body;
         if (!showtimeIds || showtimeIds.length === 0) {
-            return res.status(400).json({ message: 'No showtime IDs provided' });
+            return res.status(400).json({ message: 'Không có ID suất chiếu nào được cung cấp' });
         }
 
         let totalCancelled = 0;
@@ -219,18 +222,18 @@ router.post('/:id/cancel-affected', protect, admin, async (req, res) => {
             totalRefunded,
         });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        handleErrors(res, error, 'Lỗi khi hủy suất chiếu bị ảnh hưởng');
     }
 });
 
 router.delete('/:id', protect, admin, async (req, res) => {
     try {
         const movie = await Movie.findById(req.params.id);
-        if (!movie) return res.status(404).json({ message: 'Movie not found' });
+        if (!movie) return res.status(404).json({ message: 'Phim không tồn tại' });
         await movie.deleteOne();
-        res.json({ message: 'Movie removed' });
+        res.json({ message: 'Đã xóa phim' });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        handleErrors(res, error, 'Lỗi khi xóa phim');
     }
 });
 
