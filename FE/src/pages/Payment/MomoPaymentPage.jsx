@@ -5,7 +5,7 @@ import Navbar from "../../components/common/Navbar";
 import Footer from "../../components/common/Footer";
 import {
   Smartphone, Ticket, MapPin, Calendar, Armchair, Clock,
-  CheckCircle, ArrowLeft,
+  CheckCircle, ArrowLeft, ShieldCheck,
 } from "lucide-react";
 import axiosInstance from "../../api/axiosConfig";
 import toast, { Toaster } from "react-hot-toast";
@@ -22,32 +22,38 @@ const MomoPaymentPage = () => {
   const [countdown, setCountdown] = useState(3);
   const pollRef = useRef(null);
 
+  // Manual check fallback
+  const checkPaymentStatus = async () => {
+    try {
+      const res = await axiosInstance.get(`/payments/momo/status/${bookingId}`);
+      if (res.data.paid) {
+        if (pollRef.current) clearInterval(pollRef.current);
+        setIsPaid(true);
+        const timer = setInterval(() => {
+          setCountdown((prev) => {
+            if (prev === 1) {
+              clearInterval(timer);
+              navigate("/payment-success", {
+                state: { ...location.state, orderId: bookingCode, bookingId, paymentMethod: "momo" },
+              });
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      } else {
+        toast.error("Hệ thống chưa nhận được thanh toán. Vui lòng đợi trong giây lát!", { id: "check-pay" });
+      }
+    } catch {
+      toast.error("Có lỗi xảy ra khi kiểm tra trạng thái.");
+    }
+  };
+
   useEffect(() => {
     window.scrollTo(0, 0);
     if (!location.state) { navigate("/"); return; }
 
     // Start polling
-    pollRef.current = setInterval(async () => {
-      try {
-        const res = await axiosInstance.get(`/payments/momo/status/${bookingId}`);
-        if (res.data.paid) {
-          clearInterval(pollRef.current);
-          pollRef.current = null;
-          setIsPaid(true);
-          const timer = setInterval(() => {
-            setCountdown((prev) => {
-              if (prev === 1) {
-                clearInterval(timer);
-                navigate("/payment-success", {
-                  state: { ...location.state, orderId: bookingCode, bookingId, paymentMethod: "momo" },
-                });
-              }
-              return prev - 1;
-            });
-          }, 1000);
-        }
-      } catch { /* ignore */ }
-    }, 2000);
+    pollRef.current = setInterval(checkPaymentStatus, 2000);
 
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
@@ -80,123 +86,166 @@ const MomoPaymentPage = () => {
         </div>
       )}
 
-      <main className="w-full max-w-lg mx-auto px-4 pt-24 pb-20">
+      <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-24 pb-20">
         {/* Back button */}
         <button onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 text-sm font-medium mb-6 transition-colors">
-          <ArrowLeft size={18} /> Quay lại
+          className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 text-sm font-medium mb-8 transition-colors group">
+          <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> Quay lại
         </button>
 
-        {/* ── MoMo Payment Card ── */}
-        <div className="bg-white rounded-[28px] shadow-xl border border-slate-100 overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-[#AE2070] to-[#C41E6B] px-6 py-6 text-center text-white">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <svg viewBox="0 0 48 48" className="w-8 h-8" fill="none">
-                <circle cx="24" cy="24" r="24" fill="white" fillOpacity="0.2" />
-                <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="12" fontWeight="bold" fontFamily="Arial">MoMo</text>
-              </svg>
-              <h2 className="text-xl font-black">Ví MoMo</h2>
-            </div>
-            <p className="text-white/70 text-xs">Quét mã QR bằng app MoMo để thanh toán</p>
-          </div>
+        <div className="flex flex-col lg:flex-row gap-8 items-stretch">
+          
+          {/* ── LEFT: CINEMATIC RECEIPT ── */}
+          <div className="lg:w-[45%] flex">
+            <div className="bg-white w-full rounded-[2rem] shadow-2xl overflow-hidden border border-slate-100 flex flex-col relative">
+              <div className="bg-[#AE2070] p-8 text-center text-white relative">
+                <div className="flex items-center justify-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md">
+                     <Ticket size={22} className="text-white" />
+                  </div>
+                  <h2 className="text-xl font-black uppercase tracking-tighter">Xác nhận đặt vé</h2>
+                </div>
+                <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em]">Hóa đơn điện tử #5CINE-{bookingCode}</p>
+                
+                {/* Receipt cut effect */}
+                <div className="absolute -bottom-3 left-0 right-0 flex justify-between px-4">
+                  {[...Array(15)].map((_, i) => (
+                    <div key={i} className="w-6 h-6 bg-white rounded-full" />
+                  ))}
+                </div>
+              </div>
 
-          <div className="p-6">
-            {/* QR Code */}
-            <div className="flex justify-center mb-6">
-              <div className="bg-white border-2 border-slate-100 rounded-2xl p-4 shadow-sm">
-                {qrCodeUrl ? (
-                  <img src={qrCodeUrl} alt="MoMo QR" className="w-48 h-48"
-                    onError={(e) => { e.target.style.display = "none"; }} />
-                ) : (
-                  <QRCodeSVG
-                    value={payUrl || ''}
-                    size={192}
-                    level="M"
-                    includeMargin
-                  />
-                )}
+              <div className="p-8 pt-10 flex-1">
+                <div className="flex gap-5 mb-8">
+                  {poster && (
+                    <img src={poster} alt="" className="w-24 h-36 object-cover rounded-2xl shadow-xl border-2 border-slate-50 shrink-0" />
+                  )}
+                  <div className="flex-1 py-1">
+                    <h3 className="font-black text-slate-900 text-2xl leading-[1.1] mb-3 uppercase tracking-tighter line-clamp-2">{movieTitle}</h3>
+                    <div className="inline-block bg-red-50 text-red-600 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest mb-4">2D Phụ đề</div>
+                    <div className="space-y-2">
+                      <p className="text-xs text-slate-500 font-bold flex items-center gap-2">
+                        <MapPin size={14} className="text-[#AE2070]" /> {cinemaName}
+                      </p>
+                      <p className="text-xs text-slate-500 font-bold flex items-center gap-2">
+                        <Calendar size={14} className="text-[#AE2070]" /> {showTime} • {showDate}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-6 border-t border-dashed border-slate-200">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-400 font-black uppercase tracking-widest italic">Vị trí ghế</span>
+                    <span className="text-lg font-black text-[#dc2626] tracking-widest">{selectedSeats?.join(", ")}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-400 font-black uppercase tracking-widest italic">Trạng thái</span>
+                    <span className="text-xs font-black text-amber-500 bg-amber-50 px-3 py-1 rounded-full uppercase tracking-wider">Đang chờ...</span>
+                  </div>
+                  <div className="mt-8 bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Tổng cộng thanh toán</p>
+                    <p className="text-4xl font-black text-slate-900 tracking-tighter">{amount?.toLocaleString()}đ</p>
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
 
-            {/* Amount */}
-            <div className="bg-slate-50 rounded-2xl p-4 mb-6 border border-slate-100 text-center">
-              <p className="text-xs text-slate-400 font-medium mb-1">Số tiền thanh toán</p>
-              <p className="text-3xl font-black text-[#AE2070]">{amount?.toLocaleString()}đ</p>
-            </div>
+          {/* ── RIGHT: SMART PAYMENT AREA ── */}
+          <div className="lg:w-[55%] flex">
+            <div className="bg-white w-full rounded-[2rem] shadow-2xl border border-slate-100 p-10 flex flex-col items-center justify-center relative overflow-hidden">
+              {/* Background MoMo Logo Pattern */}
+              <div className="absolute top-0 right-0 opacity-[0.03] -mr-10 -mt-10">
+                <svg viewBox="0 0 48 48" className="w-64 h-64 fill-[#AE2070]"><circle cx="24" cy="24" r="24"/></svg>
+              </div>
 
-            {/* Direct Pay Button (Mobile & Desktop Link) */}
-            {(deeplink || payUrl) && (
-              <a
-                href={deeplink || payUrl}
-                target="_self"
-                className="w-full bg-[#AE2070] hover:bg-[#8f1a5c] text-white font-black py-4.5 rounded-2xl shadow-[0_15px_30px_rgba(174,32,112,0.3)] transition-all duration-300 text-sm uppercase tracking-widest flex items-center justify-center gap-3 mb-6 active:scale-95 transform hover:-translate-y-1"
-              >
-                <Smartphone size={20} className="animate-bounce" />
-                Mở ứng dụng MoMo
-              </a>
-            )}
+              {/* Desktop QR Focus */}
+              <div className="hidden lg:flex flex-col items-center animate-in fade-in zoom-in duration-700">
+                <div className="bg-[#AE2070] text-white px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest mb-8 shadow-xl shadow-pink-200">
+                  Quét mã để thanh toán
+                </div>
+                <div className="relative group">
+                  <div className="absolute -inset-4 bg-gradient-to-tr from-[#AE2070] to-[#C41E6B] rounded-[2.5rem] opacity-10 blur-2xl group-hover:opacity-20 transition-opacity" />
+                  <div className="relative bg-white p-6 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100">
+                    <QRCodeSVG
+                      value={qrCodeUrl || payUrl || ''}
+                      size={260}
+                      level="H"
+                      includeMargin
+                      imageSettings={{
+                        src: "https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png",
+                        x: undefined, y: undefined, height: 48, width: 48, excavate: true,
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="mt-10 text-center space-y-5">
+                  <p className="text-slate-500 font-bold text-sm italic animate-pulse">Trang web sẽ tự động cập nhật sau khi bạn thanh toán thành công...</p>
+                  
+                  <div className="flex flex-col items-center gap-3 pt-2">
+                    <p className="text-slate-400 text-[10px] uppercase tracking-widest">Bạn đã thanh toán nhưng chưa thấy chuyển trang?</p>
+                    <button 
+                      onClick={checkPaymentStatus}
+                      className="bg-white hover:bg-slate-50 text-[#AE2070] border border-[#AE2070] px-8 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm"
+                    >
+                      Tôi đã thanh toán
+                    </button>
+                  </div>
 
-            {/* Instructions */}
-            <div className="bg-pink-50 border border-pink-100 rounded-2xl p-4 mb-4 text-center">
-              <Smartphone size={28} className="text-[#AE2070] mx-auto mb-2" />
-              <p className="text-sm font-bold text-[#AE2070] mb-1">Mở App MoMo để thanh toán</p>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Dùng app <span className="font-bold text-[#AE2070]">MoMo</span> trên điện thoại, chọn <span className="font-bold">quét mã QR</span> và quét mã bên trên để thanh toán.
-              </p>
-            </div>
+                  <p className="text-slate-400 text-[10px] max-w-[320px] mx-auto pt-4 border-t border-slate-100">Mã QR sẽ tự động hết hạn sau 10 phút. Vui lòng không tắt trình duyệt cho đến khi nhận được vé.</p>
+                </div>
+              </div>
 
-            {/* Polling */}
-            <div className="flex items-center justify-center gap-2 text-slate-400 text-xs py-2">
-              <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              Đang đợi thanh toán từ MoMo...
+              {/* Mobile CTA Focus */}
+              <div className="lg:hidden w-full space-y-8 animate-in slide-in-from-bottom-5 duration-500">
+                <div className="flex justify-center">
+                   <div className="bg-slate-50 p-4 rounded-[2rem] border border-slate-100 shadow-inner">
+                      <QRCodeSVG value={qrCodeUrl || payUrl || ''} size={160} level="M" includeMargin />
+                   </div>
+                </div>
+                
+                <div className="space-y-4">
+                  {(deeplink || qrCodeUrl || payUrl) && (
+                    <a
+                      href={deeplink || qrCodeUrl || payUrl}
+                      target="_self"
+                      className="w-full bg-[#AE2070] hover:bg-[#8f1a5c] text-white font-black py-5 rounded-2xl shadow-[0_20px_40px_rgba(174,32,112,0.3)] transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-4 active:scale-95 shadow-xl"
+                    >
+                      <Smartphone size={24} className="animate-pulse" />
+                      Mở ứng dụng MoMo ngay
+                    </a>
+                  )}
+                  <div className="bg-pink-50 p-4 rounded-2xl border border-pink-100 text-center">
+                    <p className="text-xs text-[#AE2070] font-bold leading-relaxed">
+                      Chạm vào nút trên để mở App MoMo và thanh toán an toàn chỉ với 1 bước.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Polling Indicator */}
+              <div className="mt-12 flex items-center gap-4 text-slate-300 font-black text-[10px] uppercase tracking-[0.3em]">
+                <div className="flex gap-1.5">
+                  <div className="w-2 h-2 bg-[#AE2070] rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                  <div className="w-2 h-2 bg-[#AE2070] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                  <div className="w-2 h-2 bg-[#AE2070] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                </div>
+                Đang chờ thanh toán
+              </div>
             </div>
           </div>
         </div>
 
-        {/* ── Booking Summary ── */}
-        <div className="bg-white rounded-[28px] shadow-sm border border-slate-100 p-6 mt-5">
-          <h3 className="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2">
-            <Ticket size={20} className="text-[#dc2626]" />
-            Thông tin đặt vé
-          </h3>
-          <div className="space-y-4">
-            {poster && (
-              <div className="flex gap-4 items-center">
-                <img src={poster} alt="" className="w-16 h-24 object-cover rounded-xl shadow-md" />
-                <div>
-                  <p className="font-black text-slate-800 text-lg leading-tight">{movieTitle}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{cinemaName}</p>
-                </div>
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-slate-50 rounded-xl p-3 flex items-center gap-3">
-                <Calendar size={16} className="text-slate-400 shrink-0" />
-                <div>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Suất chiếu</p>
-                  <p className="font-bold text-slate-800 text-sm">{showTime}</p>
-                  <p className="text-xs text-slate-500">{showDate}</p>
-                </div>
-              </div>
-              <div className="bg-slate-50 rounded-xl p-3 flex items-center gap-3">
-                <Armchair size={16} className="text-slate-400 shrink-0" />
-                <div>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Ghế</p>
-                  <p className="font-black text-[#dc2626] text-sm">{selectedSeats?.join(", ")}</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-slate-50 rounded-xl p-3 flex items-center gap-3">
-              <MapPin size={16} className="text-slate-400 shrink-0" />
-              <div>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Rạp</p>
-                <p className="font-bold text-slate-800 text-sm">{cinemaName}</p>
-              </div>
-            </div>
+        <div className="mt-12 text-center">
+          <div className="inline-flex items-center gap-6 px-8 py-3 bg-white rounded-full shadow-sm border border-slate-100">
+             <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                <ShieldCheck size={14} className="text-emerald-500" /> Thanh toán an toàn
+             </div>
+             <div className="w-px h-4 bg-slate-200" />
+             <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                <Clock size={14} className="text-blue-500" /> Hỗ trợ 24/7
+             </div>
           </div>
         </div>
       </main>

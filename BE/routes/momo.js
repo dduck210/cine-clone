@@ -53,7 +53,7 @@ router.post('/create', protect, async (req, res) => {
                 requestType,
                 signature,
                 lang: 'vi',
-                orderType: "momo_wallet"
+                autoCapture: true,
             }),
         });
 

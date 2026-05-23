@@ -98,6 +98,8 @@ const PaymentPage = () => {
         const momoRes = await axiosInstance.post("/payments/momo/create", { bookingId });
         toast.dismiss(loadingToast);
         setIsProcessing(false);
+        
+        // Always go to our internal page to guarantee QR display & Cinematic UI
         navigate("/payment/momo", {
           state: {
             bookingId, bookingCode,
