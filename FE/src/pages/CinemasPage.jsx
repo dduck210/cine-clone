@@ -5,7 +5,7 @@ import Footer from "../components/common/Footer";
 import { MapPin, Phone, ArrowRight } from "lucide-react";
 import axiosInstance from "../api/axiosConfig";
 
-const FALLBACK_IMAGE = "https://picsum.photos/seed/cinema/800/400";
+const cinemaFallback = (id) => `https://picsum.photos/seed/${id}/800/400`;
 
 const CinemasPage = () => {
   const navigate = useNavigate();
@@ -48,9 +48,9 @@ const CinemasPage = () => {
               >
                 <div className="relative h-48 overflow-hidden">
                   <img
-                    src={cinema.image || FALLBACK_IMAGE}
+                    src={cinema.image || cinemaFallback(cinema._id)}
                     alt={cinema.name}
-                    onError={(e) => { e.target.src = FALLBACK_IMAGE; }}
+                    onError={(e) => { e.target.src = cinemaFallback(cinema._id); }}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>

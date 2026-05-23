@@ -10,6 +10,7 @@ import {
   LogOut,
   Grid,
   Star,
+  Building2,
 } from "lucide-react";
 
 const Sidebar = ({ activeTab, onTabChange }) => {
@@ -18,6 +19,7 @@ const Sidebar = ({ activeTab, onTabChange }) => {
     { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
     { id: "movies", label: "Quản lý Phim", icon: Film },
     { id: "showtimes", label: "Suất chiếu", icon: CalendarDays },
+    { id: "cinemas", label: "Quản lý Rạp", icon: Building2 },
     { id: "rooms", label: "Phòng & Ghế", icon: Grid },
     { id: "orders", label: "Đơn đặt vé", icon: ShoppingCart },
     { id: "users", label: "Người dùng", icon: Users },

@@ -12,6 +12,7 @@ import { MoviesManager, MovieModal } from "../../components/admin/MoviesTab";
 import { ShowtimesManager, ShowtimeModal } from "../../components/admin/ShowtimesTab";
 import { UsersManager } from "../../components/admin/UsersTab";
 import { RoomsManager } from "../../components/admin/RoomsTab";
+import { CinemasManager } from "../../components/admin/CinemasTab";
 import { ReviewsManager } from "../../components/admin/ReviewsTab";
 
 const toastConfig = {
@@ -852,6 +853,7 @@ const Dashboard = () => {
                 onCancel={handleCancelShowtime}
               />
             )}
+            {activeTab === "cinemas" && <CinemasManager />}
             {activeTab === "rooms" && (
               <RoomsManager cinemas={cinemas.length > 0 ? cinemas : []} />
             )}
