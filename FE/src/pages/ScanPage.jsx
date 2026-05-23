@@ -137,7 +137,6 @@ const ScanPage = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-        <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
         <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center">
           <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <XCircle className="w-10 h-10 text-red-600" />
@@ -159,7 +158,6 @@ const ScanPage = () => {
   if (ticket) {
     return (
       <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4 gap-4">
-        <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
         <TicketCard
           bookingCode={ticket.bookingCode}
           movieTitle={ticket.movieTitle}
@@ -193,7 +191,6 @@ const ScanPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
-      <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
 
       {/* Hidden div required by Html5Qrcode.scanFile() */}
       <div id="qr-file-reader" className="hidden" />
@@ -294,3 +291,4 @@ const ScanPage = () => {
 };
 
 export default ScanPage;
+age;

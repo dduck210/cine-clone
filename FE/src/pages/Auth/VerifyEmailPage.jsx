@@ -109,7 +109,6 @@ const VerifyEmailPage = () => {
   if (codeFromUrl && isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
-        <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-md w-full p-10 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#dc2626] border-t-transparent mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900 mb-2">Đang xác thực email...</h2>
@@ -121,7 +120,6 @@ const VerifyEmailPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
-      <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
       <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row">
         {/* Left panel */}
         <div className="hidden md:block md:w-1/2 bg-gray-900 relative min-h-[600px]">
