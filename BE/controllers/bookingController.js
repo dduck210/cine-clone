@@ -47,6 +47,9 @@ const createBooking = async (req, res) => {
         // Update seats status to reserved
         await Seat.updateMany({ _id: { $in: seatIds } }, { status: 'reserved' });
 
+        // Decrement available seats count
+        await Showtime.findByIdAndUpdate(showtimeId, { $inc: { availableSeats: -seats.length } });
+
         res.status(201).json(booking);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -98,6 +101,9 @@ const cancelBooking = async (req, res) => {
 
         // Release seats
         await Seat.updateMany({ _id: { $in: booking.seats } }, { status: 'available' });
+
+        // Restore available seats count
+        await Showtime.findByIdAndUpdate(booking.showtime, { $inc: { availableSeats: booking.seats.length } });
 
         res.json({ message: 'Booking cancelled', booking });
     } catch (error) {
