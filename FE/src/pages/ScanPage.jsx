@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { Camera, CheckCircle, XCircle, Ticket, Home, ScanLine, Keyboard, ImagePlus, CameraOff, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import axiosInstance from "../api/axiosConfig";
@@ -291,4 +291,3 @@ const ScanPage = () => {
 };
 
 export default ScanPage;
-age;
