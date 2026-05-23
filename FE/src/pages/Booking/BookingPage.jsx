@@ -235,6 +235,9 @@ const BookingPage = () => {
     state: {
       showtimeId, movieTitle: title, poster, cinemaName, showTime, showDate,
       showAddress, selectedSeats, combos, finalTotalPrice: discountedPrice, roomName, duration,
+      originalPrice: finalTotalPrice,
+      discountAmount: isMonday ? finalTotalPrice - discountedPrice : 0,
+      promotionName: isMonday ? "Siêu giảm giá Gold Monday" : null,
       seatMap: Object.fromEntries(selectedSeats.map((sn) => [sn, { type: seatMap[sn]?.type, price: seatMap[sn]?.price }])),
     },
   });

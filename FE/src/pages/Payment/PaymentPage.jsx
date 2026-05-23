@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   Ticket,
   Clock,
+  Tag,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -96,6 +97,9 @@ const PaymentPage = () => {
     duration,
     existingBookingId,
     existingBookingCode,
+    originalPrice,
+    discountAmount,
+    promotionName,
   } = location.state || {};
 
   const [paymentMethod, setPaymentMethod] = useState("momo");
@@ -744,16 +748,33 @@ const PaymentPage = () => {
                   )}
                 </div>
 
-                <div className="pt-6 border-t-2 border-slate-100 flex justify-between items-end mb-8">
-                  <span className="text-slate-400 font-black uppercase tracking-widest text-[10px]">
-                    Tổng cộng
-                  </span>
-                  <span className="text-3xl font-black text-slate-900 leading-none">
-                    {finalTotalPrice?.toLocaleString("vi-VN")}{" "}
-                    <span className="text-lg text-slate-300 font-normal">
-                      ₫
+                <div className="pt-6 border-t-2 border-slate-100 space-y-3 mb-8">
+                  {promotionName && discountAmount > 0 && (
+                    <>
+                      <div className="flex justify-between items-center text-sm text-slate-400">
+                        <span className="font-medium">Tạm tính</span>
+                        <span className="line-through">{originalPrice?.toLocaleString("vi-VN")}đ</span>
+                      </div>
+                      <div className="flex justify-between items-center bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <Tag size={14} className="text-emerald-600 shrink-0" />
+                          <span className="text-emerald-700 font-bold text-sm">{promotionName}</span>
+                        </div>
+                        <span className="text-emerald-600 font-black text-sm shrink-0">
+                          -{discountAmount?.toLocaleString("vi-VN")}đ
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  <div className="flex justify-between items-end">
+                    <span className="text-slate-400 font-black uppercase tracking-widest text-[10px]">
+                      Tổng cộng
                     </span>
-                  </span>
+                    <span className="text-3xl font-black text-slate-900 leading-none">
+                      {finalTotalPrice?.toLocaleString("vi-VN")}{" "}
+                      <span className="text-lg text-slate-300 font-normal">₫</span>
+                    </span>
+                  </div>
                 </div>
 
                 {/* Nút thanh toán */}
