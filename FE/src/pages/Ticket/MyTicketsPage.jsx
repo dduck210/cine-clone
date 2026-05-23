@@ -77,6 +77,7 @@ const MyTicketsPage = () => {
       finalTotalPrice: booking.totalPrice,
       poster: movie.poster || "",
       combos: booking.extraItems || [],
+      duration: movie.duration || 0,
     };
 
     if (booking.status === "pending") {

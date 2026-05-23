@@ -77,6 +77,7 @@ const BookingPage = () => {
   const [step, setStep] = useState(1); // 1 = chọn ghế, 2 = chọn combo
 
   const [showtimeData, setShowtimeData] = useState(null);
+  const duration = selectedShowtime?.duration || showtimeData?.movie?.duration || 0;
   const [seats, setSeats] = useState([]);
 
   // Auto-scale seat map to fit container width
@@ -233,7 +234,7 @@ const BookingPage = () => {
   const goToPayment = () => navigate("/payment", {
     state: {
       showtimeId, movieTitle: title, poster, cinemaName, showTime, showDate,
-      showAddress, selectedSeats, combos, finalTotalPrice: discountedPrice, roomName,
+      showAddress, selectedSeats, combos, finalTotalPrice: discountedPrice, roomName, duration,
       seatMap: Object.fromEntries(selectedSeats.map((sn) => [sn, { type: seatMap[sn]?.type, price: seatMap[sn]?.price }])),
     },
   });

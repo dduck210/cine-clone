@@ -393,6 +393,7 @@ const HistoryTab = ({ navigate }) => {
       combos: booking.extraItems || [],
       finalTotalPrice: booking.totalPrice,
       poster: movie.poster || "",
+      duration: movie.duration || 0,
     };
 
     if (booking.status === "pending") {

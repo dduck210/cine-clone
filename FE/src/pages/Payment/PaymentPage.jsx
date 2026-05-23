@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   ArrowLeft,
   Ticket,
+  Clock,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -84,6 +85,7 @@ const PaymentPage = () => {
     showtimeId,
     movieTitle,
     cinemaName,
+    roomName,
     showTime,
     showDate,
     showAddress,
@@ -91,6 +93,7 @@ const PaymentPage = () => {
     combos = [],
     finalTotalPrice,
     poster,
+    duration,
     existingBookingId,
     existingBookingCode,
   } = location.state || {};
@@ -678,6 +681,25 @@ const PaymentPage = () => {
                       </p>
                     </div>
                   </div>
+                  {(roomName || duration > 0) && (
+                    <div className="grid grid-cols-2 gap-3">
+                      {roomName && (
+                        <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100">
+                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Phòng chiếu</p>
+                          <p className="font-bold text-slate-800 text-[13px]">{roomName}</p>
+                        </div>
+                      )}
+                      {duration > 0 && (
+                        <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100 flex items-center gap-2">
+                          <Clock size={14} className="text-[#dc2626] shrink-0" />
+                          <div>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Thời lượng</p>
+                            <p className="font-bold text-slate-800 text-[13px]">{duration} phút</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center gap-4">
                     <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[#dc2626] shrink-0 shadow-sm border border-slate-100">
                       <Armchair size={20} strokeWidth={2.5} />

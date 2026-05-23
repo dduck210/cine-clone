@@ -108,6 +108,7 @@ const MovieDetailPage = () => {
       address: cinema.address,
       price: showtime.price,
       roomName: showtime.room?.name || "",
+      duration: movie?.duration || 0,
     });
 
   const onDateShowing = (cinema) =>
