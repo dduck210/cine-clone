@@ -152,16 +152,13 @@ const HomePage = () => {
         )}
 
         {!loading && visibleCount < currentMovies.length && (
-          <div className="mt-10 flex justify-center animate-fade-in-up">
+          <div className="mt-10 flex justify-center">
             <button
               onClick={handleLoadMore}
-              className="group relative inline-flex items-center gap-2 px-8 py-3 rounded-full border-2 border-red-600 text-red-600 font-bold overflow-hidden transition-all duration-300 hover:text-white hover:shadow-lg hover:shadow-red-600/30"
+              className="flex items-center gap-2 px-8 py-3.5 bg-white border-2 border-[#dc2626] text-[#dc2626] font-bold rounded-2xl hover:bg-[#dc2626] hover:text-white transition-all duration-200 shadow-sm hover:shadow-md hover:shadow-red-100"
             >
-              <span className="absolute inset-0 w-full h-full bg-red-600 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></span>
-              <span className="relative flex items-center gap-2 font-bromega font-bold">
-                Xem thêm{" "}
-                <ChevronDown size={20} className="group-hover:translate-y-1 transition-transform duration-300" />
-              </span>
+              <ChevronDown size={18} />
+              Xem thêm ({currentMovies.length - visibleCount} phim còn lại)
             </button>
           </div>
         )}
