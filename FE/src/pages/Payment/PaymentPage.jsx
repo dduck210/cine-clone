@@ -351,38 +351,14 @@ const PaymentPage = () => {
               </button>
               <div className="text-center text-white">
                 <h2 className="text-lg font-black mb-0.5">Thanh toán MoMo</h2>
-                <p className="text-pink-200 text-xs">Copy thông tin bên dưới rồi mở trang thanh toán</p>
+                <p className="text-pink-200 text-xs">Bạn sẽ được chuyển đến trang thanh toán MoMo</p>
               </div>
             </div>
 
             <div className="p-6">
-              {/* Tóm tắt đơn */}
               <div className="flex justify-between items-center mb-5 bg-pink-50 rounded-2xl px-4 py-3 border border-pink-100">
                 <span className="text-sm text-slate-500 font-medium">Số tiền</span>
                 <span className="text-lg font-black text-[#AE2070]">{momoModal.amount?.toLocaleString()}đ</span>
-              </div>
-
-              {/* Thông tin test */}
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Thông tin tài khoản test</p>
-              <div className="space-y-2 mb-5">
-                {[
-                  { label: "Số điện thoại", value: "0000000000" },
-                  { label: "OTP",           value: "000000" },
-                  { label: "PIN",           value: "000000" },
-                ].map(({ label, value }) => (
-                  <div key={label} className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-2.5 border border-slate-100">
-                    <span className="text-xs text-slate-400 font-medium">{label}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-black text-slate-800 text-sm tracking-widest">{value}</span>
-                      <button
-                        onClick={() => { navigator.clipboard.writeText(value); toast.success(`Đã sao chép ${label}!`); }}
-                        className="text-[#AE2070] hover:text-[#8f1a5c] transition-colors"
-                      >
-                        <Copy size={13} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
               </div>
 
               <button
