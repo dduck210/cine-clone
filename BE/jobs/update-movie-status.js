@@ -4,11 +4,16 @@ const Movie = require('../models/Movie');
 async function updateMovieStatus() {
     // We find movies that need update and call .save() to trigger pre-save logic
     const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
     const moviesToUpdate = await Movie.find({
         $or: [
-            { status: 'coming_soon', releaseDate: { $lte: now } },
-            { status: 'now_showing', releaseDate: { $gt: now } },
-            { status: 'now_showing', screeningEndDate: { $lt: now } }
+            // Coming soon but release date is today or earlier
+            { status: 'coming_soon', releaseDate: { $lte: today } },
+            // Now showing but release date is somehow in the future (e.g. date changed)
+            { status: 'now_showing', releaseDate: { $gt: today } },
+            // Now showing but screening end date has passed (yesterday or earlier)
+            { status: 'now_showing', screeningEndDate: { $lt: today } }
         ]
     });
 

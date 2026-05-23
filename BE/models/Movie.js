@@ -17,26 +17,48 @@ const movieSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 movieSchema.pre('save', function(next) {
-    const now = new Date();
-    // Normalize now to start of day for comparison
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    // Ensure we are working with Date objects
-    const releaseDate = this.releaseDate ? new Date(this.releaseDate) : null;
-    const screeningEndDate = this.screeningEndDate ? new Date(this.screeningEndDate) : null;
+    try {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        const rd = this.releaseDate ? new Date(this.releaseDate) : null;
+        const ed = this.screeningEndDate ? new Date(this.screeningEndDate) : null;
 
-    if (screeningEndDate && screeningEndDate < today) {
-        this.status = 'stopped';
-    } 
-    else if (releaseDate) {
-        if (releaseDate <= today) {
-            this.status = 'now_showing';
-        } else {
-            this.status = 'coming_soon';
+        let releaseDate = null;
+        if (rd && !isNaN(rd.getTime())) {
+            releaseDate = new Date(rd.getFullYear(), rd.getMonth(), rd.getDate());
         }
-    }
 
-    next();
+        let endDate = null;
+        if (ed && !isNaN(ed.getTime())) {
+            endDate = new Date(ed.getFullYear(), ed.getMonth(), ed.getDate());
+        }
+
+        let newStatus = 'coming_soon';
+
+        if (endDate) {
+            if (endDate < today) {
+                newStatus = 'stopped';
+            } else if (releaseDate) {
+                if (releaseDate <= today) {
+                    newStatus = 'now_showing';
+                } else {
+                    newStatus = 'coming_soon';
+                }
+            }
+        } else if (releaseDate) {
+            if (releaseDate <= today) {
+                newStatus = 'now_showing';
+            } else {
+                newStatus = 'coming_soon';
+            }
+        }
+
+        this.status = newStatus;
+        next();
+    } catch (err) {
+        next(err);
+    }
 });
 
 module.exports = mongoose.model('Movie', movieSchema);

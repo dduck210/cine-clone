@@ -3,8 +3,9 @@ const Movie = require('../models/Movie');
 
 async function expireMovies() {
     const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const result = await Movie.updateMany(
-        { status: 'now_showing', screeningEndDate: { $lt: now } },
+        { status: 'now_showing', screeningEndDate: { $lt: today } },
         { $set: { status: 'stopped' } }
     );
     return result.modifiedCount;

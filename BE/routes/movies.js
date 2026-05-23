@@ -40,32 +40,34 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', protect, admin, async (req, res) => {
-    console.log('--- CREATE MOVIE ATTEMPT ---');
-    console.log('Payload:', JSON.stringify(req.body, null, 2));
-    
     try {
-        // Sanitize genre: if it's an empty string or invalid, make it an empty array
+        // Sanitize genre
         if (req.body.genre === '' || (Array.isArray(req.body.genre) && req.body.genre.length === 0)) {
             delete req.body.genre;
         }
 
         const movie = new Movie(req.body);
         const createdMovie = await movie.save();
-        console.log('Movie saved successfully:', createdMovie._id);
-
+        
         try {
             await createdMovie.populate('genre');
         } catch (popError) {
             console.error('Populate Genre Error (Non-fatal):', popError.message);
         }
 
-        res.status(201).json(createdMovie);
+        // Create notification for admin
+        notificationService.createNotification({
+            type: 'movie_created',
+            title: 'Phim mới đã được thêm',
+            message: `Phim "${createdMovie.title}" đã được thêm vào hệ thống.`,
+            data: { movieId: createdMovie._id }
+        });
+
+        return res.status(201).json(createdMovie);
     } catch (error) {
-        console.error('!!! CREATE MOVIE ERROR !!!');
-        console.error('Message:', error.message);
-        console.error('Stack:', error.stack);
-        res.status(400).json({ 
-            message: error.message,
+        console.error('Create movie error:', error);
+        return res.status(error.name === 'ValidationError' ? 400 : 500).json({ 
+            message: error.message || 'Lỗi khi thêm phim',
             details: error.errors ? Object.keys(error.errors).map(key => error.errors[key].message) : []
         });
     }

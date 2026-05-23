@@ -168,16 +168,23 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
     if (!watchedReleaseDate || !watchedEndDate) return null;
     try {
       const now = new Date();
-      // Set hours to 0 to compare dates only
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const start = new Date(watchedReleaseDate);
-      const end = new Date(watchedEndDate);
+      
+      // Date inputs are YYYY-MM-DD, new Date() on these might be UTC or Local depending on browser.
+      // We parse them and get local parts to be sure.
+      const parseLocal = (dateStr) => {
+        const [y, m, d] = dateStr.split('-').map(Number);
+        return new Date(y, m - 1, d);
+      };
+
+      const start = parseLocal(watchedReleaseDate);
+      const end = parseLocal(watchedEndDate);
       
       if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
 
       if (end < today) return { label: "Ngừng chiếu", color: "text-slate-600", bg: "bg-slate-100", dot: "bg-slate-400" };
-      if (start > today) return { label: "Sắp chiếu", color: "text-amber-600", bg: "bg-amber-50", dot: "bg-amber-500" };
-      return { label: "Đang chiếu", color: "text-emerald-600", bg: "bg-emerald-50", dot: "bg-emerald-500 animate-pulse" };
+      if (start <= today) return { label: "Đang chiếu", color: "text-emerald-600", bg: "bg-emerald-50", dot: "bg-emerald-500 animate-pulse" };
+      return { label: "Sắp chiếu", color: "text-amber-600", bg: "bg-amber-50", dot: "bg-amber-500" };
     } catch { return null; }
   };
   const preview = getPreviewStatus();
@@ -226,7 +233,9 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
         </div>
         <form
           onSubmit={handleSubmit((data) => {
-            if (selectedGenres.length === 0) return;
+            if (selectedGenres.length === 0) {
+                return;
+            }
             handleSave({ ...data, genre: selectedGenres });
           })}
           className="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1"
