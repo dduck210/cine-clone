@@ -23,7 +23,12 @@ export const MovieDetailModal = ({ movie, onClose, onEdit }) => {
   const genreText = Array.isArray(movie.genre)
     ? movie.genre.map((g) => (typeof g === "object" ? g.name : g)).join(", ")
     : movie.genre || "—";
-  const isShowing = movie.status === "now_showing";
+  const statusConfig = {
+    now_showing: { label: "Đang chiếu", bg: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-100", dot: "bg-emerald-500 animate-pulse" },
+    coming_soon: { label: "Sắp chiếu",  bg: "bg-amber-50",   text: "text-amber-600",   border: "border-amber-100",   dot: "bg-amber-500" },
+    stopped:     { label: "Ngừng chiếu",bg: "bg-slate-100",  text: "text-slate-500",   border: "border-slate-200",   dot: "bg-slate-400" },
+  };
+  const sc = statusConfig[movie.status] || statusConfig.coming_soon;
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
@@ -62,6 +67,7 @@ export const MovieDetailModal = ({ movie, onClose, onEdit }) => {
                 { label: "Đánh giá", value: movie.rating ? `⭐ ${movie.rating}/10` : "—" },
                 { label: "Đạo diễn", value: movie.director || "—" },
                 { label: "Ngày ra mắt", value: movie.releaseDate ? new Date(movie.releaseDate).toLocaleDateString("vi-VN") : "—" },
+                { label: "Kết thúc chiếu", value: movie.screeningEndDate ? new Date(movie.screeningEndDate).toLocaleDateString("vi-VN") : "—" },
               ].map((item) => (
                 <div key={item.label} className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">{item.label}</p>
@@ -74,9 +80,9 @@ export const MovieDetailModal = ({ movie, onClose, onEdit }) => {
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Trạng thái</p>
-              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${isShowing ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-amber-50 text-amber-600 border-amber-100"}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${isShowing ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
-                {isShowing ? "Đang chiếu" : "Sắp chiếu"}
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${sc.bg} ${sc.text} ${sc.border}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
+                {sc.label}
               </span>
             </div>
             <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
@@ -148,6 +154,7 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
       director: "",
       cast: "",
       releaseDate: "",
+      screeningEndDate: "",
       ageRestriction: "T13",
     },
   });
@@ -157,7 +164,13 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
         ? currentMovie.genre.map((g) => (typeof g === "object" ? g._id : g))
         : [];
       setSelectedGenres(ids);
-      reset({ ...currentMovie, genre: ids });
+      const toDateInput = (val) => val ? new Date(val).toISOString().split("T")[0] : "";
+      reset({
+        ...currentMovie,
+        genre: ids,
+        releaseDate: toDateInput(currentMovie.releaseDate),
+        screeningEndDate: toDateInput(currentMovie.screeningEndDate),
+      });
     }
   }, [currentMovie, reset]);
 
@@ -311,6 +324,20 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
               />
             </div>
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                Ngày kết thúc chiếu
+              </label>
+              <input
+                type="date"
+                {...register("screeningEndDate")}
+                className={inputClass(false)}
+              />
+              <p className="text-[11px] text-slate-400 mt-1 ml-1">Sau ngày này phim tự động chuyển sang <span className="font-bold">Ngừng chiếu</span></p>
+            </div>
+            <div />
+          </div>
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
               Diễn viên chính
@@ -361,6 +388,7 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
                 >
                   <option value="now_showing">Đang chiếu</option>
                   <option value="coming_soon">Sắp chiếu</option>
+                  <option value="stopped">Ngừng chiếu</option>
                 </select>
                 <ChevronDown className="absolute right-4 top-3.5 text-slate-400 pointer-events-none" size={18} />
               </div>
@@ -476,6 +504,7 @@ export const MoviesManager = ({
           <option value="">Tất cả trạng thái</option>
           <option value="now_showing">Đang chiếu</option>
           <option value="coming_soon">Sắp chiếu</option>
+          <option value="stopped">Ngừng chiếu</option>
         </select>
         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={15} />
       </div>
@@ -501,7 +530,12 @@ export const MoviesManager = ({
               const genreText = Array.isArray(movie.genre)
                 ? movie.genre.map((g) => (typeof g === "object" ? g.name : g)).join(", ")
                 : movie.genre || "—";
-              const isShowing = movie.status === "now_showing";
+              const STATUS_MAP = {
+                now_showing: { label: "Đang chiếu", bg: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-100", dot: "bg-emerald-500 animate-pulse" },
+                coming_soon: { label: "Sắp chiếu",  bg: "bg-amber-50",   text: "text-amber-600",   border: "border-amber-100",   dot: "bg-amber-500" },
+                stopped:     { label: "Ngừng chiếu",bg: "bg-slate-100",  text: "text-slate-500",   border: "border-slate-200",   dot: "bg-slate-400" },
+              };
+              const sc = STATUS_MAP[movie.status] || STATUS_MAP.coming_soon;
               return (
                 <tr
                   key={movie._id}
@@ -539,9 +573,9 @@ export const MoviesManager = ({
                     ) : <span className="text-slate-300 text-sm">—</span>}
                   </td>
                   <td className="p-4 text-center">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${isShowing ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-amber-50 text-amber-600 border-amber-100"}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${isShowing ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
-                      {isShowing ? "Đang chiếu" : "Sắp chiếu"}
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${sc.bg} ${sc.text} ${sc.border}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
+                      {sc.label}
                     </span>
                   </td>
                   <td className="p-4 pr-5 text-right" onClick={(e) => e.stopPropagation()}>
