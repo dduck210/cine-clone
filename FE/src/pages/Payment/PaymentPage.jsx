@@ -104,6 +104,8 @@ const PaymentPage = () => {
   const [errors, setErrors] = useState({});
   const [qrModal, setQrModal] = useState(null); // { bookingId, bookingCode, qrUrl, amount }
   const [qrStep, setQrStep] = useState(1); // 1=QR scan, 2=OTP
+  const [momoModal, setMomoModal] = useState(null); // { bookingId, bookingCode, amount }
+  const [momoStep, setMomoStep] = useState(1); // 1=info, 2=OTP
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
   const [otpError, setOtpError] = useState("");
   const otpRefs = useRef([]);
@@ -170,15 +172,12 @@ const PaymentPage = () => {
       const bookingCode = bookingRes.data.bookingCode;
 
       if (paymentMethod === "momo") {
-        const momoRes = await axiosInstance.post("/payments/momo/create", {
-          bookingId,
-        });
         toast.dismiss(loadingToast);
-        localStorage.setItem(
-          "pendingBooking",
-          JSON.stringify({ bookingId, bookingCode, ...location.state }),
-        );
-        window.location.href = momoRes.data.payUrl;
+        setMomoModal({ bookingId, bookingCode, amount: finalTotalPrice });
+        setMomoStep(1);
+        setOtpDigits(["", "", "", "", "", ""]);
+        setOtpError("");
+        setIsProcessing(false);
       } else if (paymentMethod === "qr") {
         toast.dismiss(loadingToast);
         const addInfo = encodeURIComponent(`5CINE ${bookingCode}`);
@@ -283,6 +282,63 @@ const PaymentPage = () => {
     }
   };
 
+  const handleMomoRequestOtp = async () => {
+    if (!momoModal) return;
+    setIsProcessing(true);
+    const t = toast.loading("Đang gửi mã OTP...");
+    try {
+      const res = await axiosInstance.post("/payments/momo/request-otp", { bookingId: momoModal.bookingId });
+      toast.dismiss(t);
+      toast.success(`Đã gửi OTP tới ${res.data.email}`);
+      setMomoStep(2);
+      setOtpDigits(["", "", "", "", "", ""]);
+      setTimeout(() => otpRefs.current[0]?.focus(), 100);
+    } catch (err) {
+      toast.dismiss(t);
+      toast.error(err.response?.data?.message || "Gửi OTP thất bại, thử lại");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleMomoConfirmOtp = async () => {
+    const entered = otpDigits.join("");
+    if (entered.length < 6) { setOtpError("Vui lòng nhập đủ 6 số"); return; }
+    if (!momoModal) return;
+    setIsProcessing(true);
+    setOtpError("");
+    const loadingToast = toast.loading("Đang xác nhận...");
+    try {
+      await axiosInstance.post("/payments/momo/verify-otp", { bookingId: momoModal.bookingId, otp: entered });
+      toast.dismiss(loadingToast);
+      const savedModal = momoModal;
+      setMomoModal(null);
+      setMomoStep(1);
+      setOtpDigits(["", "", "", "", "", ""]);
+      setIsSuccess(true);
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev === 1) {
+            clearInterval(timer);
+            navigate("/payment-success", {
+              state: {
+                ...location.state,
+                orderId: savedModal.bookingCode,
+                bookingId: savedModal.bookingId,
+                paymentMethod: "momo",
+              },
+            });
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (err) {
+      toast.dismiss(loadingToast);
+      toast.error(err.response?.data?.message || "Xác nhận thất bại, thử lại");
+      setIsProcessing(false);
+    }
+  };
+
   if (!location.state) return null;
 
   const selectedMethod = PAYMENT_METHODS.find((m) => m.id === paymentMethod);
@@ -331,6 +387,121 @@ const PaymentPage = () => {
               </div>
               <p className="text-center text-slate-400 text-xs font-medium">Đang chuyển đến trang vé ({countdown}s)...</p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MoMo Payment Modal — multi-step */}
+      {momoModal && (
+        <div className="fixed inset-0 bg-slate-900/85 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-[32px] shadow-2xl max-w-sm w-full border border-slate-100 overflow-hidden">
+
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#AE2070] to-[#8f1a5c] px-6 pt-6 pb-5 relative">
+              <button onClick={() => { setMomoModal(null); setMomoStep(1); setOtpDigits(["","","","","",""]); setOtpError(""); }}
+                className="absolute top-4 right-4 p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors">
+                <X size={16} />
+              </button>
+
+              <div className="flex items-center justify-center gap-2 mb-4">
+                {[{ n: 1, label: "Xác nhận" }, { n: 2, label: "Nhập OTP" }].map(({ n, label }) => (
+                  <React.Fragment key={n}>
+                    <div className="flex items-center gap-1.5">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black transition-all ${momoStep >= n ? "bg-white text-[#AE2070]" : "bg-white/20 text-white/60"}`}>{n}</div>
+                      <span className={`text-xs font-bold hidden sm:inline ${momoStep >= n ? "text-white" : "text-white/50"}`}>{label}</span>
+                    </div>
+                    {n < 2 && <div className={`w-8 h-0.5 rounded-full ${momoStep > n ? "bg-white" : "bg-white/30"}`} />}
+                  </React.Fragment>
+                ))}
+              </div>
+
+              <div className="text-center text-white">
+                <h2 className="text-lg font-black mb-0.5">
+                  {momoStep === 1 ? "Thanh toán MoMo" : "Nhập mã xác nhận"}
+                </h2>
+                <p className="text-pink-200 text-xs">
+                  {momoStep === 1 ? "Xác nhận thông tin và nhận OTP qua email" : "Nhập mã 6 số đã gửi về email"}
+                </p>
+              </div>
+            </div>
+
+            {/* Step 1: MoMo info */}
+            {momoStep === 1 && (
+              <div className="p-6">
+                <div className="space-y-3 mb-5 bg-slate-50 rounded-2xl p-4 border border-slate-100 text-sm">
+                  {[
+                    { label: "Phương thức", value: "Ví MoMo" },
+                    { label: "Người nhận", value: "5CINE CINEMA" },
+                    { label: "Số tiền", value: `${momoModal.amount?.toLocaleString()}đ`, highlight: true },
+                    { label: "Mã đơn hàng", value: momoModal.bookingCode },
+                  ].map(({ label, value, highlight }) => (
+                    <div key={label} className="flex justify-between items-center">
+                      <span className="text-slate-400">{label}</span>
+                      <span className={`font-bold ${highlight ? "text-[#AE2070]" : "text-slate-800"}`}>{value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="bg-pink-50 border border-pink-100 rounded-2xl px-4 py-3 mb-5 flex items-start gap-2">
+                  <ShieldCheck size={16} className="text-[#AE2070] shrink-0 mt-0.5" />
+                  <p className="text-[#AE2070] text-xs font-medium">
+                    Sau khi bấm tiếp tục, mã OTP xác nhận sẽ được gửi về email của bạn.
+                  </p>
+                </div>
+
+                <button onClick={handleMomoRequestOtp} disabled={isProcessing}
+                  className="w-full bg-[#AE2070] hover:bg-[#8f1a5c] disabled:opacity-50 text-white font-black py-3.5 rounded-2xl transition-all text-sm uppercase tracking-wider flex items-center justify-center gap-2">
+                  {isProcessing ? (
+                    <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Đang gửi OTP...</>
+                  ) : "Tiếp tục →"}
+                </button>
+              </div>
+            )}
+
+            {/* Step 2: OTP input */}
+            {momoStep === 2 && (
+              <div className="p-6">
+                <div className="flex items-center justify-center w-16 h-16 bg-pink-50 rounded-full mx-auto mb-4 border border-pink-100">
+                  <ShieldCheck size={28} className="text-[#AE2070]" />
+                </div>
+
+                <p className="text-center text-slate-500 text-sm mb-6">
+                  Nhập mã <span className="font-bold text-slate-800">6 chữ số</span> đã được gửi về email của bạn
+                </p>
+
+                <div className="flex justify-center gap-2 mb-3">
+                  {otpDigits.map((d, i) => (
+                    <input key={i} ref={el => otpRefs.current[i] = el}
+                      type="text" inputMode="numeric" maxLength={1} value={d}
+                      autoComplete="one-time-code"
+                      onChange={e => handleOtpInput(i, e.target.value)}
+                      onKeyDown={e => handleOtpKeyDown(i, e)}
+                      onPaste={i === 0 ? handleOtpPaste : undefined}
+                      className={`w-11 h-14 text-center text-xl font-black border-2 rounded-xl outline-none transition-all ${
+                        otpError ? "border-red-400 bg-red-50 text-red-600" :
+                        d ? "border-[#AE2070] bg-pink-50 text-[#AE2070]" :
+                        "border-slate-200 bg-slate-50 text-slate-800 focus:border-[#AE2070] focus:bg-pink-50"
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                {otpError && <p className="text-center text-red-500 text-xs font-bold mb-4">{otpError}</p>}
+                {!otpError && <div className="mb-4" />}
+
+                <button onClick={handleMomoConfirmOtp} disabled={isProcessing}
+                  className="w-full bg-[#AE2070] hover:bg-[#8f1a5c] disabled:opacity-50 text-white font-black py-3.5 rounded-2xl transition-all text-sm uppercase tracking-wider flex items-center justify-center gap-2 mb-3">
+                  {isProcessing ? (
+                    <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Đang xác nhận...</>
+                  ) : "Xác nhận thanh toán"}
+                </button>
+
+                <button onClick={() => { setMomoStep(1); setOtpDigits(["","","","","",""]); setOtpError(""); }}
+                  className="w-full flex items-center justify-center gap-1 text-slate-400 hover:text-slate-600 text-sm font-medium transition-colors">
+                  <ArrowLeft size={14} /> Quay lại
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -742,7 +913,7 @@ const PaymentPage = () => {
 
                 <p className="text-center text-slate-400 text-xs mt-3 font-medium">
                   {paymentMethod === "momo"
-                    ? "Bạn sẽ được chuyển đến trang thanh toán MoMo"
+                    ? "Xác nhận đơn hàng và nhận OTP xác thực qua email"
                     : "Mã QR VietQR hỗ trợ tất cả ngân hàng Việt Nam"}
                 </p>
               </div>
