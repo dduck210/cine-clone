@@ -4,7 +4,8 @@ const movieSchema = new mongoose.Schema({
     title: { type: String, required: true },
     genre: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Genre' }],
     duration: { type: Number, required: true }, // in minutes
-    poster: { type: String }, // URL or path
+    poster: { type: String }, // URL or path (portrait 2:3)
+    backdrop: { type: String }, // URL landscape 16:9 for banner slider
     trailer: { type: String }, // URL
     description: { type: String },
     director: { type: String },
