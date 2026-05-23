@@ -101,32 +101,25 @@ const MoviesPage = () => {
         {/* Tabs */}
         {!searchQuery && (
           <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-            <div className="flex gap-2 bg-white border border-gray-200 p-1.5 rounded-2xl shadow-sm">
+            <div className="relative flex bg-white border border-gray-200 p-1.5 rounded-2xl shadow-sm">
+              <div className={`absolute top-1.5 bottom-1.5 left-1.5 w-[calc(50%-6px)] bg-[#dc2626] rounded-xl shadow-md shadow-red-200 transition-transform duration-300 ease-in-out ${activeTab === "soon" ? "translate-x-full" : "translate-x-0"}`} />
               <button
                 onClick={() => handleTabChange("now")}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 ${
-                  activeTab === "now"
-                    ? "bg-[#dc2626] text-white shadow-md shadow-red-200"
-                    : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
-                }`}
+                className={`relative z-10 flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-colors duration-200 ${activeTab === "now" ? "text-white" : "text-gray-500 hover:text-gray-800"}`}
               >
                 <Film size={15} />
                 Đang Chiếu
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-black ${activeTab === "now" ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"}`}>
+                <span className={`text-xs px-1.5 py-0.5 rounded-full font-black transition-colors duration-200 ${activeTab === "now" ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"}`}>
                   {nowShowing.length}
                 </span>
               </button>
               <button
                 onClick={() => handleTabChange("soon")}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 ${
-                  activeTab === "soon"
-                    ? "bg-[#dc2626] text-white shadow-md shadow-red-200"
-                    : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
-                }`}
+                className={`relative z-10 flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-colors duration-200 ${activeTab === "soon" ? "text-white" : "text-gray-500 hover:text-gray-800"}`}
               >
                 <Calendar size={15} />
                 Sắp Chiếu
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-black ${activeTab === "soon" ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"}`}>
+                <span className={`text-xs px-1.5 py-0.5 rounded-full font-black transition-colors duration-200 ${activeTab === "soon" ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"}`}>
                   {comingSoon.length}
                 </span>
               </button>

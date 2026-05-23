@@ -85,7 +85,7 @@ const ForgotPasswordPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Toaster position="top-center" />
+      <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
       <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row min-h-[600px]">
         {/* Left panel */}
         <div className="hidden md:block w-1/2 bg-gray-900 relative">

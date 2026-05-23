@@ -36,7 +36,7 @@ const TicketViewPage = () => {
 
     es.addEventListener("ticket_printed", () => {
       setTicketStatus("printed");
-      toast.success("Vé của bạn đã được xác nhận!", { duration: 4000 });
+      toast.success("Vé của bạn đã được xác nhận!", { duration: 2000 });
     });
 
     es.onerror = () => {};
@@ -72,7 +72,7 @@ const TicketViewPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      <Toaster position="top-center" />
+      <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
       <div className="max-w-lg mx-auto px-4 py-6">
         {/* Header */}
         <div className="text-center mb-6">

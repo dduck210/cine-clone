@@ -129,7 +129,7 @@ const ShowtimeDetailModal = ({ showtime: st, onClose }) => {
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
-    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-slate-100">
+    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-slate-100" style={{ animation: "modalIn 0.25s cubic-bezier(0.22,1,0.36,1) both" }}>
       <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
         <div>
           <h3 className="font-bold text-lg text-slate-800 line-clamp-1">{st.movie?.title || "Suất chiếu"}</h3>
@@ -300,7 +300,7 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-scale-in border border-slate-100">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-slate-100" style={{ animation: "modalIn 0.25s cubic-bezier(0.22,1,0.36,1) both" }}>
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10">
           <div>
             <h3 className="font-bold text-lg text-slate-800">Thêm Suất Chiếu Mới</h3>
@@ -579,11 +579,25 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
 
   return (
     <div className="space-y-6">
+      <style>{`
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.95) translateY(8px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes cancelIn {
+          from { opacity: 0; transform: scale(0.92) translateY(12px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes rowIn {
+          from { opacity: 0; transform: translateX(-8px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+      `}</style>
 
       {/* Cancel confirm modal */}
       {cancelTarget && (
         <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur-sm">
-          <div className="bg-white rounded-[28px] shadow-2xl max-w-sm w-full overflow-hidden border border-slate-100">
+          <div className="bg-white rounded-[28px] shadow-2xl max-w-sm w-full overflow-hidden border border-slate-100" style={{ animation: "cancelIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both" }}>
             <div className="bg-gradient-to-br from-red-500 to-rose-600 px-6 pt-7 pb-6 text-center">
               <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 ring-4 ring-white/30">
                 <Ban className="w-7 h-7 text-white" strokeWidth={2.5} />
@@ -662,7 +676,7 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
             <button
               key={opt.value}
               onClick={() => handleFilterStatus(opt.value)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${filterStatus === opt.value ? opt.cls : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"}`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all duration-150 active:scale-95 ${filterStatus === opt.value ? opt.cls : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"}`}
             >
               {opt.label}
             </button>
@@ -718,15 +732,15 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
                   <th className="p-4 pr-6 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody key={currentPage} className="divide-y divide-slate-100">
                 {filtered.length === 0 ? (
                   <tr><td colSpan="8" className="p-12 text-center text-slate-400 italic">Chưa có suất chiếu nào.</td></tr>
                 ) : (
-                  pagedShowtimes.map((st) => {
+                  pagedShowtimes.map((st, idx) => {
                     const statusMeta = SHOWTIME_STATUS_META[st.effectiveStatus] || SHOWTIME_STATUS_META.cancelled;
 
                     return (
-                      <tr key={st._id} onClick={() => setDetailShowtime(st)} className="hover:bg-slate-50/80 transition-colors group cursor-pointer">
+                      <tr key={st._id} onClick={() => setDetailShowtime(st)} className="hover:bg-slate-50/80 transition-all duration-150 group cursor-pointer" style={{ animation: "rowIn 0.25s cubic-bezier(0.22,1,0.36,1) both", animationDelay: `${idx * 40}ms` }}>
                       <td className="p-4 pl-6">
                         <div className="flex items-center gap-3">
                           {st.movie?.poster && (
@@ -800,7 +814,7 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
         </p>
         <div className="flex items-center gap-1">
           <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}
-            className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+            className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95">
             ‹ Trước
           </button>
           {Array.from({ length: Math.max(totalPages, 1) }, (_, i) => i + 1)
@@ -810,12 +824,12 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
               <span key={`d${i}`} className="px-2 text-slate-400 text-sm">…</span>
             ) : (
               <button key={p} onClick={() => setCurrentPage(p)}
-                className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${currentPage === p ? "bg-[#dc2626] text-white shadow-sm" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                className={`w-9 h-9 rounded-lg text-sm font-bold transition-all duration-150 active:scale-95 ${currentPage === p ? "bg-[#dc2626] text-white shadow-sm" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                 {p}
               </button>
             ))}
           <button onClick={() => setCurrentPage((p) => Math.min(Math.max(totalPages, 1), p + 1))} disabled={currentPage >= totalPages}
-            className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+            className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95">
             Sau ›
           </button>
         </div>

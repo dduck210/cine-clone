@@ -71,11 +71,11 @@ const VerifyEmailPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Toaster position="top-center" />
-      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row min-h-[540px]">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
+      <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
+      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row">
         {/* Left panel */}
-        <div className="hidden md:block w-1/2 bg-gray-900 relative">
+        <div className="hidden md:block md:w-1/2 bg-gray-900 relative min-h-[600px]">
           <img
             src="https://image.tmdb.org/t/p/original/mXLOHHc1Zeuwsl4xYKjKh2280oL.jpg"
             alt="Cinema Background"
@@ -91,18 +91,18 @@ const VerifyEmailPage = () => {
         </div>
 
         {/* Right panel */}
-        <div className="w-full md:w-1/2 p-8 sm:p-12 flex flex-col justify-center relative">
-          <Link
-            to="/login"
-            className="absolute top-8 left-8 text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-2 text-sm font-medium"
-          >
-            <ArrowLeft size={18} /> Quay lại đăng nhập
-          </Link>
-
+        <div className="w-full md:w-1/2 flex flex-col justify-center px-6 py-10 sm:px-10 sm:py-12">
           <div className="max-w-md mx-auto w-full">
-            <div className="mb-10 text-center md:text-left">
-              <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Kiểm tra email của bạn</h1>
-              <p className="text-gray-500">
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors text-sm font-medium mb-8"
+            >
+              <ArrowLeft size={18} /> Quay lại đăng nhập
+            </Link>
+
+            <div className="mb-8 text-center md:text-left">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">Kiểm tra email của bạn</h1>
+              <p className="text-gray-500 text-sm sm:text-base">
                 Chúng tôi đã gửi mã OTP 6 chữ số đến{" "}
                 <span className="font-semibold text-gray-700">{email}</span>
               </p>
@@ -158,6 +158,7 @@ const VerifyEmailPage = () => {
       </div>
     </div>
   );
+
 };
 
 export default VerifyEmailPage;

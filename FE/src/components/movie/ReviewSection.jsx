@@ -22,6 +22,8 @@ const StarRating = ({ value, onChange, readonly = false }) => (
   </div>
 );
 
+const INITIAL_VISIBLE = 3;
+
 const ReviewSection = ({ movieId }) => {
   const [reviews, setReviews] = useState([]);
   const [canReview, setCanReview] = useState(false);
@@ -30,6 +32,7 @@ const ReviewSection = ({ movieId }) => {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
 
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
   const token = localStorage.getItem("token");
@@ -156,7 +159,7 @@ const ReviewSection = ({ movieId }) => {
         <p className="text-gray-400 text-sm">Chưa có đánh giá nào.</p>
       ) : (
         <div className="space-y-3">
-          {reviews.map((r) => (
+          {reviews.slice(0, visibleCount).map((r) => (
             <div key={r._id} className="bg-gray-50 rounded-xl border border-gray-100 p-4">
               <div className="flex justify-between items-start">
                 <div>
@@ -177,6 +180,17 @@ const ReviewSection = ({ movieId }) => {
               <p className="text-gray-600 text-sm mt-2">{r.comment}</p>
             </div>
           ))}
+
+          {reviews.length > INITIAL_VISIBLE && (
+            <button
+              onClick={() => setVisibleCount(visibleCount >= reviews.length ? INITIAL_VISIBLE : reviews.length)}
+              className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-500 hover:text-[#dc2626] hover:border-red-200 hover:bg-red-50 transition-all"
+            >
+              {visibleCount >= reviews.length
+                ? "Thu gọn"
+                : `Xem thêm ${reviews.length - visibleCount} đánh giá`}
+            </button>
+          )}
         </div>
       )}
     </div>

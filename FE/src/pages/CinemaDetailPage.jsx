@@ -145,10 +145,10 @@ const CinemaDetailPage = () => {
                   <button
                     key={d.value}
                     onClick={() => setSelectedDate(d.value)}
-                    className={`flex-shrink-0 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${
+                    className={`flex-shrink-0 px-4 py-2.5 rounded-xl font-bold text-sm border transition-all duration-200 ease-out active:scale-95 ${
                       selectedDate === d.value
                         ? "bg-[#dc2626] text-white border-[#dc2626] shadow-md shadow-red-200"
-                        : "bg-white text-gray-600 border-gray-200 hover:border-red-400 hover:text-red-600"
+                        : "bg-white text-gray-600 border-gray-200 hover:border-[#dc2626] hover:text-[#dc2626] hover:shadow-sm"
                     }`}
                   >
                     {d.label}

@@ -294,7 +294,7 @@ const PaymentPage = () => {
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 relative">
       <Navbar />
-      <Toaster position="top-center" />
+      <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
 
       {isSuccess && (
         <div className="fixed inset-0 bg-slate-900/90 z-[100] flex items-start sm:items-center justify-center p-4 pt-6 backdrop-blur-sm overflow-y-auto">

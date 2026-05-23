@@ -34,7 +34,8 @@ export const MovieDetailModal = ({ movie, onClose, onEdit }) => {
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100"
+        style={{ animation: "modalIn 0.25s cubic-bezier(0.22,1,0.36,1) both" }}>
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
           <div>
             <h3 className="font-bold text-lg text-slate-800 line-clamp-1">{movie.title}</h3>
@@ -214,7 +215,8 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
         onClick={() => setIsModalOpen(false)}
       ></div>
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-scale-in border border-slate-100">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-slate-100"
+        style={{ animation: "modalIn 0.25s cubic-bezier(0.22,1,0.36,1) both" }}>
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 shrink-0">
           <div>
             <h3 className="font-bold text-lg text-slate-800 tracking-tight">
@@ -272,7 +274,8 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
                 <ChevronDown size={16} className={`shrink-0 ml-2 text-slate-400 transition-transform ${genreDropdownOpen ? "rotate-180" : ""}`} />
               </button>
               {genreDropdownOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto"
+                  style={{ animation: "dropDown 0.18s ease-out both", transformOrigin: "top" }}>
                   {genreOptions.length === 0 ? (
                     <p className="text-xs text-slate-400 text-center py-4">Không có thể loại nào</p>
                   ) : (
@@ -492,6 +495,20 @@ export const MoviesManager = ({
 
   return (
   <>
+  <style>{`
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(8px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes dropDown {
+      from { opacity: 0; transform: translateY(-6px) scaleY(0.95); }
+      to   { opacity: 1; transform: translateY(0) scaleY(1); }
+    }
+    @keyframes rowIn {
+      from { opacity: 0; transform: translateX(-8px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+  `}</style>
   <div className="space-y-4">
     {/* Header bar */}
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
@@ -559,7 +576,7 @@ export const MoviesManager = ({
               <th className="p-4 pr-5 text-right">Thao tác</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody key={currentPage} className="divide-y divide-slate-100">
             {pagedMovies.length > 0 ? pagedMovies.map((movie, idx) => {
               const genreText = Array.isArray(movie.genre)
                 ? movie.genre.map((g) => (typeof g === "object" ? g.name : g)).join(", ")
@@ -574,7 +591,8 @@ export const MoviesManager = ({
                 <tr
                   key={movie._id}
                   onClick={() => setDetailMovie(movie)}
-                  className="hover:bg-slate-50 transition-colors cursor-pointer"
+                  className="hover:bg-slate-50/80 transition-all duration-150 cursor-pointer"
+                  style={{ animation: "rowIn 0.25s cubic-bezier(0.22,1,0.36,1) both", animationDelay: `${idx * 40}ms` }}
                 >
                   <td className="p-4 pl-5 text-sm font-bold text-slate-400">
                     {(currentPage - 1) * MOVIES_PAGE_SIZE + idx + 1}
@@ -639,7 +657,7 @@ export const MoviesManager = ({
         </p>
         <div className="flex items-center gap-1">
           <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}
-            className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+            className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95">
             ‹ Trước
           </button>
           {Array.from({ length: Math.max(totalPages, 1) }, (_, i) => i + 1)
@@ -649,12 +667,12 @@ export const MoviesManager = ({
               <span key={`d${i}`} className="px-2 text-slate-400 text-sm">…</span>
             ) : (
               <button key={p} onClick={() => setCurrentPage(p)}
-                className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${currentPage === p ? "bg-[#dc2626] text-white shadow-sm" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                className={`w-9 h-9 rounded-lg text-sm font-bold transition-all duration-150 active:scale-95 ${currentPage === p ? "bg-[#dc2626] text-white shadow-sm" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                 {p}
               </button>
             ))}
           <button onClick={() => setCurrentPage((p) => Math.min(Math.max(totalPages, 1), p + 1))} disabled={currentPage >= totalPages}
-            className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+            className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95">
             Sau ›
           </button>
         </div>

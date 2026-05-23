@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   Plus,
   X,
@@ -192,7 +193,7 @@ const RoomDetailModal = ({ room, onClose, onEdit }) => {
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100" style={{ animation: "modalIn 0.25s cubic-bezier(0.22,1,0.36,1) both" }}>
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
           <div>
             <h3 className="font-bold text-lg text-slate-800">{room.name}</h3>
@@ -203,13 +204,13 @@ const RoomDetailModal = ({ room, onClose, onEdit }) => {
           <div className="flex items-center gap-2">
             <button
               onClick={onEdit}
-              className="flex items-center gap-1.5 px-4 py-2 bg-[#dc2626] hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-red-200"
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#dc2626] hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all duration-150 active:scale-95 shadow-md shadow-red-200"
             >
               <Settings size={14} /> Cấu hình ghế
             </button>
             <button
               onClick={onClose}
-              className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-400 transition-all"
+              className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-400 transition-all duration-150 active:scale-90"
             >
               <X size={20} />
             </button>
@@ -387,7 +388,7 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100" style={{ animation: "modalIn 0.25s cubic-bezier(0.22,1,0.36,1) both" }}>
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
           <div>
             <h3 className="font-bold text-lg text-slate-800">
@@ -399,7 +400,7 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
           </div>
           <button
             onClick={onClose}
-            className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-400 transition-all"
+            className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-400 transition-all duration-150 active:scale-90"
           >
             <X size={20} />
           </button>
@@ -517,7 +518,7 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
               <button
                 onClick={handleGenerateMatrix}
                 type="button"
-                className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all"
+                className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all duration-150 active:scale-95"
               >
                 <Grid size={14} />{" "}
                 {matrix ? "Tạo lại ma trận" : "Tạo ma trận mặc định"}
@@ -538,14 +539,14 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
         <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-semibold transition-all text-sm"
+            className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-semibold transition-all duration-150 active:scale-95 text-sm"
           >
             Hủy
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className={`px-6 py-2.5 text-white rounded-xl font-bold shadow-lg transition-all text-sm flex items-center gap-2 ${saving ? "bg-red-400 cursor-not-allowed" : "bg-[#dc2626] hover:bg-red-700 shadow-red-200"}`}
+            className={`px-6 py-2.5 text-white rounded-xl font-bold shadow-lg transition-all duration-150 active:scale-95 text-sm flex items-center gap-2 ${saving ? "bg-red-400 cursor-not-allowed" : "bg-[#dc2626] hover:bg-red-700 hover:-translate-y-0.5 shadow-red-200"}`}
           >
             <Save size={16} /> {saving ? "Đang lưu..." : "Lưu phòng"}
           </button>
@@ -635,7 +636,7 @@ const EmergencyCloseModal = ({
         className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-red-200 overflow-hidden">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-red-200 overflow-hidden" style={{ animation: "modalIn 0.28s cubic-bezier(0.22,1,0.36,1) both" }}>
         {/* Header */}
         <div className="bg-red-600 px-6 py-4 flex items-center gap-3">
           <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
@@ -804,7 +805,7 @@ const EmergencyCloseModal = ({
         <div className="px-6 pb-6 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-semibold text-sm transition-all"
+            className="px-5 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-semibold text-sm transition-all duration-150 active:scale-95"
           >
             Hủy bỏ
           </button>
@@ -817,7 +818,7 @@ const EmergencyCloseModal = ({
               !!fetchError ||
               preview?.totalShowtimes === 0
             }
-            className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm flex items-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-red-200"
+            className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm flex items-center gap-2 transition-all duration-150 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-red-200"
           >
             {closing ? (
               <>
@@ -872,7 +873,7 @@ const ReopenModal = ({
         className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md border border-emerald-200 overflow-hidden">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md border border-emerald-200 overflow-hidden" style={{ animation: "modalIn 0.28s cubic-bezier(0.22,1,0.36,1) both" }}>
         <div className="bg-emerald-600 px-6 py-4 flex items-center gap-3">
           <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
             <RotateCcw size={20} className="text-white" />
@@ -921,14 +922,14 @@ const ReopenModal = ({
         <div className="px-6 pb-6 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-semibold text-sm transition-all"
+            className="px-5 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-semibold text-sm transition-all duration-150 active:scale-95"
           >
             Hủy bỏ
           </button>
           <button
             onClick={handleReopen}
             disabled={reopening}
-            className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm flex items-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-emerald-200"
+            className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm flex items-center gap-2 transition-all duration-150 active:scale-95 disabled:opacity-50 shadow-lg shadow-emerald-200"
           >
             {reopening ? (
               <>
@@ -981,6 +982,7 @@ const CinemaStatusConfirmDialog = ({
       />
       <div
         className={`relative bg-white rounded-2xl shadow-2xl w-full max-w-sm border ${theme.border} overflow-hidden`}
+        style={{ animation: "modalIn 0.28s cubic-bezier(0.22,1,0.36,1) both" }}
       >
         <div className={`${theme.header} px-6 py-4 flex items-center gap-3`}>
           <div
@@ -1046,13 +1048,13 @@ const CinemaStatusConfirmDialog = ({
         <div className="px-5 pb-5 flex gap-2 justify-end">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl font-semibold text-sm transition-all"
+            className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl font-semibold text-sm transition-all duration-150 active:scale-95"
           >
             Hủy
           </button>
           <button
             onClick={onConfirm}
-            className={`px-5 py-2 ${theme.btn} text-white rounded-xl font-bold text-sm transition-all shadow-md flex items-center gap-1.5`}
+            className={`px-5 py-2 ${theme.btn} text-white rounded-xl font-bold text-sm transition-all duration-150 active:scale-95 shadow-md flex items-center gap-1.5`}
           >
             <Icon size={14} />
             {isIncident ? "Xác nhận bảo trì" : "Xác nhận mở rạp"}
@@ -1090,19 +1092,17 @@ export const RoomsManager = ({ cinemas }) => {
   );
 
   const loadRooms = async (cinemaId) => {
-    if (!cinemaId) {
-      setRooms([]);
-      return;
-    }
     setLoading(true);
     try {
-      const res = await axiosInstance.get(`/admin/cinemas/${cinemaId}/rooms`);
+      const url = cinemaId
+        ? `/admin/cinemas/${cinemaId}/rooms`
+        : `/admin/rooms`;
+      const res = await axiosInstance.get(url);
       setRooms(res.data);
       setSelectedRoomIds((prev) =>
         prev.filter((id) => res.data.some((room) => room._id === id)),
       );
-      // Derive cinema status: incident only when ALL rooms are in maintenance
-      if (res.data.length > 0) {
+      if (cinemaId && res.data.length > 0) {
         setCinemaStatus(
           res.data.some((r) => r.status === "active") ? "active" : "incident",
         );
@@ -1189,6 +1189,21 @@ export const RoomsManager = ({ cinemas }) => {
 
   return (
     <div className="space-y-6">
+      <style>{`
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.95) translateY(8px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes rowIn {
+          from { opacity: 0; transform: translateX(-8px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes panelIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
         <div>
           <h2 className="text-xl font-bold text-slate-800">
@@ -1202,7 +1217,7 @@ export const RoomsManager = ({ cinemas }) => {
           {selectedCinema && selectedMaintenanceRooms.length > 0 && (
             <button
               onClick={() => setShowReopen(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all shadow-md shadow-emerald-200 shrink-0 text-sm"
+              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all duration-150 active:scale-95 hover:-translate-y-0.5 shadow-md shadow-emerald-200 shrink-0 text-sm"
             >
               <RotateCcw size={16} /> Mở {selectedMaintenanceRooms.length} phòng
             </button>
@@ -1210,14 +1225,14 @@ export const RoomsManager = ({ cinemas }) => {
           {selectedCinema && selectedActiveRooms.length > 0 && (
             <button
               onClick={() => setShowEmergency(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-all shadow-md shadow-amber-200 shrink-0 text-sm"
+              className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-all duration-150 active:scale-95 hover:-translate-y-0.5 shadow-md shadow-amber-200 shrink-0 text-sm"
             >
               <Zap size={16} /> Đóng {selectedActiveRooms.length} phòng
             </button>
           )}
           <button
             onClick={handleOpenCreate}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#dc2626] text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-md shadow-red-200 shrink-0"
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#dc2626] text-white rounded-xl font-bold hover:bg-red-700 transition-all duration-150 active:scale-95 hover:-translate-y-0.5 shadow-md shadow-red-200 shrink-0"
           >
             <Plus size={20} /> Thêm phòng
           </button>
@@ -1226,14 +1241,14 @@ export const RoomsManager = ({ cinemas }) => {
 
       <div>
         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-          Chọn rạp để xem phòng
+          Lọc theo rạp
         </label>
         <select
           value={selectedCinema}
           onChange={(e) => setSelectedCinema(e.target.value)}
           className="bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] font-medium text-slate-700 min-w-[240px]"
         >
-          <option value="">-- Chọn rạp --</option>
+          <option value="">Tất cả rạp</option>
           {cinemas.map((c) => (
             <option key={c._id} value={c._id}>
               {c.name}
@@ -1243,7 +1258,7 @@ export const RoomsManager = ({ cinemas }) => {
       </div>
 
       {selectedCinemaData && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-4">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-4" style={{ animation: "panelIn 0.3s cubic-bezier(0.22,1,0.36,1) both" }}>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
@@ -1278,7 +1293,7 @@ export const RoomsManager = ({ cinemas }) => {
                 <button
                   key={value}
                   onClick={() => handleCinemaStatusChange(value)}
-                  className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${
+                  className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all duration-150 active:scale-95 ${
                     cinemaStatus === value
                       ? meta.badge
                       : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
@@ -1293,17 +1308,13 @@ export const RoomsManager = ({ cinemas }) => {
       )}
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        {!selectedCinema ? (
-          <div className="p-12 text-center text-slate-400 italic">
-            Chọn rạp để xem danh sách phòng
-          </div>
-        ) : loading ? (
+        {loading ? (
           <div className="flex justify-center py-16">
             <div className="animate-spin rounded-full h-8 w-8 border-4 border-red-600 border-t-transparent" />
           </div>
         ) : rooms.length === 0 ? (
           <div className="p-12 text-center text-slate-400 italic">
-            Rạp này chưa có phòng nào
+            {selectedCinema ? "Rạp này chưa có phòng nào" : "Chưa có phòng chiếu nào trong hệ thống"}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -1322,6 +1333,7 @@ export const RoomsManager = ({ cinemas }) => {
                     />
                   </th>
                   <th className="p-4 pl-6">Tên phòng</th>
+                  <th className="p-4">Rạp</th>
                   <th className="p-4">Kích thước</th>
                   <th className="p-4">Tổng ghế</th>
                   <th className="p-4">Loại phòng</th>
@@ -1330,8 +1342,8 @@ export const RoomsManager = ({ cinemas }) => {
                   <th className="p-4 pr-6 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {rooms.map((room) => {
+              <tbody key={selectedCinema} className="divide-y divide-slate-100">
+                {rooms.map((room, idx) => {
                   const hasMatrix =
                     room.seatMatrix && room.seatMatrix.length > 0;
                   const typeCount = hasMatrix
@@ -1348,7 +1360,8 @@ export const RoomsManager = ({ cinemas }) => {
                   return (
                     <tr
                       key={room._id}
-                      className="hover:bg-slate-50/80 transition-colors cursor-pointer"
+                      className="hover:bg-slate-50/80 transition-all duration-150 cursor-pointer"
+                      style={{ animation: "rowIn 0.25s cubic-bezier(0.22,1,0.36,1) both", animationDelay: `${idx * 40}ms` }}
                       onClick={() => setDetailRoom(room)}
                     >
                       <td
@@ -1364,6 +1377,11 @@ export const RoomsManager = ({ cinemas }) => {
                       </td>
                       <td className="p-4 pl-6 font-bold text-slate-800">
                         {room.name}
+                      </td>
+                      <td className="p-4 text-sm text-slate-600">
+                        {room.cinema?.name
+                          || cinemas.find((c) => c._id === (room.cinema?._id || room.cinema))?.name
+                          || "—"}
                       </td>
                       <td className="p-4 text-sm text-slate-600">
                         {room.rows} hàng × {room.cols} cột
@@ -1413,14 +1431,14 @@ export const RoomsManager = ({ cinemas }) => {
                         <div className="flex items-center gap-1 justify-end">
                           <button
                             onClick={() => setDetailRoom(room)}
-                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-150 active:scale-90"
                             title="Xem chi tiết phòng"
                           >
                             <Eye size={16} />
                           </button>
                           <button
                             onClick={() => handleOpenEdit(room)}
-                            className="p-2 text-slate-400 hover:text-[#dc2626] hover:bg-red-50 rounded-lg transition-all"
+                            className="p-2 text-slate-400 hover:text-[#dc2626] hover:bg-red-50 rounded-lg transition-all duration-150 active:scale-90"
                             title="Cấu hình ghế"
                           >
                             <Settings size={16} />
@@ -1436,7 +1454,7 @@ export const RoomsManager = ({ cinemas }) => {
         )}
       </div>
 
-      {detailRoom && (
+      {detailRoom && createPortal(
         <RoomDetailModal
           room={detailRoom}
           onClose={() => setDetailRoom(null)}
@@ -1444,19 +1462,21 @@ export const RoomsManager = ({ cinemas }) => {
             handleOpenEdit(detailRoom);
             setDetailRoom(null);
           }}
-        />
+        />,
+        document.body
       )}
 
-      {showModal && (
+      {showModal && createPortal(
         <RoomModal
           room={editRoom}
           cinemas={cinemas}
           onClose={() => setShowModal(false)}
           onSaved={() => loadRooms(selectedCinema)}
-        />
+        />,
+        document.body
       )}
 
-      {showEmergency && selectedCinema && (
+      {showEmergency && selectedCinema && createPortal(
         <EmergencyCloseModal
           cinemaId={selectedCinema}
           cinemaName={selectedCinemaData?.name || "Rạp"}
@@ -1467,10 +1487,11 @@ export const RoomsManager = ({ cinemas }) => {
             setSelectedRoomIds([]);
             loadRooms(selectedCinema);
           }}
-        />
+        />,
+        document.body
       )}
 
-      {showReopen && selectedCinema && (
+      {showReopen && selectedCinema && createPortal(
         <ReopenModal
           cinemaId={selectedCinema}
           cinemaName={selectedCinemaData?.name || "Rạp"}
@@ -1481,16 +1502,18 @@ export const RoomsManager = ({ cinemas }) => {
             setSelectedRoomIds([]);
             loadRooms(selectedCinema);
           }}
-        />
+        />,
+        document.body
       )}
 
-      {statusConfirm && (
+      {statusConfirm && createPortal(
         <CinemaStatusConfirmDialog
           status={statusConfirm}
           cinemaName={selectedCinemaData?.name || "Rạp"}
           onConfirm={executeStatusChange}
           onCancel={() => setStatusConfirm(null)}
-        />
+        />,
+        document.body
       )}
     </div>
   );

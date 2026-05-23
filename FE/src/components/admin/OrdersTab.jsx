@@ -44,13 +44,13 @@ const QrScannerModal = ({ onScanned, onClose }) => {
   return (
     <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" style={{ animation: "modalIn 0.25s cubic-bezier(0.22,1,0.36,1) both" }}>
         <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Camera size={18} className="text-[#dc2626]" />
             <h3 className="font-bold text-slate-800">Quét mã QR vé</h3>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400">
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 transition-all duration-150 active:scale-90">
             <X size={18} />
           </button>
         </div>
@@ -90,7 +90,7 @@ export const OrderDetailModal = ({ order, onClose, onPrint }) => {
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity print:hidden"
         onClick={onClose}
       ></div>
-      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-scale-in">
+      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden" style={{ animation: "modalIn 0.28s cubic-bezier(0.22,1,0.36,1) both" }}>
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 shrink-0 print:hidden">
           <div>
             <h3 className="font-bold text-lg text-slate-800 tracking-tight flex items-center gap-2">
@@ -100,7 +100,7 @@ export const OrderDetailModal = ({ order, onClose, onPrint }) => {
           </div>
           <button
             onClick={onClose}
-            className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-all"
+            className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-all duration-150 active:scale-90"
           >
             <X size={20} />
           </button>
@@ -239,7 +239,7 @@ export const OrderDetailModal = ({ order, onClose, onPrint }) => {
         </div>
 
         <div className="p-4 border-t border-slate-100 bg-white flex justify-end gap-3 shrink-0 print:hidden">
-          <button onClick={onClose} className="px-6 py-2.5 text-slate-600 border border-slate-200 hover:bg-slate-50 rounded-xl font-semibold transition-all text-sm">
+          <button onClick={onClose} className="px-6 py-2.5 text-slate-600 border border-slate-200 hover:bg-slate-50 rounded-xl font-semibold transition-all duration-150 active:scale-95 text-sm">
             Đóng
           </button>
           {isPaid ? (
@@ -247,14 +247,14 @@ export const OrderDetailModal = ({ order, onClose, onPrint }) => {
               {order.ticketStatus !== "printed" && (
                 <button
                   onClick={() => { onPrint?.(order.bookingRawId); onClose(); }}
-                  className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold transition-all text-sm flex items-center gap-2"
+                  className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold transition-all duration-150 active:scale-95 text-sm flex items-center gap-2"
                 >
                   <CheckCircle size={16} /> Đánh dấu đã in
                 </button>
               )}
               <button
                 onClick={() => window.print()}
-                className="px-6 py-2.5 bg-[#dc2626] hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-200 transition-all text-sm flex items-center gap-2"
+                className="px-6 py-2.5 bg-[#dc2626] hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-200 transition-all duration-150 active:scale-95 text-sm flex items-center gap-2"
               >
                 <Printer size={18} /> In vé cứng
               </button>
@@ -356,6 +356,21 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
 
   return (
     <div className="space-y-6">
+      <style>{`
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.95) translateY(8px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes rowIn {
+          from { opacity: 0; transform: translateX(-8px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes dropIn {
+          from { opacity: 0; transform: translateY(-6px) scaleY(0.95); }
+          to   { opacity: 1; transform: translateY(0) scaleY(1); }
+        }
+      `}</style>
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
         <div>
           <h2 className="text-xl font-bold text-slate-800">Quản lý Đơn hàng</h2>
@@ -366,7 +381,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
             href="/scan"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all border shadow-sm shrink-0 bg-white border-slate-200 text-slate-600 hover:bg-red-50 hover:border-red-300 hover:text-[#dc2626]"
+            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all duration-150 active:scale-95 border shadow-sm shrink-0 bg-white border-slate-200 text-slate-600 hover:bg-red-50 hover:border-red-300 hover:text-[#dc2626]"
             title="Mở trang quét vé ở tab mới"
           >
             <ScanLine size={16} />
@@ -391,7 +406,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
           <div className="relative" ref={filterRef}>
             <button
               onClick={() => setShowFilter((v) => !v)}
-              className={`px-3.5 py-2.5 border rounded-xl font-medium text-sm transition-all flex items-center gap-2 shadow-sm ${
+              className={`px-3.5 py-2.5 border rounded-xl font-medium text-sm transition-all duration-150 active:scale-95 flex items-center gap-2 shadow-sm ${
                 filterStatus ? "bg-red-50 border-red-200 text-red-600" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
               }`}
             >
@@ -404,7 +419,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
               )}
             </button>
             {showFilter && (
-              <div className="absolute right-0 mt-2 w-44 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden">
+              <div className="absolute right-0 mt-2 w-44 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden" style={{ animation: "dropIn 0.18s ease-out both", transformOrigin: "top right" }}>
                 {filterOptions.map((opt) => (
                   <button
                     key={opt.value}
@@ -439,7 +454,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
               <th className="p-4 text-right pr-6">Thao tác</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody key={currentPage} className="divide-y divide-slate-100">
             {filteredOrders.length === 0 ? (
               <tr><td colSpan="7" className="p-12 text-center text-slate-400 italic">
                 {search || filterStatus ? "Không tìm thấy đơn hàng phù hợp." : "Chưa có đơn hàng nào."}
@@ -447,7 +462,8 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
             ) : pagedOrders.map((order, index) => (
               <tr
                 key={`${order.orderId}-${index}`}
-                className="hover:bg-slate-50 transition-colors"
+                className="hover:bg-slate-50/80 transition-all duration-150"
+                style={{ animation: "rowIn 0.25s cubic-bezier(0.22,1,0.36,1) both", animationDelay: `${index * 40}ms` }}
               >
                 <td className="p-4 pl-6 font-mono font-bold text-slate-700">
                   {order.orderId}
@@ -500,7 +516,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
                     {order.status === "Chờ thanh toán" && order.paymentMethod === "cash" && (
                       <button
                         onClick={() => onConfirm(order.bookingRawId)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold transition-colors border border-emerald-200"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold transition-all duration-150 active:scale-95 border border-emerald-200"
                       >
                         <CheckCircle size={14} /> Xác nhận
                       </button>
@@ -508,7 +524,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
                     {order.status === "Đã thanh toán" && order.ticketStatus !== "printed" && (
                       <button
                         onClick={() => onPrint?.(order.bookingRawId)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-lg text-xs font-bold transition-colors border border-teal-200"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-lg text-xs font-bold transition-all duration-150 active:scale-95 border border-teal-200"
                         title="Đánh dấu vé đã in"
                       >
                         <Printer size={14} /> In vé
@@ -516,7 +532,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
                     )}
                     <button
                       onClick={() => onViewTicket(order)}
-                      className="p-2 text-slate-400 hover:text-[#dc2626] hover:bg-red-50 rounded-lg transition-all"
+                      className="p-2 text-slate-400 hover:text-[#dc2626] hover:bg-red-50 rounded-lg transition-all duration-150 active:scale-90"
                     >
                       <Eye size={18} />
                     </button>
@@ -538,7 +554,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95"
             >
               ‹ Trước
             </button>
@@ -556,7 +572,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
                   <button
                     key={p}
                     onClick={() => setCurrentPage(p)}
-                    className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${
+                    className={`w-9 h-9 rounded-lg text-sm font-bold transition-all duration-150 active:scale-95 ${
                       currentPage === p
                         ? "bg-[#dc2626] text-white shadow-sm shadow-red-200"
                         : "border border-slate-200 text-slate-600 hover:bg-slate-50"
@@ -569,7 +585,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95"
             >
               Sau ›
             </button>

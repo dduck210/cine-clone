@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import Sidebar from "../../components/admin/Sidebar";
@@ -18,7 +18,7 @@ import { ReviewsManager } from "../../components/admin/ReviewsTab";
 const toastConfig = {
   position: "top-right",
   toastOptions: {
-    duration: 4000,
+    duration: 2000,
     className: "!bg-white !text-slate-800 !shadow-2xl !rounded-xl !border !border-slate-100 !font-medium",
   },
 };
@@ -39,7 +39,11 @@ const StatCard = ({ icon, label, value, sub, color }) => {
   );
 };
 
-const DashboardView = ({ stats, extStats, loading }) => (
+const DashboardView = ({ stats, extStats, loading }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { const id = setTimeout(() => setMounted(true), 50); return () => clearTimeout(id); }, []);
+
+  return (
   <div className="space-y-6">
     {/* Main stats */}
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -47,10 +51,10 @@ const DashboardView = ({ stats, extStats, loading }) => (
         [1, 2, 3, 4].map((i) => <div key={i} className="bg-white rounded-2xl h-36 animate-pulse border border-slate-100" />)
       ) : (
         <>
-          <StatCard icon={DollarSign} label="Doanh thu vé" value={stats.totalRevenue.toLocaleString("vi-VN") + " đ"} sub="Vé đã thanh toán" color="bg-emerald-50 text-emerald-600" />
-          <StatCard icon={Popcorn} label="Doanh thu F&B" value={extStats.comboRevenue.toLocaleString("vi-VN") + " đ"} sub="Bắp rang, nước, combo" color="bg-orange-50 text-orange-500" />
-          <StatCard icon={Ticket} label="Vé đã bán" value={stats.totalBookings} sub="Đơn đã hoàn tất" color="bg-red-50 text-[#dc2626]" />
-          <StatCard icon={RefreshCw} label="Vé hoàn" value={extStats.refunds.totalRefunds} sub={extStats.refunds.totalRefundAmount.toLocaleString("vi-VN") + " đ đã hoàn"} color="bg-blue-50 text-blue-500" />
+          <div className="tab-enter" style={{ animationDelay: "0ms" }}><StatCard icon={DollarSign} label="Doanh thu vé" value={stats.totalRevenue.toLocaleString("vi-VN") + " đ"} sub="Vé đã thanh toán" color="bg-emerald-50 text-emerald-600" /></div>
+          <div className="tab-enter" style={{ animationDelay: "60ms" }}><StatCard icon={Popcorn} label="Doanh thu F&B" value={extStats.comboRevenue.toLocaleString("vi-VN") + " đ"} sub="Bắp rang, nước, combo" color="bg-orange-50 text-orange-500" /></div>
+          <div className="tab-enter" style={{ animationDelay: "120ms" }}><StatCard icon={Ticket} label="Vé đã bán" value={stats.totalBookings} sub="Đơn đã hoàn tất" color="bg-red-50 text-[#dc2626]" /></div>
+          <div className="tab-enter" style={{ animationDelay: "180ms" }}><StatCard icon={RefreshCw} label="Vé hoàn" value={extStats.refunds.totalRefunds} sub={extStats.refunds.totalRefundAmount.toLocaleString("vi-VN") + " đ đã hoàn"} color="bg-blue-50 text-blue-500" /></div>
         </>
       )}
     </div>
@@ -79,8 +83,8 @@ const DashboardView = ({ stats, extStats, loading }) => (
                     <div key={ts._id} className="flex flex-col items-center gap-1 flex-1">
                       <span className="text-xs font-bold text-slate-600 mb-1">{ts.bookings} vé</span>
                       <div
-                        className="w-full max-w-[52px] rounded-t-lg transition-all duration-700"
-                        style={{ height: `${barH}px`, backgroundColor: COLORS[ts._id] || "#dc2626" }}
+                        className="w-full max-w-[52px] rounded-t-lg transition-all duration-700 ease-out"
+                        style={{ height: mounted ? `${barH}px` : "0px", backgroundColor: COLORS[ts._id] || "#dc2626" }}
                       />
                     </div>
                   );
@@ -109,8 +113,8 @@ const DashboardView = ({ stats, extStats, loading }) => (
           <p className="text-slate-400 text-sm italic">Chưa có dữ liệu</p>
         ) : (
           <div className="space-y-2">
-            {extStats.comboItems.map((item) => (
-              <div key={item._id} className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0">
+            {extStats.comboItems.map((item, idx) => (
+              <div key={item._id} className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0 tab-enter" style={{ animationDelay: `${idx * 80}ms` }}>
                 <div>
                   <p className="font-medium text-slate-700 text-sm">{item._id}</p>
                   <p className="text-xs text-slate-400">×{item.totalQuantity} phần</p>
@@ -142,7 +146,7 @@ const DashboardView = ({ stats, extStats, loading }) => (
         return (
           <div className="space-y-3">
             {extStats.topMovies.map((movie, idx) => (
-              <div key={movie._id} className="flex items-center gap-3 group">
+              <div key={movie._id} className="flex items-center gap-3 group tab-enter" style={{ animationDelay: `${idx * 70}ms` }}>
                 <span className="w-6 text-center text-base flex-shrink-0">
                   {MEDAL[idx] || <span className="text-xs font-bold text-slate-400">{idx + 1}</span>}
                 </span>
@@ -158,8 +162,8 @@ const DashboardView = ({ stats, extStats, loading }) => (
                   <div className="flex items-center gap-2 mt-1">
                     <div className="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-red-500 to-rose-400 transition-all duration-700"
-                        style={{ width: `${Math.round((movie.revenue / maxRevenue) * 100)}%` }}
+                        className="h-full rounded-full bg-gradient-to-r from-red-500 to-rose-400 transition-all duration-700 ease-out"
+                        style={{ width: mounted ? `${Math.round((movie.revenue / maxRevenue) * 100)}%` : "0%" }}
                       />
                     </div>
                     <span className="text-[10px] text-slate-400 flex-shrink-0">{movie.bookings} vé</span>
@@ -178,14 +182,14 @@ const DashboardView = ({ stats, extStats, loading }) => (
     {/* Pending/expired summary */}
     {!loading && (stats.pendingBookings > 0 || stats.expiredBookings > 0) && (
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-center gap-3">
+        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-center gap-3 tab-enter" style={{ animationDelay: "0ms" }}>
           <Clock size={20} className="text-amber-600 shrink-0" />
           <div>
             <p className="text-amber-700 font-bold text-lg">{stats.pendingBookings}</p>
             <p className="text-amber-600 text-xs font-medium">Đơn đang chờ thanh toán</p>
           </div>
         </div>
-        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center gap-3">
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center gap-3 tab-enter" style={{ animationDelay: "80ms" }}>
           <AlertTriangle size={20} className="text-slate-400 shrink-0" />
           <div>
             <p className="text-slate-600 font-bold text-lg">{stats.expiredBookings || 0}</p>
@@ -195,7 +199,8 @@ const DashboardView = ({ stats, extStats, loading }) => (
       </div>
     )}
   </div>
-);
+  );
+};
 
 const Dashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -724,10 +729,22 @@ const Dashboard = () => {
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden relative">
+      <style>{`
+        @keyframes tabFadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        .tab-enter { animation: tabFadeIn 0.25s cubic-bezier(0.22,1,0.36,1) both; }
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .notif-enter { animation: slideDown 0.2s cubic-bezier(0.22,1,0.36,1) both; }
+      `}</style>
       {isSidebarOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[40] md:hidden" onClick={() => setIsSidebarOpen(false)} />
       )}
-      <aside className={`fixed inset-y-0 left-0 z-[50] w-64 bg-white border-r border-slate-200 transition-transform duration-300 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} md:relative md:translate-x-0 md:block`}>
+      <aside className={`fixed inset-y-0 left-0 z-[50] w-64 bg-white border-r border-slate-200 transition-transform duration-300 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} md:relative md:z-auto md:translate-x-0 md:block`}>
         <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
       </aside>
 
@@ -766,7 +783,7 @@ const Dashboard = () => {
               </button>
 
               {showNotifications && (
-                <div className="absolute right-0 mt-3 w-[360px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden z-40">
+                <div className="absolute right-0 mt-3 w-[360px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden z-40 notif-enter">
                   <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
                     <div>
                       <p className="font-bold text-slate-800 text-sm">Thông báo quản trị</p>
@@ -828,7 +845,7 @@ const Dashboard = () => {
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8">
           <Toaster {...toastConfig} />
-          <div className="pb-10">
+          <div key={activeTab} className="pb-10 tab-enter">
             {activeTab === "dashboard" && <DashboardView stats={stats} extStats={extStats} loading={statsLoading} />}
             {activeTab === "movies" && (
               moviesLoading ? (

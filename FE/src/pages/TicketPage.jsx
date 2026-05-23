@@ -51,7 +51,7 @@ const TicketPage = () => {
     es.onopen = () => { console.log('[SSE] connected'); setSseConnected(true); };
     es.addEventListener("ticket_printed", () => {
       setTicketStatus("printed");
-      toast.success("Vé của bạn đã được xác nhận!", { duration: 5000 });
+      toast.success("Vé của bạn đã được xác nhận!", { duration: 2000 });
     });
     es.onerror = (err) => {
       console.error('[SSE] error:', streamUrl, err);
@@ -87,7 +87,7 @@ const TicketPage = () => {
   if (isPrinted) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-        <Toaster position="top-center" />
+        <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
         <TicketCard
           bookingCode={ticket.bookingCode}
           movieTitle={ticket.movieTitle}
