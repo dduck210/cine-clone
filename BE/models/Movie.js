@@ -11,7 +11,8 @@ const movieSchema = new mongoose.Schema({
     cast: { type: String },
     releaseDate: { type: Date },
     rating: { type: Number, default: 0 },
-    status: { type: String, enum: ['now_showing', 'coming_soon'], default: 'coming_soon' },
+    status: { type: String, enum: ['now_showing', 'coming_soon', 'stopped'], default: 'coming_soon' },
+    screeningEndDate: { type: Date },
     ageRestriction: { type: String, default: 'All ages' },
 }, { timestamps: true });
 

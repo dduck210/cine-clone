@@ -7,6 +7,7 @@ const connectDB = require('./config/database');
 const { startExpireBookingsJob } = require('./jobs/expire-bookings');
 const { startExpireShowtimesJob } = require('./jobs/expire-showtimes');
 const { startUpcomingReminderJob } = require('./jobs/send-upcoming-reminders');
+const { startExpireMoviesJob } = require('./jobs/expire-movies');
 const { Server } = require('socket.io');
 const { initNotificationService } = require('./services/notification-service');
 
@@ -52,4 +53,5 @@ server.listen(PORT, () => {
     startExpireBookingsJob();
     startExpireShowtimesJob();
     startUpcomingReminderJob();
+    startExpireMoviesJob();
 });
