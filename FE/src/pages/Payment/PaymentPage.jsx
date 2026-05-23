@@ -297,8 +297,8 @@ const PaymentPage = () => {
       <Toaster position="top-center" />
 
       {isSuccess && (
-        <div className="fixed inset-0 bg-slate-900/90 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-[32px] shadow-2xl max-w-sm w-full overflow-hidden border border-slate-100">
+        <div className="fixed inset-0 bg-slate-900/90 z-[100] flex items-start sm:items-center justify-center p-4 pt-6 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white rounded-[32px] shadow-2xl max-w-sm w-full overflow-hidden border border-slate-100 my-auto">
             <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-8 text-center">
               <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 ring-4 ring-white/30">
                 <CheckCircle className="w-11 h-11 text-white" strokeWidth={2.5} />
@@ -341,8 +341,8 @@ const PaymentPage = () => {
 
       {/* MoMo — hiện thông tin test trước khi redirect */}
       {momoModal && (
-        <div className="fixed inset-0 bg-slate-900/85 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-[32px] shadow-2xl max-w-sm w-full border border-slate-100 overflow-hidden">
+        <div className="fixed inset-0 bg-slate-900/85 z-[100] flex items-start sm:items-center justify-center p-4 pt-6 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white rounded-[32px] shadow-2xl max-w-sm w-full border border-slate-100 overflow-hidden my-auto">
 
             <div className="bg-gradient-to-r from-[#AE2070] to-[#8f1a5c] px-6 py-5 relative">
               <button onClick={() => setMomoModal(null)}
@@ -398,8 +398,8 @@ const PaymentPage = () => {
 
       {/* QR Payment Modal — multi-step */}
       {qrModal && (
-        <div className="fixed inset-0 bg-slate-900/85 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-[32px] shadow-2xl max-w-sm w-full border border-slate-100 overflow-hidden">
+        <div className="fixed inset-0 bg-slate-900/85 z-[100] flex items-start sm:items-center justify-center p-4 pt-6 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white rounded-[32px] shadow-2xl max-w-sm w-full border border-slate-100 overflow-hidden my-auto">
 
             {/* Header */}
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 pt-6 pb-5 relative">
@@ -435,7 +435,7 @@ const PaymentPage = () => {
             {qrStep === 1 && (
               <div className="p-6">
                 <div className="bg-blue-50 rounded-2xl p-3 mb-4 border border-blue-100 flex justify-center">
-                  <img src={qrModal.qrUrl} alt="VietQR" className="w-44 h-44 rounded-xl"
+                  <img src={qrModal.qrUrl} alt="VietQR" className="w-36 h-36 sm:w-44 sm:h-44 rounded-xl"
                     onError={(e) => { e.target.src = `https://api.qrserver.com/v1/create-qr-code/?size=176x176&data=${encodeURIComponent(`${QR_BANK.bankId} ${QR_BANK.accountNo} ${qrModal.amount} ${qrModal.bookingCode}`)}`; }} />
                 </div>
 
