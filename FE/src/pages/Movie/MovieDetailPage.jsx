@@ -200,21 +200,16 @@ const MovieDetailPage = () => {
                   <p className="text-white/80 font-semibold leading-snug">{value || "—"}</p>
                 </div>
               ))}
-              {(genreNames.length > 0 || movie.ageRestriction) && (
+              {genreNames.length > 0 && (
                 <div className="flex gap-3">
-                  <p className="text-white/30 text-[9px] uppercase tracking-widest font-bold w-[72px] shrink-0 pt-1">Thể loại</p>
-                  <div className="flex flex-wrap gap-1.5 pt-0.5">
-                    {genreNames.slice(0, 4).map((g) => (
-                      <span key={g} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/8 border border-white/10 text-white/60">
-                        {g}
-                      </span>
-                    ))}
-                    {movie.ageRestriction && (
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-red-600 text-white border border-red-700">
-                        {movie.ageRestriction}
-                      </span>
-                    )}
-                  </div>
+                  <p className="text-white/30 text-[9px] uppercase tracking-widest font-bold w-[72px] shrink-0 pt-0.5">Thể loại</p>
+                  <p className="text-white/80 font-semibold leading-snug">{genreNames.slice(0, 4).join(" · ")}</p>
+                </div>
+              )}
+              {movie.ageRestriction && (
+                <div className="flex gap-3">
+                  <p className="text-white/30 text-[9px] uppercase tracking-widest font-bold w-[72px] shrink-0 pt-0.5">Độ tuổi</p>
+                  <p className="text-white/80 font-semibold leading-snug">{movie.ageRestriction}</p>
                 </div>
               )}
             </div>
