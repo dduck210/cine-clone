@@ -7,8 +7,16 @@ const Payment = require('../models/Payment');
 const createBooking = async (req, res) => {
     const { showtimeId, seatIds } = req.body;
     try {
-        const showtime = await Showtime.findById(showtimeId);
+        const showtime = await Showtime.findById(showtimeId).populate('movie');
         if (!showtime) return res.status(404).json({ message: 'Showtime not found' });
+
+        // Check if movie is now showing
+        if (showtime.movie.status === 'coming_soon') {
+            return res.status(400).json({
+                message: 'Phim chưa được công chiếu, không thể đặt vé cho đến ngày ' + 
+                         new Date(showtime.movie.releaseDate).toLocaleDateString('vi-VN')
+            });
+        }
 
         // Get seats and calculate price
         const seats = await Seat.find({ _id: { $in: seatIds } });

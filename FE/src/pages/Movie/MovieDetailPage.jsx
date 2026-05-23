@@ -196,7 +196,19 @@ const MovieDetailPage = () => {
             )}
 
             {/* CTA */}
-            {selectedShowtime ? (
+            {movie.status === "coming_soon" ? (
+              <div className="flex flex-col gap-3">
+                <button
+                  disabled
+                  className="bg-gray-500 cursor-not-allowed text-white font-black py-4 px-8 rounded-xl shadow-2xl transition-all uppercase tracking-wider text-sm flex items-center gap-2 w-fit"
+                >
+                  <Ticket size={20} /> Phim Sắp Chiếu
+                </button>
+                <p className="text-amber-400 font-bold text-sm flex items-center gap-2">
+                  <Info size={16} /> Vui lòng quay lại vào ngày {new Date(movie.releaseDate).toLocaleDateString("vi-VN")} để đặt vé!
+                </p>
+              </div>
+            ) : selectedShowtime ? (
               <Link to={`/booking/${id}`} state={{ selectedShowtime, selectedDate, movieTitle: movie.title, poster: movie.poster }}>
                 <button className="bg-[#dc2626] hover:bg-red-700 text-white font-black py-4 px-8 rounded-xl shadow-2xl shadow-red-900/40 transition-all uppercase tracking-wider text-sm flex items-center gap-2">
                   <Ticket size={20} /> Mua Vé: {selectedShowtime.time} — {selectedShowtime.cinemaName}
