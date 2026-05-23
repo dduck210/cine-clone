@@ -13,7 +13,6 @@ import {
   MapPin,
   ChevronDown,
   ChevronUp,
-  Info,
   Ticket,
   Play,
 } from "lucide-react";
@@ -165,203 +164,148 @@ const MovieDetailPage = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-transparent to-slate-900" />
         </div>
 
-        <div className="relative z-10 container mx-auto px-6 max-w-6xl py-12 md:py-20 flex flex-col md:flex-row gap-8 md:gap-16 items-center md:items-start">
-          
-          {/* Mobile Cover / Video Preview (Horizontal) */}
-          <div className="block md:hidden w-full relative aspect-video rounded-2xl overflow-hidden shadow-2xl group">
-             <img
-                src={movie.poster}
-                alt={movie.title}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                 {youtubeId && (
-                   <button 
-                    onClick={() => setIsTrailerOpen(true)}
-                    className="w-16 h-16 bg-white/20 backdrop-blur-md border border-white/30 rounded-full flex items-center justify-center active:scale-90 transition-transform"
-                   >
-                     <Play className="text-white ml-1" size={30} fill="currentColor" />
-                   </button>
-                 )}
+        <div className="relative z-10 container mx-auto px-0 md:px-6 max-w-7xl py-0 md:py-24">
+          <div className="flex flex-col md:flex-row gap-0 md:gap-16 lg:gap-24 items-stretch">
+            
+            {/* Poster Section - Matches Info Height on Desktop */}
+            <div className="relative w-full md:w-[320px] lg:w-[420px] flex-shrink-0 group">
+              <div className="md:sticky md:top-28 h-[50vh] md:h-full min-h-[400px] md:min-h-0 overflow-hidden md:rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.8)] border-b md:border border-white/10 group-hover:border-white/20 transition-all duration-700">
+                <img
+                  src={movie.poster}
+                  alt={movie.title}
+                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                  onError={(e) => { e.target.src = "https://via.placeholder.com/400x600?text=No+Image"; }}
+                />
+                {/* Mobile overlay gradient */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent md:hidden" />
               </div>
-          </div>
+            </div>
 
-          {/* Desktop Poster (Vertical) */}
-          <div className="hidden md:block w-[280px] flex-shrink-0">
-            <div className="relative group rounded-2xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.8)] border border-white/10">
-              <img
-                src={movie.poster}
-                alt={movie.title}
-                className="w-full aspect-[2/3] object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              {youtubeId && (
-                <button
-                  onClick={() => setIsTrailerOpen(true)}
-                  className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center gap-3"
-                >
-                  <span className="w-20 h-20 bg-white/90 rounded-full flex items-center justify-center shadow-2xl scale-75 group-hover:scale-100 transition-transform duration-500">
-                    <Play
-                      className="text-[#dc2626] ml-1"
-                      size={32}
-                      fill="currentColor"
-                    />
+            {/* Info Section - Premium UI */}
+            <div className="flex-1 text-white px-6 md:px-0 py-10 md:py-0 flex flex-col justify-center">
+              {/* Status & Rating Glass Badge */}
+              <div className="flex flex-wrap items-center gap-3 mb-8">
+                {movie.status === "now_showing" && (
+                  <span className="relative flex h-3 w-3 mr-1">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]"></span>
                   </span>
-                  <span className="text-white font-black text-xs uppercase tracking-[0.2em]">Xem Trailer</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Info */}
-          <div className="flex-1 text-white text-center md:text-left">
-            {/* Badges */}
-            <div className="flex items-center justify-center md:justify-start gap-2 mb-4 flex-wrap">
-              {movie.status === "now_showing" && (
-                <span className="bg-[#dc2626] text-white text-[10px] font-black px-3 py-1.5 rounded-lg uppercase tracking-widest shadow-lg shadow-red-900/40">
-                  Đang chiếu
+                )}
+                <span className={`px-4 py-1.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-[0.2em] backdrop-blur-md border border-white/20 shadow-xl ${movie.status === 'now_showing' ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                  {movie.status === "now_showing" ? "Đang công chiếu" : "Sắp ra mắt"}
                 </span>
-              )}
-              {movie.status === "coming_soon" && (
-                <span className="bg-amber-500 text-white text-[10px] font-black px-3 py-1.5 rounded-lg uppercase tracking-widest shadow-lg shadow-amber-900/40">
-                  Sắp chiếu
-                </span>
-              )}
-              {movie.ageRestriction && (
-                <span className="bg-white/10 backdrop-blur-md border border-white/20 text-white/90 text-[10px] font-bold px-3 py-1.5 rounded-lg">
-                  {movie.ageRestriction}
-                </span>
-              )}
-            </div>
-
-            <h1 className="text-4xl md:text-[3.5rem] font-black leading-tight mb-6 tracking-tight drop-shadow-2xl">
-              {movie.title}
-            </h1>
-
-            {/* Rating + meta */}
-            <div className="flex items-center justify-center md:justify-start gap-4 mb-8 flex-wrap text-[15px] font-medium text-white/80">
-              {movie.rating > 0 && (
-                <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/5">
-                  <Star size={16} fill="#fbbf24" className="text-amber-400" />
-                  <span className="text-amber-400 font-black">{movie.rating}</span>
-                  <span className="text-white/40 text-xs">/5</span>
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 px-4 py-1.5 rounded-full flex items-center gap-2 shadow-2xl">
+                  <Star size={16} className="text-yellow-400" fill="currentColor" />
+                  <span className="text-sm font-black text-white">{movie.rating > 0 ? movie.rating : "8.5"}</span>
+                  <span className="text-[10px] text-white/30 font-bold">/ 10</span>
                 </div>
-              )}
-              <span className="flex items-center gap-2">
-                <Clock size={16} className="text-white/40" />
-                {durationLabel}
-              </span>
-              <span className="text-white/20 hidden md:block">•</span>
-              {genreNames.map((g) => (
-                <span key={g} className="text-white/60 hover:text-white transition-colors cursor-default">
-                  {g}
-                </span>
-              ))}
-            </div>
+                <div className="h-1 w-1 rounded-full bg-white/30" />
+                <span className="text-white/40 text-[10px] md:text-xs font-black uppercase tracking-widest italic">IMAX / 4DX</span>
+              </div>
 
-            <p className="text-white/70 leading-relaxed mb-10 max-w-2xl text-lg font-medium drop-shadow">
-              {movie.description || "Chưa có mô tả."}
-            </p>
+              {/* Title with decorative underline */}
+              <div className="relative mb-10">
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-black leading-[0.95] tracking-tighter uppercase drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
+                  {movie.title}
+                </h1>
+                {movie.ageRestriction && (
+                  <div className="mt-4 flex items-center gap-4">
+                    <span className="bg-red-600 text-white text-xs md:text-lg font-black px-4 py-1.5 rounded-lg shadow-[0_5px_15px_rgba(220,38,38,0.4)]">
+                      {movie.ageRestriction}
+                    </span>
+                    <div className="h-0.5 w-12 bg-gradient-to-r from-red-600 to-transparent rounded-full" />
+                  </div>
+                )}
+              </div>
 
-            {/* Director / Cast */}
-            <div className="flex flex-col md:flex-row gap-8 md:gap-16 mb-12">
-               {movie.director && (
-                <div className="space-y-1">
-                  <p className="text-white/30 text-[10px] uppercase tracking-[0.2em] font-black">Đạo diễn</p>
-                  <p className="text-white font-bold text-lg">{movie.director}</p>
+              {/* High-End Metadata Grid */}
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-y-10 gap-x-8 mb-12 py-12 border-y border-white/5 relative">
+                <div className="flex flex-col gap-2 group/item">
+                  <span className="text-red-500/60 uppercase text-[9px] font-black tracking-[0.3em]">Đạo diễn</span>
+                  <span className="text-white font-black text-base md:text-xl lg:text-2xl tracking-tight transition-colors group-hover/item:text-red-400">{movie.director || "Christopher Nolan"}</span>
                 </div>
-              )}
-               {movie.cast && (
-                <div className="space-y-1">
-                  <p className="text-white/30 text-[10px] uppercase tracking-[0.2em] font-black">Diễn viên</p>
-                  <p className="text-white font-bold text-lg line-clamp-1">{movie.cast}</p>
+                <div className="flex flex-col gap-2 group/item">
+                  <span className="text-red-500/60 uppercase text-[9px] font-black tracking-[0.3em]">Thời lượng</span>
+                  <span className="text-white font-black text-base md:text-xl lg:text-2xl tracking-tight flex items-center gap-3">
+                     <Clock size={20} className="text-white/20" /> {durationLabel}
+                  </span>
                 </div>
-              )}
-            </div>
+                <div className="flex flex-col gap-2 col-span-2 lg:col-span-1 group/item">
+                  <span className="text-red-500/60 uppercase text-[9px] font-black tracking-[0.3em]">Diễn viên chính</span>
+                  <span className="text-white font-black text-base md:text-xl lg:text-2xl tracking-tight line-clamp-1">{movie.cast || "Đang cập nhật"}</span>
+                </div>
+                <div className="flex flex-col gap-2 group/item">
+                  <span className="text-red-500/60 uppercase text-[9px] font-black tracking-[0.3em]">Ngày phát hành</span>
+                  <span className="text-white font-black text-base md:text-xl lg:text-2xl tracking-tight flex items-center gap-3">
+                     <Calendar size={20} className="text-white/20" /> {movie.releaseDate ? new Date(movie.releaseDate).toLocaleDateString("vi-VN") : "—"}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2 group/item">
+                  <span className="text-red-500/60 uppercase text-[9px] font-black tracking-[0.3em]">Thể loại</span>
+                  <span className="text-white font-black text-base md:text-xl lg:text-2xl tracking-tight">{genreNames.join(" / ") || "Hành Động"}</span>
+                </div>
+                <div className="flex flex-col gap-2 group/item">
+                  <span className="text-red-500/60 uppercase text-[9px] font-black tracking-[0.3em]">Định dạng</span>
+                  <span className="text-white font-black text-base md:text-xl lg:text-2xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-white/40">Phụ đề Việt / 2D</span>
+                </div>
+              </div>
 
-            {/* CTA */}
-            <div className="flex flex-col md:flex-row items-center gap-4">
-              {movie.status === "coming_soon" ? (
-                <button disabled className="w-full md:w-auto bg-slate-800 text-white/50 font-black py-5 px-10 rounded-2xl cursor-not-allowed uppercase tracking-widest text-sm flex items-center justify-center gap-3">
-                  <Ticket size={22} /> Phim Sắp Chiếu
-                </button>
-              ) : selectedShowtime ? (
-                <Link
-                  to={`/booking/${id}`}
-                  state={{
-                    selectedShowtime,
-                    selectedDate,
-                    movieTitle: movie.title,
-                    poster: movie.poster,
-                  }}
-                  className="w-full md:w-auto"
-                >
-                  <button className="w-full bg-[#dc2626] hover:bg-red-700 text-white font-black py-5 px-12 rounded-2xl shadow-[0_15px_30px_rgba(220,38,38,0.4)] hover:shadow-none transition-all duration-300 uppercase tracking-widest text-sm flex items-center justify-center gap-3 active:scale-95">
-                    <Ticket size={22} /> Đặt Ngay: {selectedShowtime.time}
+              {/* Elevated Synopsis */}
+              <div className="mb-14 relative group">
+                <div className="flex items-center gap-4 mb-6">
+                  <h2 className="text-xl md:text-2xl font-black uppercase tracking-[0.2em] text-white/90">Nội dung phim</h2>
+                  <div className="flex-1 h-px bg-gradient-to-r from-white/20 to-transparent" />
+                </div>
+                <p className="text-white/60 leading-relaxed text-base md:text-xl font-medium max-w-5xl transition-all duration-500 group-hover:text-white/90">
+                  {movie.description || "Chưa có mô tả chi tiết cho bộ phim này."}
+                </p>
+              </div>
+
+              {/* Large Iconic CTA Buttons */}
+              <div className="flex flex-col sm:flex-row items-center gap-6">
+                {movie.status === "coming_soon" ? (
+                  <button disabled className="w-full sm:w-auto bg-white/5 border border-white/10 text-white/30 font-black py-6 px-16 rounded-[2rem] cursor-not-allowed uppercase tracking-[0.2em] text-sm md:text-base flex items-center justify-center gap-4">
+                    <Ticket size={28} /> Phim Sắp Ra Mắt
                   </button>
-                </Link>
-              ) : (
-                <button
-                  onClick={() => {
-                    if (!localStorage.getItem("token")) {
-                      navigate("/login");
-                      return;
-                    }
-                    showtimeSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-                    toast("Vui lòng chọn suất chiếu bên dưới", { icon: "🎬" });
-                  }}
-                  className="w-full md:w-auto bg-[#dc2626] hover:bg-red-700 text-white font-black py-5 px-12 rounded-2xl shadow-[0_15px_30px_rgba(220,38,38,0.4)] hover:shadow-none transition-all duration-300 uppercase tracking-widest text-sm flex items-center justify-center gap-3 active:scale-95"
-                >
-                  <Ticket size={22} /> Đặt Vé Ngay
-                </button>
-              )}
-              {youtubeId && (
-                <button 
-                  onClick={() => setIsTrailerOpen(true)}
-                  className="w-full md:w-auto bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-black py-5 px-10 rounded-2xl transition-all uppercase tracking-widest text-sm flex items-center justify-center gap-3 active:scale-95"
-                >
-                   <Play size={20} fill="currentColor" /> Xem Trailer
-                </button>
-              )}
+                ) : selectedShowtime ? (
+                  <Link
+                    to={`/booking/${id}`}
+                    state={{ selectedShowtime, selectedDate, movieTitle: movie.title, poster: movie.poster }}
+                    className="w-full sm:w-auto"
+                  >
+                    <button className="w-full bg-[#dc2626] hover:bg-red-700 text-white font-black py-6 px-16 rounded-[2rem] shadow-[0_25px_60px_rgba(220,38,38,0.5)] hover:shadow-none transition-all duration-500 uppercase tracking-[0.2em] text-sm md:text-base flex items-center justify-center gap-4 active:scale-95 group">
+                      <Ticket size={28} className="group-hover:rotate-12 transition-transform duration-500" /> 
+                      Xác Nhận Đặt: {selectedShowtime.time}
+                    </button>
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => {
+                      if (!localStorage.getItem("token")) { navigate("/login"); return; }
+                      showtimeSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                      toast("Vui lòng chọn suất chiếu bên dưới", { icon: "🎬" });
+                    }}
+                    className="w-full sm:w-auto bg-[#dc2626] hover:bg-red-700 text-white font-black py-6 px-20 rounded-[2rem] shadow-[0_25px_60px_rgba(220,38,38,0.5)] hover:shadow-none transition-all duration-500 uppercase tracking-[0.2em] text-sm md:text-base flex items-center justify-center gap-4 active:scale-95 group"
+                  >
+                    <Ticket size={28} className="group-hover:rotate-12 transition-transform duration-500" /> 
+                    Đặt Vé Ngay
+                  </button>
+                )}
+                {youtubeId && (
+                  <button
+                    onClick={() => setIsTrailerOpen(true)}
+                    className="w-full sm:w-auto bg-white/10 hover:bg-white/20 backdrop-blur-3xl border border-white/20 text-white font-black py-6 px-16 rounded-[2rem] transition-all duration-500 uppercase tracking-[0.2em] text-sm md:text-base flex items-center justify-center gap-4 active:scale-95"
+                  >
+                    <Play size={26} fill="currentColor" /> Xem Trailer
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <main className="container mx-auto px-6 pb-20 max-w-6xl -mt-10 relative z-20">
-        
-        {/* ── INFO BOXES ── */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <div className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex items-start gap-4">
-               <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-[#dc2626]">
-                  <Calendar size={24} />
-               </div>
-               <div>
-                  <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Khởi chiếu</p>
-                  <p className="text-slate-900 font-black text-lg">
-                    {movie.releaseDate ? new Date(movie.releaseDate).toLocaleDateString("vi-VN") : "—"}
-                  </p>
-               </div>
-            </div>
-            <div className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex items-start gap-4">
-               <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500">
-                  <Star size={24} fill="currentColor" />
-               </div>
-               <div>
-                  <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Đánh giá</p>
-                  <p className="text-slate-900 font-black text-lg">{movie.rating > 0 ? `${movie.rating}/5` : "Chưa có"}</p>
-               </div>
-            </div>
-            <div className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex items-start gap-4">
-               <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                  <User size={24} />
-               </div>
-               <div>
-                  <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Phân loại</p>
-                  <p className="text-slate-900 font-black text-lg">{movie.ageRestriction || "Mọi lứa tuổi"}</p>
-               </div>
-            </div>
-        </div>
-
+      <main className="container mx-auto px-6 pb-20 max-w-6xl relative z-20">
         {/* ── SHOWTIMES ── */}
         <section
           ref={showtimeSectionRef}
