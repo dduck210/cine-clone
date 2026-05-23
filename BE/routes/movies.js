@@ -61,6 +61,15 @@ router.put('/:id', protect, admin, async (req, res) => {
         const newDuration = req.body.duration ? Number(req.body.duration) : oldDuration;
         const durationChanged = newDuration !== oldDuration;
 
+        // Auto update status if releaseDate changed to today or past
+        if (req.body.releaseDate) {
+            const releaseDate = new Date(req.body.releaseDate);
+            const now = new Date();
+            if (releaseDate <= now && movie.status === 'coming_soon') {
+                req.body.status = 'now_showing';
+            }
+        }
+
         Object.assign(movie, req.body);
         const updated = await movie.save();
 
