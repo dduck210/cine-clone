@@ -382,19 +382,29 @@ const HistoryTab = ({ navigate }) => {
     const showtime = booking.showtime || {};
     const movie = showtime.movie || {};
     const cinema = showtime.cinema || {};
+    const sharedState = {
+      movieTitle: movie.title || "Phim",
+      cinemaName: cinema.name || "5Cine",
+      roomName: showtime.room?.name || "",
+      showTime: showtime.startTime || "",
+      showDate: showtime.date ? new Date(showtime.date).toLocaleDateString("vi-VN") : "",
+      showAddress: cinema.address || "",
+      selectedSeats: booking.seatNumbers || [],
+      combos: booking.extraItems || [],
+      finalTotalPrice: booking.totalPrice,
+      poster: movie.poster || "",
+    };
+
+    if (booking.status === "pending") {
+      navigate("/payment", {
+        state: { ...sharedState, existingBookingId: booking._id, existingBookingCode: booking.bookingCode },
+      });
+      return;
+    }
+
     navigate("/payment-success", {
       state: {
-        movieTitle: movie.title || "Phim",
-        cinemaName: cinema.name || "5Cine",
-        showTime: showtime.startTime || "",
-        showDate: showtime.date
-          ? new Date(showtime.date).toLocaleDateString("vi-VN")
-          : "",
-        showAddress: cinema.address || "",
-        selectedSeats: booking.seatNumbers || [],
-        combos: booking.extraItems || [],
-        finalTotalPrice: booking.totalPrice,
-        poster: movie.poster || "",
+        ...sharedState,
         orderId: booking.bookingCode,
         bookingId: booking._id,
         isHistoryMode: true,

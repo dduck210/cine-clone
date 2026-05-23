@@ -91,6 +91,8 @@ const PaymentPage = () => {
     combos = [],
     finalTotalPrice,
     poster,
+    existingBookingId,
+    existingBookingCode,
   } = location.state || {};
 
   const [paymentMethod, setPaymentMethod] = useState("momo");
@@ -158,17 +160,23 @@ const PaymentPage = () => {
     const loadingToast = toast.loading("Đang xử lý...");
 
     try {
-      // 1. Tạo booking
-      const extraItems = combos
-        .filter((c) => c.quantity > 0)
-        .map((c) => ({ name: c.name, quantity: c.quantity, price: c.price }));
-      const bookingRes = await axiosInstance.post("/bookings", {
-        showtimeId,
-        seats: selectedSeats,
-        extraItems,
-      });
-      const bookingId = bookingRes.data._id;
-      const bookingCode = bookingRes.data.bookingCode;
+      // Dùng booking cũ (tiếp tục thanh toán) hoặc tạo mới
+      let bookingId, bookingCode;
+      if (existingBookingId) {
+        bookingId = existingBookingId;
+        bookingCode = existingBookingCode || "";
+      } else {
+        const extraItems = combos
+          .filter((c) => c.quantity > 0)
+          .map((c) => ({ name: c.name, quantity: c.quantity, price: c.price }));
+        const bookingRes = await axiosInstance.post("/bookings", {
+          showtimeId,
+          seats: selectedSeats,
+          extraItems,
+        });
+        bookingId = bookingRes.data._id;
+        bookingCode = bookingRes.data.bookingCode;
+      }
 
       if (paymentMethod === "momo") {
         const momoRes = await axiosInstance.post("/payments/momo/create", { bookingId });

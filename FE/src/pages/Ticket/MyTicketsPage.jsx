@@ -66,24 +66,35 @@ const MyTicketsPage = () => {
       } catch {}
     }
 
+    const sharedState = {
+      movieTitle: movie.title || "Phim",
+      cinemaName: cinema.name || "5Cine",
+      roomName,
+      showTime: showtime.startTime || "",
+      showDate: showtime.date ? new Date(showtime.date).toLocaleDateString("vi-VN") : "",
+      showAddress: cinema.address || "",
+      selectedSeats: booking.seatNumbers || [],
+      finalTotalPrice: booking.totalPrice,
+      poster: movie.poster || "",
+      combos: booking.extraItems || [],
+    };
+
+    if (booking.status === "pending") {
+      navigate("/payment", {
+        state: { ...sharedState, existingBookingId: booking._id, existingBookingCode: booking.bookingCode },
+      });
+      return;
+    }
+
     navigate("/ticket-detail", {
       state: {
-        movieTitle: movie.title || "Phim",
-        cinemaName: cinema.name || "5Cine",
-        roomName,
-        showTime: showtime.startTime || "",
-        showDate: showtime.date ? new Date(showtime.date).toLocaleDateString("vi-VN") : "",
-        showAddress: cinema.address || "",
-        selectedSeats: booking.seatNumbers || [],
-        finalTotalPrice: booking.totalPrice,
-        poster: movie.poster || "",
+        ...sharedState,
         orderId: booking.bookingCode,
         bookingId: booking._id,
         isHistoryMode: true,
         bookingStatus: booking.status,
         ticketStatus: booking.ticketStatus || "not_printed",
         paymentMethod: booking.paymentId?.method || "",
-        combos: booking.extraItems || [],
       },
     });
   };
