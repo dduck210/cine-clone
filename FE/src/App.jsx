@@ -6,6 +6,7 @@ import HomePage from "./pages/Home/HomePage";
 import MovieDetailPage from "./pages/Movie/MovieDetailPage";
 import BookingPage from "./pages/Booking/BookingPage";
 import PaymentPage from "./pages/Payment/PaymentPage";
+import MomoPaymentPage from "./pages/Payment/MomoPaymentPage";
 import PaymentSuccessPage from "./pages/Payment/PaymentSuccessPage";
 import MyTicketsPage from "./pages/Ticket/MyTicketsPage";
 import Dashboard from "./pages/Admin/Dashboard";
@@ -81,6 +82,7 @@ function App() {
         {/* Yêu cầu đăng nhập */}
         <Route path="/booking/:id" element={<PrivateRoute><BookingPage /></PrivateRoute>} />
         <Route path="/payment" element={<PrivateRoute><PaymentPage /></PrivateRoute>} />
+        <Route path="/payment/momo" element={<PrivateRoute><MomoPaymentPage /></PrivateRoute>} />
         <Route path="/payment-success" element={<PrivateRoute><PaymentSuccessPage /></PrivateRoute>} />
         <Route path="/ticket-detail" element={<PrivateRoute><PaymentSuccessPage /></PrivateRoute>} />
         <Route path="/my-tickets" element={<PrivateRoute><MyTicketsPage /></PrivateRoute>} />

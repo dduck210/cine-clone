@@ -5,7 +5,7 @@ const Booking = require('../models/Booking');
 const Payment = require('../models/Payment');
 const Seat = require('../models/Seat');
 const { protect } = require('../middleware/auth');
-const { sendPaymentSuccessEmail, sendAdminPaymentNotificationEmail, sendOtpEmail } = require('../services/email-service');
+const { sendPaymentSuccessEmail, sendAdminPaymentNotificationEmail } = require('../services/email-service');
 const notificationService = require('../services/notification-service');
 
 const PARTNER_CODE = process.env.MOMO_PARTNER_CODE || 'MOMO';
@@ -17,7 +17,7 @@ const SERVER_URL   = process.env.SERVER_URL          || 'http://localhost:5000';
 
 const hmac = (data) => crypto.createHmac('sha256', SECRET_KEY).update(data).digest('hex');
 
-// POST /api/payments/momo/create
+// POST /api/payments/momo/create — Tạo QR thanh toán MoMo (captureWallet)
 router.post('/create', protect, async (req, res) => {
     const { bookingId } = req.body;
     try {
@@ -31,10 +31,12 @@ router.post('/create', protect, async (req, res) => {
         const orderInfo   = 'Thanh toan ve phim 5Cine';
         const redirectUrl = `${CLIENT_URL}/payment-success`;
         const ipnUrl      = `${SERVER_URL}/api/payments/momo/ipn`;
-        const requestType = 'payWithATM';
+        const requestType = 'payWithMethod';
+        const paymentMethod = 'momo_wallet';
         const extraData   = Buffer.from(JSON.stringify({ bookingId: bookingId.toString() })).toString('base64');
 
-        const rawSignature = `accessKey=${ACCESS_KEY}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${PARTNER_CODE}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
+        // Signature must follow alphabetical order of keys
+        const rawSignature = `accessKey=${ACCESS_KEY}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${PARTNER_CODE}&paymentMethod=${paymentMethod}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
         const signature = hmac(rawSignature);
 
         const response = await fetch(MOMO_API, {
@@ -51,6 +53,7 @@ router.post('/create', protect, async (req, res) => {
                 ipnUrl,
                 extraData,
                 requestType,
+                paymentMethod,
                 signature,
                 lang: 'vi',
             }),
@@ -61,13 +64,22 @@ router.post('/create', protect, async (req, res) => {
             return res.status(400).json({ message: data.message || 'Tạo thanh toán MoMo thất bại' });
         }
 
-        res.json({ payUrl: data.payUrl, orderId });
+        // Save orderId to booking for polling
+        booking.momoOrderId = orderId;
+        await booking.save();
+
+        res.json({
+            payUrl: data.payUrl,
+            deeplink: data.deeplink || data.payUrl, // Fallback to payUrl if no deeplink
+            qrCodeUrl: data.qrCodeUrl || null,
+            orderId,
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
-// POST /api/payments/momo/ipn  — MoMo gọi khi có kết quả thanh toán
+// POST /api/payments/momo/ipn — MoMo gọi khi user thanh toán thành công
 router.post('/ipn', async (req, res) => {
     const { partnerCode, orderId, requestId, amount, orderInfo, orderType,
             transId, resultCode, message, payType, responseTime, extraData, signature } = req.body;
@@ -81,53 +93,58 @@ router.post('/ipn', async (req, res) => {
     if (resultCode === 0) {
         try {
             const { bookingId } = JSON.parse(Buffer.from(extraData, 'base64').toString('utf8'));
-            // Only save MoMo transId, don't process payment yet — wait for OTP verification
-            await Booking.findByIdAndUpdate(bookingId, { momoTransId: transId.toString() });
+            const booking = await Booking.findById(bookingId);
+            if (!booking) return res.status(200).json({ message: 'ok' });
+
+            // Save transId and process payment immediately
+            booking.momoTransId = transId.toString();
+            await booking.save();
+
+            if (booking.status === 'pending') {
+                await processSuccessfulPayment(bookingId, transId.toString(), booking.totalPrice);
+            }
         } catch (e) {
-            console.error('[momo] IPN error saving transId:', e);
+            console.error('[momo] IPN processing error:', e);
         }
     }
 
     res.status(200).json({ message: 'ok' });
 });
 
-// POST /api/payments/momo/request-otp — Gửi OTP xác nhận thanh toán MoMo (không qua gateway)
-router.post('/request-otp', protect, async (req, res) => {
-    const { bookingId } = req.body;
+// GET /api/payments/momo/status/:bookingId — Frontend poll payment status
+router.get('/status/:bookingId', protect, async (req, res) => {
     try {
-        const booking = await Booking.findById(bookingId)
-            .populate('user', 'name email')
-            .populate({ path: 'showtime', populate: [{ path: 'movie', select: 'title' }] });
+        const booking = await Booking.findById(req.params.bookingId)
+            .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }] })
+            .populate('paymentId', 'method status');
         if (!booking) return res.status(404).json({ message: 'Booking not found' });
-        if (booking.user._id.toString() !== req.user._id.toString())
-            return res.status(403).json({ message: 'Not authorized' });
-        if (booking.status === 'paid')
-            return res.status(400).json({ message: 'Booking already paid' });
 
-        const otp = String(Math.floor(100000 + Math.random() * 900000));
-        booking.otpCode = otp;
-        booking.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
-        await booking.save();
-
-        const recipientEmail = booking.user.email?.endsWith('@cinema.com')
-            ? process.env.EMAIL_USER
-            : booking.user.email;
-        const displayEmail = recipientEmail || booking.user.email;
-
-        const emailResult = await sendOtpEmail(
-            { ...booking.toObject(), user: { ...booking.user.toObject(), email: recipientEmail } },
-            otp
-        );
-        if (emailResult?.skipped) {
-            return res.status(503).json({ message: 'Hệ thống email chưa được cấu hình. Vui lòng liên hệ quản trị viên.' });
+        if (booking.status === 'paid') {
+            return res.json({
+                paid: true,
+                bookingId: booking._id,
+                bookingCode: booking.bookingCode,
+                movieTitle: booking.showtime?.movie?.title || '',
+                cinemaName: booking.showtime?.cinema?.name || '',
+                roomName: booking.showtime?.room?.name || '',
+                showTime: booking.showtime?.startTime || '',
+                showDate: booking.showtime?.date
+                    ? new Date(booking.showtime.date).toLocaleDateString('vi-VN') : '',
+                selectedSeats: booking.seatNumbers || [],
+                finalTotalPrice: booking.totalPrice,
+                poster: booking.showtime?.movie?.poster || '',
+                combos: booking.extraItems || [],
+                ticketStatus: booking.ticketStatus,
+            });
         }
-        res.json({ message: 'OTP sent', email: displayEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3') });
+
+        res.json({ paid: false });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
-// POST /api/payments/momo/confirm — Frontend gọi sau khi MoMo redirect về
+// POST /api/payments/momo/confirm — Fallback khi user bị redirect về từ MoMo app
 router.post('/confirm', protect, async (req, res) => {
     const { partnerCode, orderId, requestId, amount, orderInfo, orderType,
             transId, resultCode, message, payType, responseTime, extraData, signature } = req.body;
@@ -150,92 +167,18 @@ router.post('/confirm', protect, async (req, res) => {
 
         if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-        // Save MoMo transId
         booking.momoTransId = transId.toString();
         await booking.save();
 
-        // If already paid (e.g. verified via OTP already), just return data
-        if (booking.status === 'paid') {
-            return res.json({
-                bookingId: booking._id,
-                bookingCode: booking.bookingCode,
-                movieTitle: booking.showtime?.movie?.title || '',
-                cinemaName: booking.showtime?.cinema?.name || '',
-                roomName: booking.showtime?.room?.name || '',
-                showTime: booking.showtime?.startTime || '',
-                showDate: booking.showtime?.date
-                    ? new Date(booking.showtime.date).toLocaleDateString('vi-VN') : '',
-                selectedSeats: booking.seatNumbers || [],
-                finalTotalPrice: booking.totalPrice,
-                poster: booking.showtime?.movie?.poster || '',
-                combos: booking.extraItems || [],
-                otpVerified: true,
-            });
+        if (booking.status === 'pending') {
+            await processSuccessfulPayment(bookingId, transId.toString(), booking.totalPrice);
         }
-
-        // Generate OTP and send email
-        const otp = String(Math.floor(100000 + Math.random() * 900000));
-        booking.otpCode = otp;
-        booking.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
-        await booking.save();
-
-        // Send OTP to user's email
-        const recipientEmail = booking.user?.email?.endsWith('@cinema.com')
-            ? process.env.EMAIL_USER
-            : booking.user?.email;
-
-        await sendOtpEmail(
-            { ...booking.toObject(), user: { ...(booking.user?.toObject() || {}), email: recipientEmail } },
-            otp
-        );
-
-        res.json({
-            bookingId: booking._id,
-            bookingCode: booking.bookingCode,
-            movieTitle: booking.showtime?.movie?.title || '',
-            cinemaName: booking.showtime?.cinema?.name || '',
-            roomName: booking.showtime?.room?.name || '',
-            showTime: booking.showtime?.startTime || '',
-            showDate: booking.showtime?.date
-                ? new Date(booking.showtime.date).toLocaleDateString('vi-VN') : '',
-            selectedSeats: booking.seatNumbers || [],
-            finalTotalPrice: booking.totalPrice,
-            poster: booking.showtime?.movie?.poster || '',
-            combos: booking.extraItems || [],
-            otpVerified: false,
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// POST /api/payments/momo/verify-otp — Xác nhận OTP và kích hoạt vé
-router.post('/verify-otp', protect, async (req, res) => {
-    const { bookingId, otp } = req.body;
-    try {
-        const booking = await Booking.findById(bookingId);
-        if (!booking) return res.status(404).json({ message: 'Booking not found' });
-        if (booking.status === 'paid') return res.status(400).json({ message: 'Vé đã được kích hoạt' });
-        if (!booking.otpCode || !booking.otpExpiry)
-            return res.status(400).json({ message: 'Chưa yêu cầu mã OTP, vui lòng thử lại' });
-        if (new Date() > booking.otpExpiry)
-            return res.status(400).json({ message: 'Mã OTP đã hết hạn, vui lòng thử lại' });
-        if (otp !== booking.otpCode)
-            return res.status(400).json({ message: 'Mã OTP không đúng' });
-
-        // Clear OTP
-        booking.otpCode = undefined;
-        booking.otpExpiry = undefined;
-        await booking.save();
-
-        // Process payment
-        const transId = booking.momoTransId;
-        await processSuccessfulPayment(bookingId, transId || 'MOMO', booking.totalPrice);
 
         const updated = await Booking.findById(bookingId)
             .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }] });
 
         res.json({
+            paid: true,
             bookingId: updated._id,
             bookingCode: updated.bookingCode,
             movieTitle: updated.showtime?.movie?.title || '',
@@ -255,13 +198,12 @@ router.post('/verify-otp', protect, async (req, res) => {
 });
 
 async function processSuccessfulPayment(bookingId, transactionId, amount) {
-    // Atomic gate — only one concurrent call can transition from 'pending' to 'paid'
     const booking = await Booking.findOneAndUpdate(
         { _id: bookingId, status: 'pending' },
         { $set: { status: 'paid' } },
         { new: true }
     );
-    if (!booking) return; // already paid or not found
+    if (!booking) return;
 
     const payment = new Payment({
         booking: bookingId,
@@ -296,10 +238,7 @@ async function processSuccessfulPayment(bookingId, transactionId, amount) {
         type: 'payment_paid',
         title: 'Thanh toán MoMo thành công',
         message: `${bookingContext?.user?.name || 'Khách hàng'} vừa thanh toán đơn ${bookingContext?.bookingCode}`,
-        data: {
-            bookingId: bookingContext?._id?.toString(),
-            bookingCode: bookingContext?.bookingCode,
-        },
+        data: { bookingId: bookingContext?._id?.toString(), bookingCode: bookingContext?.bookingCode },
     });
 }
 
