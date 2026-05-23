@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
-import { Film, Calendar, Search, X, Clapperboard } from "lucide-react";
+import { Film, Calendar, Search, X, Clapperboard, ChevronDown } from "lucide-react";
 import MovieCard from "../components/movie/MovieCard";
 import axiosInstance from "../api/axiosConfig";
 
@@ -13,6 +13,9 @@ const MoviesPage = () => {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("now");
+  const [visibleCount, setVisibleCount] = useState(10);
+
+  const PAGE_SIZE = 10;
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
@@ -25,9 +28,13 @@ const MoviesPage = () => {
 
   const nowShowing = movies.filter((m) => m.status === "now_showing");
   const comingSoon = movies.filter((m) => m.status === "coming_soon");
-  const displayMovies = searchQuery
+  const allDisplay = searchQuery
     ? movies.filter((m) => m.title.toLowerCase().includes(searchQuery.toLowerCase()))
     : activeTab === "now" ? nowShowing : comingSoon;
+  const displayMovies = allDisplay.slice(0, visibleCount);
+  const hasMore = visibleCount < allDisplay.length;
+
+  const handleTabChange = (tab) => { setActiveTab(tab); setVisibleCount(PAGE_SIZE); };
 
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans text-gray-900">
@@ -96,7 +103,7 @@ const MoviesPage = () => {
           <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
             <div className="flex gap-2 bg-white border border-gray-200 p-1.5 rounded-2xl shadow-sm">
               <button
-                onClick={() => setActiveTab("now")}
+                onClick={() => handleTabChange("now")}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 ${
                   activeTab === "now"
                     ? "bg-[#dc2626] text-white shadow-md shadow-red-200"
@@ -110,7 +117,7 @@ const MoviesPage = () => {
                 </span>
               </button>
               <button
-                onClick={() => setActiveTab("soon")}
+                onClick={() => handleTabChange("soon")}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 ${
                   activeTab === "soon"
                     ? "bg-[#dc2626] text-white shadow-md shadow-red-200"
@@ -125,7 +132,7 @@ const MoviesPage = () => {
               </button>
             </div>
             <p className="text-sm text-gray-400 font-medium">
-              Hiển thị <span className="font-bold text-gray-700">{displayMovies.length}</span> phim
+              Hiển thị <span className="font-bold text-gray-700">{displayMovies.length}</span>/<span className="font-bold text-gray-700">{allDisplay.length}</span> phim
             </p>
           </div>
         )}
@@ -155,6 +162,18 @@ const MoviesPage = () => {
             <p className="text-gray-500 font-bold text-lg">
               {searchQuery ? `Không tìm thấy phim nào với từ khóa "${searchQuery}".` : "Hiện chưa có phim trong mục này."}
             </p>
+          </div>
+        )}
+
+        {hasMore && (
+          <div className="flex justify-center mt-10">
+            <button
+              onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+              className="flex items-center gap-2 px-8 py-3.5 bg-white border-2 border-[#dc2626] text-[#dc2626] font-bold rounded-2xl hover:bg-[#dc2626] hover:text-white transition-all duration-200 shadow-sm hover:shadow-md hover:shadow-red-100"
+            >
+              <ChevronDown size={18} />
+              Xem thêm ({allDisplay.length - visibleCount} phim còn lại)
+            </button>
           </div>
         )}
       </main>
