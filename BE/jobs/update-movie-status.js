@@ -2,29 +2,30 @@ const cron = require('node-cron');
 const Movie = require('../models/Movie');
 
 async function updateMovieStatus() {
-    const today = new Date();
-    // No need to set hours to 0 if we use $lte, but usually releaseDate is at 00:00:00
-    
-    const result = await Movie.updateMany(
-        {
-            status: 'coming_soon',
-            releaseDate: { $lte: today }
-        },
-        {
-            $set: { status: 'now_showing' }
-        }
-    );
+    // We find movies that need update and call .save() to trigger pre-save logic
+    const now = new Date();
+    const moviesToUpdate = await Movie.find({
+        $or: [
+            { status: 'coming_soon', releaseDate: { $lte: now } },
+            { status: 'now_showing', releaseDate: { $gt: now } },
+            { status: 'now_showing', screeningEndDate: { $lt: now } }
+        ]
+    });
 
-    return result.modifiedCount;
+    for (const movie of moviesToUpdate) {
+        await movie.save();
+    }
+
+    return moviesToUpdate.length;
 }
 
 function startUpdateMovieStatusJob() {
-    // Run every day at midnight (00:00)
-    cron.schedule('0 0 * * *', async () => {
+    // Run every minute to ensure status is updated promptly
+    cron.schedule('* * * * *', async () => {
         try {
             const count = await updateMovieStatus();
             if (count > 0) {
-                console.log(`[cron] Updated ${count} movie(s) to now_showing`);
+                console.log(`[cron] Updated ${count} movie(s) status`);
             }
         } catch (error) {
             console.error('[cron] update-movie-status error:', error.message);
