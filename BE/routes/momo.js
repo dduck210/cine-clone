@@ -91,6 +91,42 @@ router.post('/ipn', async (req, res) => {
     res.status(200).json({ message: 'ok' });
 });
 
+// POST /api/payments/momo/request-otp — Gửi OTP xác nhận thanh toán MoMo (không qua gateway)
+router.post('/request-otp', protect, async (req, res) => {
+    const { bookingId } = req.body;
+    try {
+        const booking = await Booking.findById(bookingId)
+            .populate('user', 'name email')
+            .populate({ path: 'showtime', populate: [{ path: 'movie', select: 'title' }] });
+        if (!booking) return res.status(404).json({ message: 'Booking not found' });
+        if (booking.user._id.toString() !== req.user._id.toString())
+            return res.status(403).json({ message: 'Not authorized' });
+        if (booking.status === 'paid')
+            return res.status(400).json({ message: 'Booking already paid' });
+
+        const otp = String(Math.floor(100000 + Math.random() * 900000));
+        booking.otpCode = otp;
+        booking.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+        await booking.save();
+
+        const recipientEmail = booking.user.email?.endsWith('@cinema.com')
+            ? process.env.EMAIL_USER
+            : booking.user.email;
+        const displayEmail = recipientEmail || booking.user.email;
+
+        const emailResult = await sendOtpEmail(
+            { ...booking.toObject(), user: { ...booking.user.toObject(), email: recipientEmail } },
+            otp
+        );
+        if (emailResult?.skipped) {
+            return res.status(503).json({ message: 'Hệ thống email chưa được cấu hình. Vui lòng liên hệ quản trị viên.' });
+        }
+        res.json({ message: 'OTP sent', email: displayEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3') });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // POST /api/payments/momo/confirm — Frontend gọi sau khi MoMo redirect về
 router.post('/confirm', protect, async (req, res) => {
     const { partnerCode, orderId, requestId, amount, orderInfo, orderType,
