@@ -4,6 +4,7 @@ const cinemaSchema = new mongoose.Schema({
     name: { type: String, required: true },
     location: { type: String, required: true },
     address: { type: String, required: true },
+    image: { type: String },
     phone: { type: String },
     email: { type: String },
     city: { type: String },
