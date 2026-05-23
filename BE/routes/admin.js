@@ -502,6 +502,15 @@ router.get('/rooms/:id/showtimes', protect, admin, async (req, res) => {
     }
 });
 
+router.get('/rooms', protect, admin, async (req, res) => {
+    try {
+        const rooms = await CinemaRoom.find().populate('cinema', 'name').sort({ cinema: 1, name: 1 });
+        res.json(rooms);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 router.get('/cinemas/:cinemaId/rooms', protect, admin, async (req, res) => {
     try {
         const rooms = await CinemaRoom.find({ cinema: req.params.cinemaId });
