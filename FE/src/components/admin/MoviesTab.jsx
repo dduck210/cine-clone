@@ -66,7 +66,7 @@ export const MovieDetailModal = ({ movie, onClose, onEdit }) => {
                 { label: "Thể loại", value: genreText },
                 { label: "Thời lượng", value: `${movie.duration} phút` },
                 { label: "Giới hạn tuổi", value: movie.ageRestriction || "—" },
-                { label: "Đánh giá", value: movie.rating ? `⭐ ${movie.rating}/10` : "—" },
+                { label: "Đánh giá", value: movie.rating ? `⭐ ${movie.rating}/5` : "—" },
                 { label: "Đạo diễn", value: movie.director || "—" },
                 { label: "Ngày ra mắt", value: movie.releaseDate ? new Date(movie.releaseDate).toLocaleDateString("vi-VN") : "—" },
                 { label: "Kết thúc chiếu", value: movie.screeningEndDate ? new Date(movie.screeningEndDate).toLocaleDateString("vi-VN") : "—" },

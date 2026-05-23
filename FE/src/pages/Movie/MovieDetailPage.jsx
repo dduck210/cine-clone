@@ -243,7 +243,7 @@ const MovieDetailPage = () => {
                 <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/5">
                   <Star size={16} fill="#fbbf24" className="text-amber-400" />
                   <span className="text-amber-400 font-black">{movie.rating}</span>
-                  <span className="text-white/40 text-xs">/10</span>
+                  <span className="text-white/40 text-xs">/5</span>
                 </div>
               )}
               <span className="flex items-center gap-2">
@@ -348,7 +348,7 @@ const MovieDetailPage = () => {
                </div>
                <div>
                   <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Đánh giá</p>
-                  <p className="text-slate-900 font-black text-lg">{movie.rating > 0 ? `${movie.rating}/10` : "Chưa có"}</p>
+                  <p className="text-slate-900 font-black text-lg">{movie.rating > 0 ? `${movie.rating}/5` : "Chưa có"}</p>
                </div>
             </div>
             <div className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex items-start gap-4">

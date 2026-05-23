@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { ArrowLeft, KeyRound } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import axiosInstance from "../../api/axiosConfig";
+
+const COOLDOWN_SECONDS = 45;
 
 const FieldError = ({ msg }) => msg ? <p className="text-red-500 text-xs mt-1 ml-1">{msg}</p> : null;
 
@@ -11,20 +13,48 @@ const VerifyEmailPage = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const email = location.state?.email || searchParams.get("email") || "";
-  const [otp, setOtp] = useState(searchParams.get("code") || "");
+  const codeFromUrl = searchParams.get("code") || "";
+  const [otp, setOtp] = useState(codeFromUrl);
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const [error, setError] = useState("");
+  const autoVerifiedRef = useRef(false);
 
-  // Auto-verify if code comes from email link
+  // Auto-verify when code comes from email link (one-time use)
   useEffect(() => {
-    const codeFromUrl = searchParams.get("code");
-    if (codeFromUrl && email) {
+    if (codeFromUrl && email && !autoVerifiedRef.current) {
+      autoVerifiedRef.current = true;
       setOtp(codeFromUrl);
-      toast.success("Đã điền mã OTP từ email!", { duration: 2000 });
+      setIsLoading(true);
+      axiosInstance.post("/auth/verify-email", { email, otp: codeFromUrl })
+        .then(() => {
+          toast.success("Xác thực thành công! Đang chuyển đến trang đăng nhập...");
+          setTimeout(() => navigate("/login", { state: { verifiedEmail: email } }), 1500);
+        })
+        .catch((err) => {
+          const msg = err.response?.data?.message || "Xác thực thất bại";
+          toast.error(msg);
+          if (msg.includes("đã được xác thực") || msg.includes("không tồn tại")) {
+            setTimeout(() => navigate("/login"), 2000);
+          }
+        })
+        .finally(() => setIsLoading(false));
     }
     return () => toast.dismiss();
   }, []);
+
+  // Countdown timer
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((prev) => {
+        if (prev <= 1) { clearInterval(timer); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   const handleVerify = async (e) => {
     e.preventDefault();
@@ -39,18 +69,23 @@ const VerifyEmailPage = () => {
       toast.success("Đăng ký thành công! Bạn có thể đăng nhập ngay.");
       navigate("/login", { state: { verifiedEmail: email } });
     } catch (err) {
-      toast.error(err.response?.data?.message || "Xác thực thất bại");
+      const msg = err.response?.data?.message || "Xác thực thất bại";
+      toast.error(msg);
+      if (msg.includes("đã được xác thực") || msg.includes("không tồn tại")) {
+        setTimeout(() => navigate("/login"), 2000);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleResend = async () => {
-    if (!email) return;
+    if (!email || cooldown > 0) return;
     setIsResending(true);
     try {
       const res = await axiosInstance.post("/auth/resend-verify-otp", { email });
       toast.success(res.data.message || "OTP đã được gửi lại");
+      setCooldown(COOLDOWN_SECONDS);
     } catch (err) {
       toast.error(err.response?.data?.message || "Không thể gửi lại OTP");
     } finally {
@@ -65,6 +100,20 @@ const VerifyEmailPage = () => {
           <h2 className="text-xl font-bold text-gray-900 mb-2">Không tìm thấy email cần xác thực</h2>
           <p className="text-gray-500 mb-4">Vui lòng đăng ký tài khoản trước.</p>
           <Link to="/register" className="text-[#dc2626] font-bold hover:underline">Đi đến trang đăng ký</Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Auto-verifying from email link
+  if (codeFromUrl && isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
+        <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
+        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-md w-full p-10 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#dc2626] border-t-transparent mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Đang xác thực email...</h2>
+          <p className="text-gray-500 text-sm">Vui lòng đợi trong giây lát.</p>
         </div>
       </div>
     );
@@ -118,7 +167,7 @@ const VerifyEmailPage = () => {
                     value={otp}
                     onChange={(e) => { setOtp(e.target.value.replace(/\D/g, "").slice(0, 6)); if (error) setError(""); }}
                     placeholder="123456"
-                    autocomplete="one-time-code"
+                    autoComplete="one-time-code"
                     className={`w-full bg-gray-50 border rounded-xl pl-12 pr-4 py-3 focus:ring-2 outline-none transition-all font-medium tracking-widest text-center text-lg ${error ? "border-red-400 focus:ring-red-100 focus:border-red-500" : "border-gray-200 focus:ring-red-100 focus:border-[#dc2626]"}`}
                     disabled={isLoading}
                     maxLength={6}
@@ -138,15 +187,15 @@ const VerifyEmailPage = () => {
             </form>
 
             <div className="mt-6 text-center space-y-3">
-              <p className="text-gray-500 text-sm">
+              <p className="text-gray-500 text-sm flex items-center justify-center gap-2">
                 Không nhận được mã?{" "}
                 <button
                   type="button"
                   onClick={handleResend}
-                  disabled={isResending}
+                  disabled={isResending || cooldown > 0}
                   className="font-bold text-[#dc2626] hover:underline disabled:text-red-300"
                 >
-                  {isResending ? "Đang gửi lại..." : "Gửi lại mã"}
+                  {isResending ? "Đang gửi lại..." : cooldown > 0 ? `Gửi lại sau ${cooldown}s` : "Gửi lại mã"}
                 </button>
               </p>
               <p className="text-gray-400 text-xs">
@@ -158,7 +207,6 @@ const VerifyEmailPage = () => {
       </div>
     </div>
   );
-
 };
 
 export default VerifyEmailPage;

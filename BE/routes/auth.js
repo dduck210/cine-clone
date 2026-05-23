@@ -173,11 +173,11 @@ router.post('/resend-verify-otp', async (req, res) => {
         const pending = await PendingRegistration.findOne({ email });
         if (!pending) return res.status(404).json({ message: 'Yêu cầu đăng ký không tồn tại hoặc đã hết hạn. Vui lòng đăng ký lại.' });
 
-        // Cooldown 60s to prevent spam
+        // Cooldown 45s to prevent spam
         if (pending.otpExpiry) {
             const otpCreatedAt = new Date(pending.otpExpiry).getTime() - 15 * 60 * 1000;
-            if (Date.now() - otpCreatedAt < 60000) {
-                return res.status(429).json({ message: 'Vui lòng đợi 1 phút trước khi yêu cầu gửi lại mã' });
+            if (Date.now() - otpCreatedAt < 45000) {
+                return res.status(429).json({ message: 'Vui lòng đợi 45 giây trước khi yêu cầu gửi lại mã' });
             }
         }
 
