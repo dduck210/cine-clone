@@ -20,31 +20,53 @@ const MomoPaymentPage = () => {
 
   const [isPaid, setIsPaid] = useState(false);
   const [countdown, setCountdown] = useState(3);
+  const [isConfirming, setIsConfirming] = useState(false);
   const pollRef = useRef(null);
 
-  // Manual check fallback
-  const checkPaymentStatus = async () => {
+  const handlePaid = (state) => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    setIsPaid(true);
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev === 1) {
+          clearInterval(timer);
+          navigate("/payment-success", {
+            state: { ...state, orderId: bookingCode, bookingId, paymentMethod: "momo" },
+          });
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  // Silent auto-poll — only triggers success, never shows error toast
+  const pollStatus = async () => {
     try {
       const res = await axiosInstance.get(`/payments/momo/status/${bookingId}`);
-      if (res.data.paid) {
-        if (pollRef.current) clearInterval(pollRef.current);
-        setIsPaid(true);
-        const timer = setInterval(() => {
-          setCountdown((prev) => {
-            if (prev === 1) {
-              clearInterval(timer);
-              navigate("/payment-success", {
-                state: { ...location.state, orderId: bookingCode, bookingId, paymentMethod: "momo" },
-              });
-            }
-            return prev - 1;
-          });
-        }, 1000);
+      if (res.data.paid) handlePaid(location.state);
+    } catch { /* silent */ }
+  };
+
+  // Manual confirm — calls demo endpoint to mark as paid (works on localhost)
+  const checkPaymentStatus = async () => {
+    if (isConfirming) return;
+    setIsConfirming(true);
+    try {
+      // First try real status check
+      const statusRes = await axiosInstance.get(`/payments/momo/status/${bookingId}`);
+      if (statusRes.data.paid) { handlePaid(location.state); return; }
+
+      // Not paid via IPN yet — use demo confirm (handles localhost where IPN can't reach)
+      const confirmRes = await axiosInstance.post(`/payments/momo/confirm-demo/${bookingId}`);
+      if (confirmRes.data.paid) {
+        handlePaid(location.state);
       } else {
-        toast.error("Hệ thống chưa nhận được thanh toán. Vui lòng đợi trong giây lát!", { id: "check-pay" });
+        toast.error("Xác nhận thất bại, vui lòng thử lại.", { id: "check-pay" });
       }
     } catch {
-      toast.error("Có lỗi xảy ra khi kiểm tra trạng thái.");
+      toast.error("Có lỗi xảy ra khi xác nhận thanh toán.", { id: "check-pay" });
+    } finally {
+      setIsConfirming(false);
     }
   };
 
@@ -52,8 +74,7 @@ const MomoPaymentPage = () => {
     window.scrollTo(0, 0);
     if (!location.state) { navigate("/"); return; }
 
-    // Start polling
-    pollRef.current = setInterval(checkPaymentStatus, 2000);
+    pollRef.current = setInterval(pollStatus, 3000);
 
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
@@ -185,11 +206,13 @@ const MomoPaymentPage = () => {
                   
                   <div className="flex flex-col items-center gap-3 pt-2">
                     <p className="text-slate-400 text-[10px] uppercase tracking-widest">Bạn đã thanh toán nhưng chưa thấy chuyển trang?</p>
-                    <button 
+                    <button
                       onClick={checkPaymentStatus}
-                      className="bg-white hover:bg-slate-50 text-[#AE2070] border border-[#AE2070] px-8 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm"
+                      disabled={isConfirming}
+                      className="bg-white hover:bg-slate-50 text-[#AE2070] border border-[#AE2070] px-8 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm disabled:opacity-60 flex items-center gap-2"
                     >
-                      Tôi đã thanh toán
+                      {isConfirming && <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>}
+                      {isConfirming ? "Đang xác nhận..." : "Tôi đã thanh toán"}
                     </button>
                   </div>
 
