@@ -110,7 +110,7 @@ const PaymentPage = () => {
             amount: finalTotalPrice,
             movieTitle, cinemaName, roomName, showTime, showDate, showAddress,
             selectedSeats, duration, poster,
-            combos, originalPrice, discountAmount, promotionName, voucherCode,
+            combos, originalPrice, mondayDiscount, voucherDiscount, voucherCode, voucherType, voucherValue,
           },
         });
       } else if (paymentMethod === "qr") {
