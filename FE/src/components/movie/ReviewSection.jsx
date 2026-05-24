@@ -29,6 +29,7 @@ const ReviewSection = ({ movieId }) => {
   const [canReview, setCanReview] = useState(false);
   const [hasReviewed, setHasReviewed] = useState(false);
   const [myReviewId, setMyReviewId] = useState(null);
+  const [hasPendingShowtime, setHasPendingShowtime] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -57,6 +58,7 @@ const ReviewSection = ({ movieId }) => {
       setCanReview(res.data.canReview);
       setHasReviewed(res.data.hasReviewed);
       setMyReviewId(res.data.reviewId || null);
+      setHasPendingShowtime(res.data.hasPendingShowtime || false);
     } catch (err) {
       console.error("can-review error:", err.response?.status, err.response?.data);
     }
@@ -138,7 +140,17 @@ const ReviewSection = ({ movieId }) => {
         </form>
       )}
 
-      {token && !canReview && !hasReviewed && (
+      {token && !canReview && !hasReviewed && hasPendingShowtime && (
+        <div className="bg-amber-50 rounded-xl border border-amber-200 px-5 py-4 mb-6 flex items-start gap-3">
+          <span className="text-2xl leading-none mt-0.5">🎬</span>
+          <div>
+            <p className="text-amber-800 text-sm font-bold">Phim có hay không? Đánh giá giúp chúng tôi nhé!</p>
+            <p className="text-amber-600 text-xs mt-0.5">Sau khi phim kết thúc, hãy quay lại đây để chia sẻ cảm nhận của bạn.</p>
+          </div>
+        </div>
+      )}
+
+      {token && !canReview && !hasReviewed && !hasPendingShowtime && (
         <div className="bg-gray-50 rounded-xl border border-dashed border-gray-200 px-4 py-3 mb-6">
           <p className="text-gray-400 text-sm font-bold text-center">
             Chỉ người dùng đã mua vé mới có thể đánh giá phim này.

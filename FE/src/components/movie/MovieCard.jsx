@@ -88,9 +88,9 @@ const MovieCard = ({ movie }) => {
           <div className="flex items-center gap-1">
             <Star
               size={12}
-              className={rating && rating >= 4 ? "text-yellow-400 fill-yellow-400" : "text-gray-300 fill-gray-300"}
+              className={rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300 fill-gray-300"}
             />
-            <span className={`text-xs font-bold ${rating && rating >= 4 ? "text-yellow-600" : "text-gray-500"}`}>
+            <span className={`text-xs font-bold ${rating ? "text-yellow-600" : "text-gray-500"}`}>
               {rating ? rating.toFixed(1) : "—"}
             </span>
           </div>
