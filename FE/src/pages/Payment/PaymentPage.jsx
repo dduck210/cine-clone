@@ -41,7 +41,8 @@ const PaymentPage = () => {
   const {
     showtimeId, movieTitle, cinemaName, roomName, showTime, showDate, showAddress,
     selectedSeats = [], combos = [], finalTotalPrice, poster, duration,
-    existingBookingId, existingBookingCode, originalPrice, discountAmount, promotionName, voucherCode,
+    existingBookingId, existingBookingCode, originalPrice, mondayDiscount = 0, voucherDiscount = 0,
+    voucherCode, voucherType, voucherValue,
   } = location.state || {};
 
   const [paymentMethod, setPaymentMethod] = useState("momo");
@@ -357,8 +358,9 @@ const PaymentPage = () => {
 
           {/* Cột phải: tóm tắt đơn */}
           <div className="lg:col-span-5 sticky top-28">
-            <div className="bg-white rounded-[32px] shadow-xl overflow-hidden border border-slate-200">
-              <div className="relative h-48 bg-slate-900 flex items-center p-6 overflow-hidden">
+            <div className="bg-white rounded-[32px] shadow-xl border border-slate-200 overflow-hidden">
+              {/* Poster */}
+              <div className="relative h-48 bg-slate-900 flex items-center p-6 overflow-hidden rounded-t-[32px]">
                 {poster && <img src={poster} className="absolute inset-0 w-full h-full object-cover opacity-30 blur-sm scale-110" alt="bg" />}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent" />
                 <div className="relative z-10 w-full flex gap-5 items-center text-white">
@@ -370,8 +372,9 @@ const PaymentPage = () => {
                 </div>
               </div>
 
-              <div className="p-8 bg-white">
-                <div className="space-y-5 mb-8">
+              {/* Booking details */}
+              <div className="p-8 pb-4 bg-white">
+                <div className="space-y-5">
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-[#dc2626] shrink-0 border border-red-100"><MapPin size={20} strokeWidth={2.5} /></div>
                     <div className="flex-1"><p className="text-slate-400 font-bold uppercase tracking-wider text-[9px] mb-0.5">Rạp chiếu</p><p className="font-bold text-slate-800 text-[16px] leading-tight">{cinemaName}</p></div>
@@ -404,20 +407,43 @@ const PaymentPage = () => {
                     </div>
                   )}
                 </div>
+              </div>
 
-                <div className="pt-6 border-t-2 border-slate-100 space-y-3 mb-8">
-                  {promotionName && discountAmount > 0 && (<>
-                    <div className="flex justify-between items-center text-sm text-slate-400"><span className="font-medium">Tạm tính</span><span className="line-through">{originalPrice?.toLocaleString("vi-VN")}đ</span></div>
-                    <div className="flex justify-between items-center bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3">
-                      <div className="flex items-center gap-2"><Tag size={14} className="text-emerald-600 shrink-0" /><span className="text-emerald-700 font-bold text-sm">{promotionName}</span></div>
-                      <span className="text-emerald-600 font-black text-sm shrink-0">-{discountAmount?.toLocaleString("vi-VN")}đ</span>
+              {/* Discount + tổng cộng + nút - luôn hiển thị ở dưới */}
+              <div className="px-8 pt-5 pb-7 bg-white border-t-2 border-slate-100 shrink-0">
+                {(mondayDiscount > 0 || voucherDiscount > 0) ? (
+                  <div className="space-y-2 mb-4">
+                    <div className="flex justify-between items-center text-sm text-slate-400">
+                      <span>Tạm tính</span>
+                      <span>{originalPrice?.toLocaleString("vi-VN")}đ</span>
                     </div>
-                  </>)}
-                  <div className="flex justify-between items-end">
+                    {mondayDiscount > 0 && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="flex items-center gap-1.5 text-emerald-600 font-semibold">
+                          <Tag size={12} /> Gold Monday −20%
+                        </span>
+                        <span className="text-emerald-600 font-bold">−{mondayDiscount?.toLocaleString("vi-VN")}đ</span>
+                      </div>
+                    )}
+                    {voucherDiscount > 0 && voucherCode && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="flex items-center gap-1.5 text-violet-600 font-semibold">
+                          <Tag size={12} /> {voucherCode} {voucherType === "percent" ? `−${voucherValue}%` : ""}
+                        </span>
+                        <span className="text-violet-600 font-bold">−{voucherDiscount?.toLocaleString("vi-VN")}đ</span>
+                      </div>
+                    )}
+                    <div className="border-t border-dashed border-slate-200 pt-3 flex justify-between items-end">
+                      <span className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Tổng cộng</span>
+                      <span className="text-3xl font-black text-slate-900 leading-none">{finalTotalPrice?.toLocaleString("vi-VN")} <span className="text-lg text-slate-300 font-normal">₫</span></span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-between items-end mb-4">
                     <span className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Tổng cộng</span>
                     <span className="text-3xl font-black text-slate-900 leading-none">{finalTotalPrice?.toLocaleString("vi-VN")} <span className="text-lg text-slate-300 font-normal">₫</span></span>
                   </div>
-                </div>
+                )}
 
                 <button onClick={handlePayment} disabled={isProcessing}
                   className={`w-full font-black py-4 rounded-2xl shadow-xl transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-3 ${isProcessing ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none" : paymentMethod === "momo" ? "bg-[#AE2070] hover:bg-[#8f1a5c] text-white shadow-pink-200 transform hover:-translate-y-1" : "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200 transform hover:-translate-y-1"}`}>

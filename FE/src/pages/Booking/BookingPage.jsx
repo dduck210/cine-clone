@@ -223,7 +223,7 @@ const BookingPage = () => {
         code: voucherInput.trim(),
         orderAmount: discountedPrice,
       });
-      setAppliedVoucher({ code: res.data.voucher.code, discountAmount: res.data.discountAmount });
+      setAppliedVoucher({ code: res.data.voucher.code, discountAmount: res.data.discountAmount, type: res.data.voucher.type, value: res.data.voucher.value });
       setVoucherInput("");
     } catch (err) {
       setVoucherError(err.response?.data?.message || "Mã không hợp lệ");
@@ -260,9 +260,11 @@ const BookingPage = () => {
       showtimeId, movieTitle: title, poster, cinemaName, showTime, showDate,
       showAddress, selectedSeats, combos, finalTotalPrice: priceAfterVoucher, roomName, duration,
       originalPrice: finalTotalPrice,
-      discountAmount: (isMonday ? finalTotalPrice - discountedPrice : 0) + voucherDiscount,
-      promotionName: isMonday ? "Siêu giảm giá Gold Monday" : null,
+      mondayDiscount: isMonday ? finalTotalPrice - discountedPrice : 0,
+      voucherDiscount,
       voucherCode: appliedVoucher?.code || null,
+      voucherType: appliedVoucher?.type || null,
+      voucherValue: appliedVoucher?.value || null,
       seatMap: Object.fromEntries(selectedSeats.map((sn) => [sn, { type: seatMap[sn]?.type, price: seatMap[sn]?.price }])),
     },
   });
