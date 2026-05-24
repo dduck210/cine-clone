@@ -108,8 +108,9 @@ const PaymentPage = () => {
             deeplink: momoRes.data.deeplink,
             qrCodeUrl: momoRes.data.qrCodeUrl,
             amount: finalTotalPrice,
-            movieTitle, cinemaName, showTime, showDate,
+            movieTitle, cinemaName, roomName, showTime, showDate, showAddress,
             selectedSeats, duration, poster,
+            combos, originalPrice, discountAmount, promotionName, voucherCode,
           },
         });
       } else if (paymentMethod === "qr") {

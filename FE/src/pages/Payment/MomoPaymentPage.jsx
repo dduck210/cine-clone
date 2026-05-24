@@ -1,21 +1,23 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { QRCodeSVG } from "qrcode.react";
 import Navbar from "../../components/common/Navbar";
 import Footer from "../../components/common/Footer";
 import {
   Smartphone, Ticket, MapPin, Calendar, Armchair, Clock,
-  CheckCircle, ArrowLeft, ShieldCheck,
+  CheckCircle, ArrowLeft, ShieldCheck, Popcorn, Tag, Phone, Monitor,
 } from "lucide-react";
 import axiosInstance from "../../api/axiosConfig";
 import toast, { Toaster } from "react-hot-toast";
+import momoQR from "./momo.png";
 
 const MomoPaymentPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const {
     bookingId, bookingCode, payUrl, deeplink, qrCodeUrl, amount,
-    movieTitle, cinemaName, showTime, showDate, selectedSeats, duration, poster,
+    movieTitle, cinemaName, roomName, showTime, showDate, showAddress,
+    selectedSeats, duration, poster,
+    combos, originalPrice, discountAmount, promotionName, voucherCode,
   } = location.state || {};
 
   const [isPaid, setIsPaid] = useState(false);
@@ -39,7 +41,6 @@ const MomoPaymentPage = () => {
     }, 1000);
   };
 
-  // Silent auto-poll — only triggers success, never shows error toast
   const pollStatus = async () => {
     try {
       const res = await axiosInstance.get(`/payments/momo/status/${bookingId}`);
@@ -47,16 +48,13 @@ const MomoPaymentPage = () => {
     } catch { /* silent */ }
   };
 
-  // Manual confirm — calls demo endpoint to mark as paid (works on localhost)
   const checkPaymentStatus = async () => {
     if (isConfirming) return;
     setIsConfirming(true);
     try {
-      // First try real status check
       const statusRes = await axiosInstance.get(`/payments/momo/status/${bookingId}`);
       if (statusRes.data.paid) { handlePaid(location.state); return; }
 
-      // Not paid via IPN yet — use demo confirm (handles localhost where IPN can't reach)
       const confirmRes = await axiosInstance.post(`/payments/momo/confirm-demo/${bookingId}`);
       if (confirmRes.data.paid) {
         handlePaid(location.state);
@@ -107,7 +105,7 @@ const MomoPaymentPage = () => {
         </div>
       )}
 
-      <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-24 pb-20">
+      <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-24 pb-20">
         {/* Back button */}
         <button onClick={() => navigate(-1)}
           className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 text-sm font-medium mb-8 transition-colors group">
@@ -115,11 +113,11 @@ const MomoPaymentPage = () => {
         </button>
 
         <div className="flex flex-col lg:flex-row gap-8 items-stretch">
-          
-          {/* ── LEFT: CINEMATIC RECEIPT ── */}
-          <div className="lg:w-[45%] flex">
+
+          {/* ── LEFT: CINEMATIC RECEIPT (desktop only) ── */}
+          <div className="hidden lg:flex lg:w-[48%]">
             <div className="bg-white w-full rounded-[2rem] shadow-2xl overflow-hidden border border-slate-100 flex flex-col relative">
-              <div className="bg-[#AE2070] p-8 text-center text-white relative">
+              <div className="bg-gradient-to-r from-[#AE2070] to-[#C41E6B] p-7 text-center text-white relative">
                 <div className="flex items-center justify-center gap-3 mb-2">
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md">
                      <Ticket size={22} className="text-white" />
@@ -127,83 +125,292 @@ const MomoPaymentPage = () => {
                   <h2 className="text-xl font-black uppercase tracking-tighter">Xác nhận đặt vé</h2>
                 </div>
                 <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em]">Hóa đơn điện tử #5CINE-{bookingCode}</p>
-                
+
                 {/* Receipt cut effect */}
                 <div className="absolute -bottom-3 left-0 right-0 flex justify-between px-4">
-                  {[...Array(15)].map((_, i) => (
-                    <div key={i} className="w-6 h-6 bg-white rounded-full" />
+                  {[...Array(18)].map((_, i) => (
+                    <div key={i} className="w-5 h-5 bg-white rounded-full" />
                   ))}
                 </div>
               </div>
 
-              <div className="p-8 pt-10 flex-1">
-                <div className="flex gap-5 mb-8">
+              <div className="p-7 pt-10 flex-1 space-y-5">
+                {/* Movie info */}
+                <div className="flex gap-5 pb-5 border-b border-dashed border-slate-200">
                   {poster && (
-                    <img src={poster} alt="" className="w-24 h-36 object-cover rounded-2xl shadow-xl border-2 border-slate-50 shrink-0" />
+                    <img src={poster} alt="" className="w-20 h-28 object-cover rounded-xl shadow-lg border-2 border-slate-50 shrink-0" />
                   )}
-                  <div className="flex-1 py-1">
-                    <h3 className="font-black text-slate-900 text-2xl leading-[1.1] mb-3 uppercase tracking-tighter line-clamp-2">{movieTitle}</h3>
-                    <div className="inline-block bg-red-50 text-red-600 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest mb-4">2D Phụ đề</div>
-                    <div className="space-y-2">
-                      <p className="text-xs text-slate-500 font-bold flex items-center gap-2">
-                        <MapPin size={14} className="text-[#AE2070]" /> {cinemaName}
+                  <div className="flex-1">
+                    <h3 className="font-black text-slate-900 text-xl leading-tight mb-1 uppercase tracking-tighter line-clamp-2">{movieTitle}</h3>
+                    <span className="inline-block bg-red-50 text-red-600 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest mb-2">2D Phụ đề</span>
+                    {duration > 0 && (
+                      <p className="text-xs text-slate-400 font-bold flex items-center gap-1">
+                        <Clock size={12} /> {duration} phút
                       </p>
-                      <p className="text-xs text-slate-500 font-bold flex items-center gap-2">
-                        <Calendar size={14} className="text-[#AE2070]" /> {showTime} • {showDate}
-                      </p>
-                    </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="space-y-4 pt-6 border-t border-dashed border-slate-200">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-slate-400 font-black uppercase tracking-widest italic">Vị trí ghế</span>
-                    <span className="text-lg font-black text-[#dc2626] tracking-widest">{selectedSeats?.join(", ")}</span>
+                {/* Venue details */}
+                <div className="space-y-3 pb-5 border-b border-dashed border-slate-200">
+                  <div className="flex items-start gap-3">
+                    <MapPin size={16} className="text-[#AE2070] shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-slate-800 text-sm">{cinemaName}</p>
+                      {showAddress && <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{showAddress}</p>}
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-slate-400 font-black uppercase tracking-widest italic">Trạng thái</span>
-                    <span className="text-xs font-black text-amber-500 bg-amber-50 px-3 py-1 rounded-full uppercase tracking-wider">Đang chờ...</span>
+                  {roomName && (
+                    <div className="flex items-center gap-3">
+                      <Monitor size={16} className="text-[#AE2070] shrink-0" />
+                      <p className="font-bold text-slate-800 text-sm">{roomName}</p>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3">
+                    <Calendar size={16} className="text-[#AE2070] shrink-0" />
+                    <p className="font-bold text-slate-800 text-sm">{showTime} • {showDate}</p>
                   </div>
-                  <div className="mt-8 bg-slate-50 rounded-2xl p-5 border border-slate-100">
-                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Tổng cộng thanh toán</p>
-                    <p className="text-4xl font-black text-slate-900 tracking-tighter">{amount?.toLocaleString()}đ</p>
+                  <div className="flex items-center gap-3">
+                    <Armchair size={16} className="text-[#AE2070] shrink-0" />
+                    <p className="font-black text-[#dc2626] text-base tracking-widest">{selectedSeats?.join(", ")}</p>
                   </div>
+                </div>
+
+                {/* Combos */}
+                {combos?.some((c) => c.quantity > 0) && (
+                  <div className="pb-5 border-b border-dashed border-slate-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Popcorn size={16} className="text-[#dc2626]" />
+                      <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Bắp & Nước</span>
+                    </div>
+                    <div className="space-y-2">
+                      {combos.filter((c) => c.quantity > 0).map((c) => (
+                        <div key={c.id || c.name} className="flex justify-between text-sm text-slate-700 font-bold">
+                          <span>{c.quantity}x {c.name}</span>
+                          <span className="text-slate-400">{(c.price * c.quantity).toLocaleString()}đ</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Price breakdown */}
+                <div className="space-y-3">
+                  {promotionName && discountAmount > 0 && (
+                    <div className="flex justify-between items-center bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <Tag size={14} className="text-emerald-600 shrink-0" />
+                        <span className="text-emerald-700 font-bold text-sm">
+                          {promotionName}
+                          {voucherCode && <span className="text-emerald-500 text-xs ml-1">({voucherCode})</span>}
+                        </span>
+                      </div>
+                      <span className="text-emerald-600 font-black text-sm">−{discountAmount?.toLocaleString()}đ</span>
+                    </div>
+                  )}
+                  {originalPrice && discountAmount > 0 && (
+                    <div className="flex justify-between text-xs text-slate-400 font-medium">
+                      <span>Tạm tính</span>
+                      <span className="line-through">{originalPrice?.toLocaleString()}đ</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                    <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Tổng cộng</span>
+                    <span className="text-4xl font-black text-slate-900 tracking-tighter">{amount?.toLocaleString()}đ</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center pt-1">
+                  <span className="text-xs text-slate-400 font-black uppercase tracking-widest italic">Trạng thái</span>
+                  <span className="text-xs font-black text-amber-500 bg-amber-50 px-3 py-1 rounded-full uppercase tracking-wider">Đang chờ thanh toán</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ── RIGHT: SMART PAYMENT AREA ── */}
-          <div className="lg:w-[55%] flex">
+          {/* ── MOBILE: Integrated receipt + QR in one card ── */}
+          <div className="lg:hidden w-full bg-white rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden">
+            {/* Pink header */}
+            <div className="bg-gradient-to-r from-[#AE2070] to-[#C41E6B] p-5 text-white relative">
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                  <Ticket size={18} className="text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="font-black text-base uppercase tracking-tight truncate">{movieTitle}</h2>
+                  <p className="text-white/60 text-[10px] font-bold">#5CINE-{bookingCode}</p>
+                </div>
+                <span className="text-white font-black text-lg shrink-0">{amount?.toLocaleString()}đ</span>
+              </div>
+              {/* Cut effect */}
+              <div className="absolute -bottom-2.5 left-0 right-0 flex justify-between px-4">
+                {[...Array(14)].map((_, i) => (
+                  <div key={i} className="w-4 h-4 bg-white rounded-full" />
+                ))}
+              </div>
+            </div>
+
+            <div className="p-5 pt-8 space-y-4">
+              {/* ── QR CODE (top) ── */}
+              <div className="flex flex-col items-center pb-4 border-b border-dashed border-slate-200">
+                <div className="bg-[#AE2070] text-white px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 shadow-lg shadow-pink-200">
+                  Quét mã để thanh toán
+                </div>
+                <div className="bg-slate-50 p-3 rounded-[2rem] border border-slate-100 shadow-inner">
+                  <img src={momoQR} alt="MoMo QR" className="w-[160px] h-[160px]" />
+                </div>
+                <p className="text-slate-400 text-[10px] mt-3 text-center">Mở App MoMo và quét mã QR bên trên</p>
+              </div>
+
+              {/* Movie + Poster */}
+              <div className="flex gap-4 pb-4 border-b border-dashed border-slate-200">
+                {poster && (
+                  <img src={poster} alt="" className="w-14 h-20 object-cover rounded-xl shadow-md border border-slate-100 shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-black text-slate-900 text-lg leading-tight mb-1 uppercase tracking-tighter line-clamp-2">{movieTitle}</h3>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-block bg-red-50 text-red-600 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest">2D Phụ đề</span>
+                    {duration > 0 && (
+                      <span className="text-[11px] text-slate-400 font-bold flex items-center gap-0.5">
+                        <Clock size={10} /> {duration} phút
+                      </span>
+                    )}
+                    <span className="text-[11px] text-amber-500 font-black">★ 8.5</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Venue */}
+              <div className="space-y-2.5 pb-4 border-b border-dashed border-slate-200">
+                <div className="flex items-start gap-2.5">
+                  <MapPin size={14} className="text-[#AE2070] shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-slate-800 text-sm">{cinemaName}</p>
+                    {showAddress && <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed truncate">{showAddress}</p>}
+                  </div>
+                </div>
+                {roomName && (
+                  <div className="flex items-center gap-2.5">
+                    <Monitor size={14} className="text-[#AE2070] shrink-0" />
+                    <p className="font-bold text-slate-800 text-sm">{roomName}</p>
+                  </div>
+                )}
+                <div className="flex items-center gap-2.5">
+                  <Calendar size={14} className="text-[#AE2070] shrink-0" />
+                  <p className="font-bold text-slate-800 text-sm">{showTime} • {showDate}</p>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Armchair size={14} className="text-[#AE2070] shrink-0" />
+                  <p className="font-black text-[#dc2626] text-sm tracking-widest">{selectedSeats?.join(", ")}</p>
+                </div>
+              </div>
+
+              {/* Combos */}
+              {combos?.some((c) => c.quantity > 0) && (
+                <div className="pb-4 border-b border-dashed border-slate-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Popcorn size={14} className="text-[#dc2626]" />
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Bắp & Nước</span>
+                  </div>
+                  {combos.filter((c) => c.quantity > 0).map((c) => (
+                    <div key={c.id || c.name} className="flex justify-between text-sm text-slate-700 font-bold">
+                      <span>{c.quantity}x {c.name}</span>
+                      <span className="text-slate-400">{(c.price * c.quantity).toLocaleString()}đ</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Price */}
+              <div className="space-y-2 pb-4 border-b border-dashed border-slate-200">
+                {promotionName && discountAmount > 0 && (
+                  <div className="flex justify-between items-center bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Tag size={12} className="text-emerald-600 shrink-0" />
+                      <span className="text-emerald-700 font-bold text-xs truncate">{promotionName}</span>
+                    </div>
+                    <span className="text-emerald-600 font-black text-xs shrink-0 ml-2">−{discountAmount?.toLocaleString()}đ</span>
+                  </div>
+                )}
+                {originalPrice && discountAmount > 0 && (
+                  <div className="flex justify-between text-xs text-slate-400">
+                    <span>Tạm tính</span>
+                    <span className="line-through">{originalPrice?.toLocaleString()}đ</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center bg-slate-50 rounded-xl p-4">
+                  <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Tổng cộng</span>
+                  <span className="text-2xl font-black text-slate-900 tracking-tighter">{amount?.toLocaleString()}đ</span>
+                </div>
+              </div>
+
+              {/* ── CTA BUTTONS ── */}
+              <div className="flex flex-col items-center pt-1 space-y-3">
+                {(deeplink || qrCodeUrl || payUrl) && (
+                  <a
+                    href={deeplink || qrCodeUrl || payUrl}
+                    target="_self"
+                    className="w-full bg-[#AE2070] hover:bg-[#8f1a5c] text-white font-black py-4 rounded-2xl shadow-[0_12px_28px_rgba(174,32,112,0.3)] transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95"
+                  >
+                    <Smartphone size={20} className="animate-pulse" />
+                    Mở ứng dụng MoMo ngay
+                  </a>
+                )}
+
+                <p className="text-slate-400 text-[10px] uppercase tracking-widest">Đã thanh toán nhưng chưa thấy chuyển trang?</p>
+                <button
+                  onClick={checkPaymentStatus}
+                  disabled={isConfirming}
+                  className="bg-white hover:bg-slate-50 text-[#AE2070] border border-[#AE2070] px-7 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm disabled:opacity-60 flex items-center gap-2"
+                >
+                  {isConfirming && <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>}
+                  {isConfirming ? "Đang xác nhận..." : "Tôi đã thanh toán"}
+                </button>
+
+                <div className="flex justify-between items-center w-full pt-2">
+                  <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest italic">Trạng thái</span>
+                  <span className="text-[10px] font-black text-amber-500 bg-amber-50 px-2.5 py-1 rounded-full uppercase tracking-wider">Đang chờ thanh toán</span>
+                </div>
+
+                <div className="flex items-center justify-center gap-4 text-slate-300 font-black text-[10px] uppercase tracking-[0.3em] pt-1">
+                  <div className="flex gap-1.5">
+                    <div className="w-1.5 h-1.5 bg-[#AE2070] rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                    <div className="w-1.5 h-1.5 bg-[#AE2070] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                    <div className="w-1.5 h-1.5 bg-[#AE2070] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                  </div>
+                  Đang chờ thanh toán
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── RIGHT: QR PAYMENT AREA (desktop only) ── */}
+          <div className="hidden lg:flex lg:w-[52%]">
             <div className="bg-white w-full rounded-[2rem] shadow-2xl border border-slate-100 p-10 flex flex-col items-center justify-center relative overflow-hidden">
               {/* Background MoMo Logo Pattern */}
               <div className="absolute top-0 right-0 opacity-[0.03] -mr-10 -mt-10">
                 <svg viewBox="0 0 48 48" className="w-64 h-64 fill-[#AE2070]"><circle cx="24" cy="24" r="24"/></svg>
               </div>
 
-              {/* Desktop QR Focus */}
+              {/* Desktop: Static QR Image */}
               <div className="hidden lg:flex flex-col items-center animate-in fade-in zoom-in duration-700">
                 <div className="bg-[#AE2070] text-white px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest mb-8 shadow-xl shadow-pink-200">
                   Quét mã để thanh toán
                 </div>
                 <div className="relative group">
                   <div className="absolute -inset-4 bg-gradient-to-tr from-[#AE2070] to-[#C41E6B] rounded-[2.5rem] opacity-10 blur-2xl group-hover:opacity-20 transition-opacity" />
-                  <div className="relative bg-white p-6 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100">
-                    <QRCodeSVG
-                      value={qrCodeUrl || payUrl || ''}
-                      size={260}
-                      level="H"
-                      includeMargin
-                      imageSettings={{
-                        src: "https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png",
-                        x: undefined, y: undefined, height: 48, width: 48, excavate: true,
-                      }}
+                  <div className="relative bg-white p-5 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100">
+                    <img
+                      src={momoQR}
+                      alt="MoMo QR"
+                      className="w-[260px] h-[260px]"
                     />
                   </div>
                 </div>
-                <div className="mt-10 text-center space-y-5">
+                <div className="mt-8 text-center space-y-5">
                   <p className="text-slate-500 font-bold text-sm italic animate-pulse">Trang web sẽ tự động cập nhật sau khi bạn thanh toán thành công...</p>
-                  
+
                   <div className="flex flex-col items-center gap-3 pt-2">
                     <p className="text-slate-400 text-[10px] uppercase tracking-widest">Bạn đã thanh toán nhưng chưa thấy chuyển trang?</p>
                     <button
@@ -220,34 +427,7 @@ const MomoPaymentPage = () => {
                 </div>
               </div>
 
-              {/* Mobile CTA Focus */}
-              <div className="lg:hidden w-full space-y-8 animate-in slide-in-from-bottom-5 duration-500">
-                <div className="flex justify-center">
-                   <div className="bg-slate-50 p-4 rounded-[2rem] border border-slate-100 shadow-inner">
-                      <QRCodeSVG value={qrCodeUrl || payUrl || ''} size={160} level="M" includeMargin />
-                   </div>
-                </div>
-                
-                <div className="space-y-4">
-                  {(deeplink || qrCodeUrl || payUrl) && (
-                    <a
-                      href={deeplink || qrCodeUrl || payUrl}
-                      target="_self"
-                      className="w-full bg-[#AE2070] hover:bg-[#8f1a5c] text-white font-black py-5 rounded-2xl shadow-[0_20px_40px_rgba(174,32,112,0.3)] transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-4 active:scale-95 shadow-xl"
-                    >
-                      <Smartphone size={24} className="animate-pulse" />
-                      Mở ứng dụng MoMo ngay
-                    </a>
-                  )}
-                  <div className="bg-pink-50 p-4 rounded-2xl border border-pink-100 text-center">
-                    <p className="text-xs text-[#AE2070] font-bold leading-relaxed">
-                      Chạm vào nút trên để mở App MoMo và thanh toán an toàn chỉ với 1 bước.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Polling Indicator */}
+              {/* Polling Indicator (desktop) */}
               <div className="mt-12 flex items-center gap-4 text-slate-300 font-black text-[10px] uppercase tracking-[0.3em]">
                 <div className="flex gap-1.5">
                   <div className="w-2 h-2 bg-[#AE2070] rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
