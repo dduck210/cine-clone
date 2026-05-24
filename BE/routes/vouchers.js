@@ -69,7 +69,7 @@ router.post('/admin', protect, admin, async (req, res) => {
 
 router.put('/admin/:id', protect, admin, async (req, res) => {
     try {
-        const voucher = await Voucher.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const voucher = await Voucher.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
         if (!voucher) return res.status(404).json({ message: 'Không tìm thấy voucher' });
         res.json(voucher);
     } catch (error) {

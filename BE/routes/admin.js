@@ -244,7 +244,7 @@ router.post('/cinemas', protect, admin, async (req, res) => {
 
 router.put('/cinemas/:id', protect, admin, async (req, res) => {
     try {
-        const cinema = await Cinema.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const cinema = await Cinema.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
         if (!cinema) return res.status(404).json({ message: 'Cinema not found' });
         res.json(cinema);
     } catch (error) {
@@ -262,7 +262,7 @@ router.patch('/cinemas/:id/status', protect, admin, async (req, res) => {
         const cinema = await Cinema.findByIdAndUpdate(
             req.params.id,
             { status },
-            { new: true }
+            { returnDocument: 'after' }
         );
         if (!cinema) return res.status(404).json({ message: 'Cinema not found' });
 
@@ -603,7 +603,7 @@ router.put('/seats/:id/lock', protect, admin, async (req, res) => {
         const seat = await Seat.findByIdAndUpdate(
             req.params.id,
             { isLocked: !!isLocked },
-            { new: true }
+            { returnDocument: 'after' }
         );
         if (!seat) return res.status(404).json({ message: 'Seat not found' });
         res.json(seat);

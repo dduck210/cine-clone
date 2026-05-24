@@ -110,7 +110,7 @@ const updateShowtime = async (req, res) => {
         const showtime = await Showtime.findByIdAndUpdate(
             req.params.id,
             { date, startTime, price },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (showtime) {
@@ -129,7 +129,7 @@ const cancelShowtime = async (req, res) => {
         const showtime = await Showtime.findByIdAndUpdate(
             req.params.id,
             { status: 'cancelled' },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (showtime) {

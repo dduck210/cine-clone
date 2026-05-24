@@ -199,7 +199,7 @@ async function processSuccessfulPayment(bookingId, transactionId, amount) {
     const booking = await Booking.findOneAndUpdate(
         { _id: bookingId, status: 'pending' },
         { $set: { status: 'paid' } },
-        { new: true }
+        { returnDocument: 'after' }
     );
     if (!booking) return;
 
