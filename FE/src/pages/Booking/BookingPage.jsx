@@ -5,7 +5,7 @@ import Footer from "../../components/common/Footer";
 import axiosInstance from "../../api/axiosConfig";
 import {
   Minus, Plus, Calendar, MapPin, Ticket, Popcorn,
-  CreditCard, Clock, AlertTriangle, ChevronRight, ChevronLeft, Tag, X,
+  CreditCard, Clock, AlertTriangle, ChevronRight, ChevronLeft, Tag, X, Info
 } from "lucide-react";
 
 const HOLD_SECONDS = 5 * 60;
@@ -75,6 +75,7 @@ const BookingPage = () => {
   const showAddress = selectedShowtime?.address || "";
 
   const [step, setStep] = useState(1); // 1 = chọn ghế, 2 = chọn combo
+  const [showSeatInfo, setShowSeatInfo] = useState(false);
 
   const [showtimeData, setShowtimeData] = useState(null);
   const duration = selectedShowtime?.duration || showtimeData?.movie?.duration || 0;
@@ -394,6 +395,61 @@ const BookingPage = () => {
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
       <Navbar />
 
+      {/* Seat Info Modal */}
+      {showSeatInfo && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] shadow-2xl max-w-md w-full overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-300">
+            <div className="p-8">
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Định nghĩa phòng</h3>
+                <button onClick={() => setShowSeatInfo(false)} className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div className="flex gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                  <div className="w-12 h-12 rounded-xl bg-white border-2 border-slate-300 shrink-0 flex items-center justify-center shadow-sm">
+                    <span className="text-[10px] font-black text-slate-400">12</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-800 mb-0.5">Ghế Thường</h4>
+                    <p className="text-sm text-slate-500 leading-relaxed">Ghế tiêu chuẩn, mang lại sự thoải mái tối ưu cho trải nghiệm xem phim cơ bản.</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 p-4 rounded-2xl bg-amber-50 border border-amber-100">
+                  <div className="w-12 h-12 rounded-xl bg-amber-100 border-2 border-amber-400 shrink-0 flex items-center justify-center shadow-sm">
+                    <span className="text-[10px] font-black text-amber-600">12</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-amber-900 mb-0.5">Ghế VIP</h4>
+                    <p className="text-sm text-amber-700/70 leading-relaxed">Vị trí trung tâm, tầm nhìn tốt nhất và không gian ngồi rộng rãi hơn.</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 p-4 rounded-2xl bg-pink-50 border border-pink-100">
+                  <div className="w-12 h-12 rounded-xl bg-pink-100 border-2 border-pink-400 shrink-0 flex items-center justify-center shadow-sm">
+                    <span className="text-[10px] font-black text-pink-600">♥</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-pink-900 mb-0.5">Ghế Đôi (Sweetbox)</h4>
+                    <p className="text-sm text-pink-700/70 leading-relaxed">Không gian riêng tư, lãng mạn dành cho cặp đôi với thiết kế vách ngăn tinh tế.</p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowSeatInfo(false)}
+                className="w-full mt-8 bg-slate-900 hover:bg-[#dc2626] text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-slate-200 hover:shadow-red-200 uppercase tracking-widest text-sm"
+              >
+                Đã hiểu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Timer expired modal */}
       {timerExpired && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
@@ -475,7 +531,15 @@ const BookingPage = () => {
                   </div>
                 )}
 
-                <h2 className="text-base font-bold text-slate-700 mb-4">Sơ đồ ghế</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-base font-bold text-slate-700">Sơ đồ ghế</h2>
+                  <button
+                    onClick={() => setShowSeatInfo(true)}
+                    className="flex items-center gap-1.5 text-[#dc2626] hover:text-red-700 font-bold text-xs transition-colors bg-red-50 px-3 py-1.5 rounded-lg border border-red-100"
+                  >
+                    <Info size={14} /> Định nghĩa phòng
+                  </button>
+                </div>
 
                 {/* Seat grid — auto-scale to fit, pinch-zoom to enlarge */}
                 <div ref={seatOuterRef} className="overflow-hidden w-full">

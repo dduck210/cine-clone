@@ -23,6 +23,60 @@ const ROOM_TYPE_STYLE = {
   VIP: "bg-amber-50 text-amber-700 border border-amber-200",
 };
 
+const ROOM_TYPE_INFO = {
+  Standard: {
+    seatTypes: "Thường, Couple",
+    minSeats: 40,
+    minRows: 5,
+    minCols: 8,
+    screen: "Màn chiếu 2K, kích thước tiêu chuẩn.",
+    sound: "Âm thanh Dolby 5.1 hoặc 7.1.",
+    amenities: "Không yêu cầu tiện ích đặc biệt.",
+    desc: "Phòng chiếu tiêu chuẩn — đáp ứng nhu cầu xem phim cơ bản với chất lượng ổn định.",
+    seatReq: "Tối thiểu 80% ghế thường, có thể có 1-2 hàng ghế Couple.",
+    icon: "🎬",
+    border: "border-blue-200",
+    bg: "bg-blue-50/60",
+    accent: "text-blue-700",
+    accentBg: "bg-blue-100",
+    badge: "bg-blue-100 text-blue-700 border-blue-200",
+  },
+  Premium: {
+    seatTypes: "Thường, VIP, Đôi",
+    minSeats: 60,
+    minRows: 6,
+    minCols: 10,
+    screen: "Màn chiếu 2K/4K, kích thước lớn hơn 20% so với Standard.",
+    sound: "Âm thanh Dolby Atmos hoặc DTS:X.",
+    amenities: "Có ít nhất 1 tiện ích: bắp nước phục vụ tận ghế, cổng sạc USB.",
+    desc: "Phòng chiếu cao cấp — trải nghiệm nâng cao với ghế ngồi rộng hơn, màn hình lớn hơn.",
+    seatReq: "Tối thiểu 2 hàng ghế VIP, 1 hàng Couple, ghế bọc da, khoảng cách hàng rộng.",
+    icon: "✨",
+    border: "border-purple-200",
+    bg: "bg-purple-50/60",
+    accent: "text-purple-700",
+    accentBg: "bg-purple-100",
+    badge: "bg-purple-100 text-purple-700 border-purple-200",
+  },
+  VIP: {
+    seatTypes: "VIP, Đôi",
+    minSeats: 30,
+    minRows: 5,
+    minCols: 6,
+    screen: "Màn chiếu 4K Laser, kích thước lớn nhất.",
+    sound: "Âm thanh Dolby Atmos toàn diện.",
+    amenities: "Phòng chờ VIP riêng, phục vụ đồ ăn tại ghế, menu premium, chăn/gối miễn phí.",
+    desc: "Phòng chiếu hạng sang — không gian riêng tư, dịch vụ đẳng cấp nhất.",
+    seatReq: "Tối thiểu 60% ghế VIP, 20% ghế Couple. Ghế da cao cấp, ngả điện, tích hợp massage.",
+    icon: "👑",
+    border: "border-amber-200",
+    bg: "bg-amber-50/60",
+    accent: "text-amber-700",
+    accentBg: "bg-amber-100",
+    badge: "bg-amber-100 text-amber-700 border-amber-200",
+  },
+};
+
 const SEAT_TYPES = [
   {
     value: "normal",
@@ -53,22 +107,63 @@ const SEAT_TYPES = [
 const typeColor = (type) =>
   SEAT_TYPES.find((t) => t.value === type)?.color || "bg-slate-200";
 
-// Generate default matrix matching seed logic:
-// rooms with 6+ rows: last row = couple, second-to-last = VIP, rest = normal
-function generateDefaultMatrix(rows, cols) {
+// Auto-generate matrix from total seats + room type:
+// cols = round(sqrt(totalSeats × 1.6)), clamped 6–16 (cinema aspect ratio)
+// rows = ceil(totalSeats / cols), max 26 (A-Z)
+// Seat distribution per room type:
+//   Standard: >=80% normal, 1-2 VIP rows at back (if rows>=8→2 VIP, rows>=4→1 VIP)
+//   Premium: 1 couple row (last), >=2 VIP rows above it, rest normal
+//   VIP: ~60% VIP, ~20% couple, rest normal
+function generateMatrixFromTotalSeats(totalSeats, roomType = "Standard") {
+  if (!totalSeats || totalSeats < 1) return { matrix: [], rows: 0, cols: 0 };
+
+  let cols = Math.round(Math.sqrt(totalSeats * 1.6));
+  cols = Math.min(16, Math.max(6, cols));
+
+  let rows = Math.ceil(totalSeats / cols);
+
+  if (rows > 26) {
+    rows = 26;
+    cols = Math.ceil(totalSeats / 26);
+    cols = Math.min(16, Math.max(6, cols));
+  }
+
   const matrix = [];
   for (let r = 0; r < rows; r++) {
     const rowLetter = String.fromCharCode(65 + r);
-    const isCouple = rows >= 6 && r === rows - 1;
-    const isVip = rows >= 6 && r === rows - 2;
-    const seatType = isCouple ? "couple" : isVip ? "vip" : "normal";
+    let seatType;
+
+    if (roomType === "Standard") {
+      const coupleRows = rows >= 8 ? 2 : rows >= 4 ? 1 : 0;
+      seatType = coupleRows > 0 && r >= rows - coupleRows ? "couple" : "normal";
+    } else if (roomType === "Premium") {
+      if (rows >= 6) {
+        if (r === rows - 1) seatType = "couple";
+        else if (r >= rows - 3) seatType = "vip";
+        else seatType = "normal";
+      } else if (rows >= 3) {
+        if (r === rows - 1) seatType = "couple";
+        else if (r === rows - 2) seatType = "vip";
+        else seatType = "normal";
+      } else {
+        seatType = rows >= 2 && r === rows - 1 ? "couple" : "normal";
+      }
+    } else if (roomType === "VIP") {
+      const coupleRows = Math.max(1, Math.round(rows * 0.2));
+      const vipRows = Math.max(1, Math.round(rows * 0.6));
+      const normalRows = rows - coupleRows - vipRows;
+      if (r >= rows - coupleRows) seatType = "couple";
+      else if (r >= Math.max(0, normalRows)) seatType = "vip";
+      else seatType = "normal";
+    }
+
     const rowArr = [];
     for (let c = 1; c <= cols; c++) {
       rowArr.push({ label: `${rowLetter}${c}`, type: seatType });
     }
     matrix.push(rowArr);
   }
-  return matrix;
+  return { matrix, rows, cols };
 }
 
 // Matrix editor: click a cell to cycle through types
@@ -180,7 +275,7 @@ const RoomDetailModal = ({ room, onClose, onEdit }) => {
   const hasMatrix = room.seatMatrix?.length > 0;
   const matrix = hasMatrix
     ? room.seatMatrix
-    : generateDefaultMatrix(room.rows || 8, room.cols || 10);
+    : generateMatrixFromTotalSeats(room.totalSeats || 80).matrix;
   const typeCount = { normal: 0, vip: 0, couple: 0 };
   for (const r of matrix)
     for (const cell of r)
@@ -224,7 +319,7 @@ const RoomDetailModal = ({ room, onClose, onEdit }) => {
               { label: "Loại phòng", isRoomType: true },
               {
                 label: "Kích thước",
-                value: `${room.rows} hàng × ${room.cols} cột`,
+                value: `${matrix.length} hàng × ${matrix[0]?.length || 0} cột`,
               },
               { label: "Tổng ghế", value: `${room.totalSeats} ghế` },
               {
@@ -320,49 +415,64 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
     room?.cinema?._id || room?.cinema || "",
   );
   const [name, setName] = useState(room?.name || "");
-  const [rows, setRows] = useState(room?.rows || 8);
-  const [cols, setCols] = useState(room?.cols || 10);
+  const [totalSeats, setTotalSeats] = useState(room?.totalSeats || 80);
   const [roomType, setRoomType] = useState(room?.roomType || "Standard");
   const [matrix, setMatrix] = useState(
     room?.seatMatrix?.length > 0 ? room.seatMatrix : null,
   );
+  const [rows, setRows] = useState(room?.rows || 0);
+  const [cols, setCols] = useState(room?.cols || 0);
   const [saving, setSaving] = useState(false);
-  const [showMatrix, setShowMatrix] = useState(!!room);
+  const [showMatrix, setShowMatrix] = useState(
+    !!(room?.seatMatrix?.length > 0),
+  );
   const [errors, setErrors] = useState({});
 
   const validate = () => {
     const e = {};
+    const info = ROOM_TYPE_INFO[roomType];
     if (!cinemaId) e.cinemaId = "Vui lòng chọn rạp";
     if (!name.trim()) e.name = "Tên phòng không được để trống";
-    if (rows < 1 || rows > 26) e.rows = "Số hàng phải từ 1–26";
-    if (cols < 1 || cols > 30) e.cols = "Số cột phải từ 1–30";
+    if (!totalSeats || totalSeats < 1) e.totalSeats = "Số ghế phải lớn hơn 0";
+    if (totalSeats < info.minSeats) e.totalSeats = `${roomType} yêu cầu tối thiểu ${info.minSeats} ghế`;
+    if (totalSeats > 416) e.totalSeats = "Tối đa 416 ghế (26 hàng × 16 cột)";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const handleGenerateMatrix = () => {
     const e = {};
-    if (rows < 1 || rows > 26) e.rows = "Số hàng phải từ 1–26";
-    if (cols < 1 || cols > 30) e.cols = "Số cột phải từ 1–30";
+    const info = ROOM_TYPE_INFO[roomType];
+    if (!totalSeats || totalSeats < 1) e.totalSeats = "Nhập số ghế trước";
+    if (totalSeats < info.minSeats) e.totalSeats = `${roomType} yêu cầu tối thiểu ${info.minSeats} ghế`;
+    if (totalSeats > 416) e.totalSeats = "Tối đa 416 ghế";
     if (Object.keys(e).length > 0) {
       setErrors((p) => ({ ...p, ...e }));
       return;
     }
-    setMatrix(generateDefaultMatrix(rows, cols));
+    const result = generateMatrixFromTotalSeats(totalSeats, roomType);
+    setRows(result.rows);
+    setCols(result.cols);
+    setMatrix(result.matrix);
     setShowMatrix(true);
   };
 
   const handleSave = async () => {
     if (!validate()) return;
+    if (!matrix) {
+      toast.error("Vui lòng tạo ma trận ghế trước khi lưu");
+      return;
+    }
+    const actualTotal = rows * cols;
     const payload = {
       cinema: cinemaId,
       name,
       rows: Number(rows),
       cols: Number(cols),
       roomType,
-      totalSeats: rows * cols,
+      totalSeats: actualTotal,
     };
-    if (matrix) payload.seatMatrix = matrix;
+    payload.seatMatrix = matrix;
 
     setSaving(true);
     try {
@@ -452,46 +562,22 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
             </div>
             <div>
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-                Số hàng{" "}
-                <span className="text-slate-400 font-normal">(1–26)</span>
+                Tổng số ghế{" "}
+                <span className="text-slate-400 font-normal">(tối thiểu {ROOM_TYPE_INFO[roomType].minSeats})</span>
               </label>
               <input
                 type="number"
-                value={rows}
+                value={totalSeats}
                 onChange={(e) => {
-                  setRows(
-                    Math.min(26, Math.max(1, Number(e.target.value) || 1)),
-                  );
-                  setErrors((p) => ({ ...p, rows: "" }));
+                  const v = Math.min(416, Math.max(0, Number(e.target.value) || 0));
+                  setTotalSeats(v);
+                  setShowMatrix(false);
+                  setErrors((p) => ({ ...p, totalSeats: "" }));
                 }}
-                min={1}
-                max={26}
-                className={`w-full bg-slate-50 border rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 font-medium text-slate-700 ${errors.rows ? "border-red-400 focus:border-red-400" : "border-slate-200 focus:border-[#dc2626]"}`}
+                className={`w-full bg-slate-50 border rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 font-medium text-slate-700 ${errors.totalSeats ? "border-red-400 focus:border-red-400" : "border-slate-200 focus:border-[#dc2626]"}`}
               />
-              {errors.rows && (
-                <p className="text-red-500 text-xs mt-1 ml-1">{errors.rows}</p>
-              )}
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-                Số cột{" "}
-                <span className="text-slate-400 font-normal">(1–30)</span>
-              </label>
-              <input
-                type="number"
-                value={cols}
-                onChange={(e) => {
-                  setCols(
-                    Math.min(30, Math.max(1, Number(e.target.value) || 1)),
-                  );
-                  setErrors((p) => ({ ...p, cols: "" }));
-                }}
-                min={1}
-                max={30}
-                className={`w-full bg-slate-50 border rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 font-medium text-slate-700 ${errors.cols ? "border-red-400 focus:border-red-400" : "border-slate-200 focus:border-[#dc2626]"}`}
-              />
-              {errors.cols && (
-                <p className="text-red-500 text-xs mt-1 ml-1">{errors.cols}</p>
+              {errors.totalSeats && (
+                <p className="text-red-500 text-xs mt-1 ml-1">{errors.totalSeats}</p>
               )}
             </div>
             <div>
@@ -500,7 +586,11 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
               </label>
               <select
                 value={roomType}
-                onChange={(e) => setRoomType(e.target.value)}
+                onChange={(e) => {
+                  setRoomType(e.target.value);
+                  setShowMatrix(false);
+                  setErrors((p) => ({ ...p, totalSeats: "" }));
+                }}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] font-medium text-slate-700"
               >
                 <option value="Standard">Standard</option>
@@ -509,6 +599,88 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
               </select>
             </div>
           </div>
+
+          {/* Room type info card */}
+          {(() => {
+            const info = ROOM_TYPE_INFO[roomType];
+            return (
+              <div className={`rounded-2xl border ${info.border} ${info.bg} p-5 shadow-sm transition-all duration-300`}>
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={`w-10 h-10 rounded-xl ${info.accentBg} flex items-center justify-center text-lg shrink-0`}>
+                    {info.icon}
+                  </div>
+                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <h4 className={`text-sm font-extrabold ${info.accent} tracking-tight`}>
+                      {roomType}
+                    </h4>
+                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${info.badge} shadow-sm`}>
+                      {info.seatTypes}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <p className="text-xs text-slate-500 leading-relaxed mb-4 pl-[52px]">
+                  {info.desc}
+                </p>
+
+                {/* Specs: row 1 */}
+                <div className="grid grid-cols-2 gap-4 mb-3">
+                  <div className="bg-white/80 rounded-xl p-3 border border-white/60">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                      Yêu cầu ghế
+                    </p>
+                    <p className="text-xs font-bold text-slate-700 leading-snug">
+                      {info.seatReq}
+                    </p>
+                  </div>
+                  <div className="bg-white/80 rounded-xl p-3 border border-white/60">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                      Màn chiếu
+                    </p>
+                    <p className="text-xs font-bold text-slate-700 leading-snug">
+                      {info.screen}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Specs: row 2 */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="bg-white/80 rounded-xl p-3 border border-white/60">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                      Âm thanh
+                    </p>
+                    <p className="text-xs font-bold text-slate-700 leading-snug">
+                      {info.sound}
+                    </p>
+                  </div>
+                  <div className="bg-white/80 rounded-xl p-3 border border-white/60">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                      Tiện ích thêm
+                    </p>
+                    <p className="text-xs font-bold text-slate-700 leading-snug">
+                      {info.amenities}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Minimum dimensions bar */}
+                <div className={`rounded-xl px-4 py-3 ${info.bg} border ${info.border} flex items-center gap-3`}>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 shrink-0">
+                    Kích thước tối thiểu
+                  </span>
+                  <span className="text-xs font-bold text-slate-700">
+                    {info.minRows} hàng × {info.minCols} cột
+                  </span>
+                  <span className="w-1 h-1 rounded-full bg-slate-300 shrink-0"></span>
+                  <span className="text-xs font-bold text-slate-700">
+                    Tổng ghế tối thiểu: {info.minSeats}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
 
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -957,21 +1129,21 @@ const CinemaStatusConfirmDialog = ({
   const isIncident = status === "incident";
   const theme = isIncident
     ? {
-        header: "bg-amber-500",
-        icon: AlertTriangle,
-        iconBg: "bg-white/20",
-        border: "border-amber-200",
-        btn: "bg-amber-500 hover:bg-amber-600 shadow-amber-200",
-        dot: "bg-amber-400",
-      }
+      header: "bg-amber-500",
+      icon: AlertTriangle,
+      iconBg: "bg-white/20",
+      border: "border-amber-200",
+      btn: "bg-amber-500 hover:bg-amber-600 shadow-amber-200",
+      dot: "bg-amber-400",
+    }
     : {
-        header: "bg-emerald-600",
-        icon: CheckCircle,
-        iconBg: "bg-white/20",
-        border: "border-emerald-200",
-        btn: "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200",
-        dot: "bg-emerald-500",
-      };
+      header: "bg-emerald-600",
+      icon: CheckCircle,
+      iconBg: "bg-white/20",
+      border: "border-emerald-200",
+      btn: "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200",
+      dot: "bg-emerald-500",
+    };
   const Icon = theme.icon;
 
   return (
@@ -1306,11 +1478,10 @@ export const RoomsManager = ({ cinemas }) => {
                 <button
                   key={value}
                   onClick={() => handleCinemaStatusChange(value)}
-                  className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all duration-150 active:scale-95 ${
-                    cinemaStatus === value
-                      ? meta.badge
-                      : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
-                  }`}
+                  className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all duration-150 active:scale-95 ${cinemaStatus === value
+                    ? meta.badge
+                    : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                    }`}
                 >
                   {meta.label}
                 </button>
