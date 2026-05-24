@@ -5,7 +5,7 @@ import Footer from "../../components/common/Footer";
 import axiosInstance from "../../api/axiosConfig";
 import {
   Minus, Plus, Calendar, MapPin, Ticket, Popcorn,
-  CreditCard, Clock, AlertTriangle, ChevronRight, ChevronLeft,
+  CreditCard, Clock, AlertTriangle, ChevronRight, ChevronLeft, Tag, X,
 } from "lucide-react";
 
 const HOLD_SECONDS = 5 * 60;

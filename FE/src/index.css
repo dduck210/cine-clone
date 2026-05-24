@@ -115,6 +115,15 @@
   scrollbar-width: none;
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -133,4 +142,21 @@
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(100%); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in {
+  animation-duration: 500ms;
+  animation-fill-mode: both;
+}
+
+.fade-in {
+  animation-name: fadeIn;
+}
+
+.slide-in-from-bottom-4 {
+  animation-name: fadeUp;
+}
+
+.scale-in {
+  animation-name: scaleIn;
 }
