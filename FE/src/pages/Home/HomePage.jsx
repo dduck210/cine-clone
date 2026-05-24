@@ -1,12 +1,29 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import Navbar from "../../components/common/Navbar";
 import Hero from "../../components/common/Hero";
 import Footer from "../../components/common/Footer";
+import FeaturesStrip from "../../components/home/FeaturesStrip";
 import MovieCard from "../../components/movie/MovieCard";
 import axiosInstance from "../../api/axiosConfig";
 import { NEWS_LIST } from "../../data/newsData";
+import useInView from "../../hooks/use-in-view";
+
+const SectionHeading = ({ children, action }) => {
+  const [ref, visible] = useInView();
+  return (
+    <div
+      ref={ref}
+      className={`flex items-center justify-between mb-8 transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"}`}
+    >
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 uppercase tracking-wide relative pl-5 before:absolute before:left-0 before:top-[4px] before:bottom-[4px] before:w-[4px] before:rounded-full before:bg-red-600">
+        {children}
+      </h2>
+      {action}
+    </div>
+  );
+};
 
 const HomePage = () => {
   const [movies, setMovies] = useState([]);
@@ -16,126 +33,111 @@ const HomePage = () => {
 
   const newsScrollRef = useRef(null);
   const animationRef = useRef(null);
-
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
 
+  const [movieSectionRef, movieSectionVisible] = useInView(0.05);
+  const [newsSectionRef, newsSectionVisible] = useInView(0.05);
+
   useEffect(() => {
-    axiosInstance
-      .get("/movies")
+    axiosInstance.get("/movies")
       .then((res) => setMovies(res.data))
       .catch(() => setMovies([]))
       .finally(() => setLoading(false));
   }, []);
 
-  const nowShowingMovies = movies.filter((m) => m.status === "now_showing");
-  const comingSoonMovies = movies.filter((m) => m.status === "coming_soon");
+  const nowShowing = movies.filter((m) => m.status === "now_showing");
+  const comingSoon = movies.filter((m) => m.status === "coming_soon");
+  const currentMovies = activeTab === "now" ? nowShowing : comingSoon;
 
   const smoothScrollTo = (element, target, duration) => {
     if (animationRef.current) cancelAnimationFrame(animationRef.current);
     const start = element.scrollLeft;
     const change = target - start;
     const startTime = performance.now();
-    const animateScroll = (currentTime) => {
-      const elapsed = currentTime - startTime;
+    const animate = (now) => {
+      const elapsed = now - startTime;
       if (elapsed < duration) {
-        const t = elapsed / duration;
-        const easeOut = 1 - Math.pow(1 - t, 3);
-        element.scrollLeft = start + change * easeOut;
-        animationRef.current = requestAnimationFrame(animateScroll);
+        element.scrollLeft = start + change * (1 - Math.pow(1 - elapsed / duration, 3));
+        animationRef.current = requestAnimationFrame(animate);
       } else {
         element.scrollLeft = target;
         animationRef.current = null;
       }
     };
-    animationRef.current = requestAnimationFrame(animateScroll);
+    animationRef.current = requestAnimationFrame(animate);
   };
 
-  const scrollNews = (direction) => {
-    const container = newsScrollRef.current;
-    if (container) {
-      const firstCard = container.firstElementChild;
-      if (firstCard) {
-        const cardWidth = firstCard.offsetWidth;
-        const gap = 24;
-        const scrollAmount = cardWidth + gap;
-        const target =
-          direction === "left"
-            ? container.scrollLeft - scrollAmount
-            : container.scrollLeft + scrollAmount;
-        smoothScrollTo(container, target, 600);
-      }
-    }
+  const scrollNews = (dir) => {
+    const c = newsScrollRef.current;
+    if (!c) return;
+    const cardW = c.firstElementChild?.offsetWidth || 320;
+    const target = dir === "left" ? c.scrollLeft - (cardW + 24) : c.scrollLeft + (cardW + 24);
+    smoothScrollTo(c, target, 600);
   };
 
   const handleMouseDown = (e) => {
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
-    }
+    if (animationRef.current) { cancelAnimationFrame(animationRef.current); animationRef.current = null; }
     setIsDragging(true);
     setStartX(e.pageX - newsScrollRef.current.offsetLeft);
     setScrollLeft(newsScrollRef.current.scrollLeft);
   };
-
   const handleMouseLeave = () => setIsDragging(false);
   const handleMouseUp = () => setIsDragging(false);
-
   const handleMouseMove = (e) => {
     if (!isDragging) return;
     e.preventDefault();
-    const x = e.pageX - newsScrollRef.current.offsetLeft;
-    const walk = (x - startX) * 1.5;
-    newsScrollRef.current.scrollLeft = scrollLeft - walk;
+    newsScrollRef.current.scrollLeft = scrollLeft - (e.pageX - newsScrollRef.current.offsetLeft - startX) * 1.5;
   };
-
-  const currentMovies = activeTab === "now" ? nowShowingMovies : comingSoonMovies;
-
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-    setVisibleCount(10);
-  };
-
-  const handleLoadMore = () => setVisibleCount((prev) => prev + 5);
-
 
   return (
     <div className="min-h-screen bg-white font-bromega font-bold text-gray-900">
       <Navbar />
-      <Hero movies={nowShowingMovies} />
+      <Hero movies={nowShowing} />
+      <FeaturesStrip />
 
-      <main className="container mx-auto px-4 sm:px-6 py-12 max-w-7xl">
-        <div className="flex flex-col items-start mb-8 gap-5">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 border-l-4 border-red-600 pl-4 uppercase tracking-wide">
-            {activeTab === "now" ? "Phim Đang Chiếu" : "Phim Sắp Chiếu"}
-          </h2>
+      {/* ── Movie section ── */}
+      <main className="container mx-auto px-4 sm:px-6 py-14 max-w-7xl">
+        <SectionHeading
+          action={
+            <Link to="/movies" className="hidden sm:flex items-center gap-1.5 text-sm text-red-600 font-bold hover:gap-3 transition-all duration-200">
+              Xem tất cả <ArrowRight size={15} />
+            </Link>
+          }
+        >
+          {activeTab === "now" ? "Phim Đang Chiếu" : "Phim Sắp Chiếu"}
+        </SectionHeading>
+
+        {/* Tabs */}
+        <div
+          ref={movieSectionRef}
+          className={`mb-8 transition-all duration-700 delay-100 ${movieSectionVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"}`}
+        >
           <div className="relative flex bg-gray-100 p-1 rounded-xl w-fit">
             <div
-              className={`absolute top-1 bottom-1 left-1 w-[calc(50%-0.25rem)] bg-red-600 rounded-lg shadow-md transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${activeTab === "coming" ? "translate-x-full" : "translate-x-0"}`}
-            ></div>
-            <button
-              onClick={() => handleTabChange("now")}
-              className={`relative z-10 flex-1 px-4 py-2 text-sm font-bold whitespace-nowrap min-w-[120px] transition-colors duration-300 ${activeTab === "now" ? "text-white" : "text-gray-500 hover:text-gray-900"}`}
-            >
-              Đang Chiếu
-            </button>
-            <button
-              onClick={() => handleTabChange("coming")}
-              className={`relative z-10 flex-1 px-4 py-2 text-sm font-bold whitespace-nowrap min-w-[120px] transition-colors duration-300 ${activeTab === "coming" ? "text-white" : "text-gray-500 hover:text-gray-900"}`}
-            >
-              Sắp Chiếu
-            </button>
+              className={`absolute top-1 bottom-1 left-1 w-[calc(50%-0.25rem)] bg-red-600 rounded-lg shadow-md transition-all duration-400 ease-in-out ${activeTab === "coming" ? "translate-x-full" : "translate-x-0"}`}
+            />
+            {[["now", "Đang Chiếu"], ["coming", "Sắp Chiếu"]].map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => { setActiveTab(key); setVisibleCount(10); }}
+                className={`relative z-10 px-5 py-2.5 text-sm font-bold min-w-[120px] transition-colors duration-300 ${activeTab === key ? "text-white" : "text-gray-500 hover:text-gray-800"}`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
 
+        {/* Movie grid */}
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
             {Array.from({ length: 10 }).map((_, i) => (
               <div key={i} className="animate-pulse">
-                <div className="aspect-[2/3] rounded-xl bg-gray-200"></div>
-                <div className="mt-3 h-4 bg-gray-200 rounded w-3/4"></div>
-                <div className="mt-2 h-3 bg-gray-200 rounded w-1/2"></div>
+                <div className="aspect-[2/3] rounded-2xl bg-gray-200" />
+                <div className="mt-3 h-4 bg-gray-200 rounded w-3/4" />
+                <div className="mt-2 h-3 bg-gray-200 rounded w-1/2" />
               </div>
             ))}
           </div>
@@ -145,8 +147,14 @@ const HomePage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
-            {currentMovies.slice(0, visibleCount).map((movie) => (
-              <MovieCard key={movie._id || movie.id} movie={movie} />
+            {currentMovies.slice(0, visibleCount).map((movie, i) => (
+              <div
+                key={movie._id || movie.id}
+                className="opacity-0 animate-[fadeUp_0.5s_ease_forwards]"
+                style={{ animationDelay: `${(i % 5) * 60}ms` }}
+              >
+                <MovieCard movie={movie} />
+              </div>
             ))}
           </div>
         )}
@@ -154,30 +162,30 @@ const HomePage = () => {
         {!loading && visibleCount < currentMovies.length && (
           <div className="mt-10 flex justify-center">
             <button
-              onClick={handleLoadMore}
-              className="flex items-center gap-2 px-8 py-3.5 bg-white border-2 border-[#dc2626] text-[#dc2626] font-bold rounded-2xl hover:bg-[#dc2626] hover:text-white transition-all duration-200 shadow-sm hover:shadow-md hover:shadow-red-100"
+              onClick={() => setVisibleCount((p) => p + 5)}
+              className="flex items-center gap-2 px-8 py-3.5 bg-white border-2 border-red-600 text-red-600 font-bold rounded-2xl hover:bg-red-600 hover:text-white transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-red-100 group"
             >
-              <ChevronDown size={18} />
+              <ChevronDown size={18} className="group-hover:translate-y-0.5 transition-transform" />
               Xem thêm ({currentMovies.length - visibleCount} phim còn lại)
             </button>
           </div>
         )}
       </main>
 
-      <section className="bg-gray-50 py-12 border-t border-gray-100 overflow-hidden">
+      {/* ── News section ── */}
+      <section
+        ref={newsSectionRef}
+        className={`bg-gray-50 py-14 border-t border-gray-100 overflow-hidden transition-all duration-700 ${newsSectionVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+      >
         <div className="container mx-auto px-4 max-w-7xl">
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 uppercase tracking-wide border-l-4 border-red-600 pl-4">
-              Tin Bên Lề
-            </h2>
-          </div>
+          <SectionHeading>Tin Bên Lề</SectionHeading>
 
-          <div className="relative group">
+          <div className="relative group/news">
             <button
               onClick={() => scrollNews("left")}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-20 -ml-2 md:-ml-5 w-12 h-12 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-red-600 hover:text-white hover:scale-110 transition-all opacity-0 group-hover:opacity-100 duration-300"
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-20 -ml-2 md:-ml-5 w-11 h-11 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-red-600 hover:text-white hover:border-transparent hover:scale-110 transition-all opacity-0 group-hover/news:opacity-100 duration-300"
             >
-              <ChevronLeft size={24} />
+              <ChevronLeft size={22} />
             </button>
 
             <div
@@ -187,16 +195,16 @@ const HomePage = () => {
               onMouseUp={handleMouseUp}
               onMouseMove={handleMouseMove}
               className={`flex gap-6 overflow-x-auto pb-4 px-2 hide-scrollbar ${isDragging ? "cursor-grabbing select-none" : "cursor-grab"}`}
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              style={{ scrollbarWidth: "none" }}
             >
-              {NEWS_LIST.map((item) => (
+              {NEWS_LIST.map((item, i) => (
                 <Link
                   key={item.id}
                   to={`/news/${item.id}`}
                   onDragStart={(e) => e.preventDefault()}
-                  className="min-w-[300px] md:min-w-[380px] bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group/card border border-gray-100 block"
+                  className="min-w-[300px] md:min-w-[360px] bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group/card border border-gray-100 block hover:-translate-y-1 flex-shrink-0"
                 >
-                  <div className="h-48 overflow-hidden pointer-events-none">
+                  <div className="h-48 overflow-hidden">
                     <img
                       src={item.image}
                       alt={item.title}
@@ -204,11 +212,14 @@ const HomePage = () => {
                     />
                   </div>
                   <div className="p-5">
-                    <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider">{item.category}</span>
-                    <h3 className="font-bold text-gray-800 mt-1 mb-3 text-base line-clamp-2 group-hover/card:text-red-600 transition-colors">
+                    <span className="text-[10px] font-black text-red-600 uppercase tracking-widest">{item.category}</span>
+                    <h3 className="font-bold text-gray-800 mt-1.5 mb-3 text-[15px] line-clamp-2 group-hover/card:text-red-600 transition-colors leading-snug">
                       {item.title}
                     </h3>
-                    <p className="text-sm text-gray-500 font-bold">{item.timeAgo}</p>
+                    <p className="text-xs text-gray-400 font-semibold flex items-center gap-1.5">
+                      <span className="w-1 h-1 rounded-full bg-gray-300 inline-block" />
+                      {item.timeAgo}
+                    </p>
                   </div>
                 </Link>
               ))}
@@ -216,9 +227,9 @@ const HomePage = () => {
 
             <button
               onClick={() => scrollNews("right")}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-20 -mr-2 md:-mr-5 w-12 h-12 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-red-600 hover:text-white hover:scale-110 transition-all opacity-0 group-hover:opacity-100 duration-300"
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-20 -mr-2 md:-mr-5 w-11 h-11 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-red-600 hover:text-white hover:border-transparent hover:scale-110 transition-all opacity-0 group-hover/news:opacity-100 duration-300"
             >
-              <ChevronRight size={24} />
+              <ChevronRight size={22} />
             </button>
           </div>
         </div>
