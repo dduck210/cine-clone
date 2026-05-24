@@ -140,67 +140,58 @@ const Navbar = () => {
                 </button>
 
                 {isDropdownOpen && (
-                  <div className="absolute right-0 top-[calc(100%+8px)] w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+                  <div className="absolute right-0 top-[calc(100%+8px)] w-58 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50" style={{width:"232px"}}>
                     {/* Header */}
-                    <div className="px-4 py-3 bg-gradient-to-br from-red-50 to-orange-50 border-b border-red-100/60">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-[#dc2626] flex items-center justify-center shadow-sm flex-shrink-0">
-                          <span className="text-white font-black text-sm leading-none select-none">
-                            {currentUser.name?.charAt(0).toUpperCase() || "U"}
-                          </span>
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-gray-800 text-sm truncate">{currentUser.name}</p>
-                          <p className="text-[11px] text-gray-400 truncate">{currentUser.email}</p>
-                        </div>
+                    <div className="bg-slate-900 px-4 py-3.5 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[#dc2626] flex items-center justify-center flex-shrink-0 ring-2 ring-red-500/30 overflow-hidden">
+                        {currentUser.avatar
+                          ? <img src={currentUser.avatar} alt="" className="w-full h-full object-cover" />
+                          : <span className="text-white font-black text-sm select-none">{currentUser.name?.charAt(0).toUpperCase() || "U"}</span>
+                        }
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-white text-sm truncate leading-tight">{currentUser.name}</p>
+                        <p className="text-slate-400 text-[11px] truncate mt-0.5">{currentUser.email}</p>
                       </div>
                     </div>
 
                     {/* Menu items */}
-                    <div className="p-1.5 space-y-0.5">
+                    <div className="p-2 space-y-0.5">
                       <Link
                         to="/profile"
                         onClick={() => setIsDropdownOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 text-gray-700 text-sm font-semibold transition-colors group"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 text-sm font-medium hover:bg-slate-50 hover:text-[#dc2626] transition-colors group"
                       >
-                        <div className="w-7 h-7 rounded-lg bg-gray-100 group-hover:bg-red-100 flex items-center justify-center transition-colors">
-                          <User size={14} className="text-gray-500 group-hover:text-[#dc2626] transition-colors" />
-                        </div>
+                        <User size={15} className="text-slate-400 group-hover:text-[#dc2626] transition-colors flex-shrink-0" />
                         Tài khoản
                       </Link>
                       <Link
                         to="/my-tickets"
                         onClick={() => setIsDropdownOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 text-gray-700 text-sm font-semibold transition-colors group"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 text-sm font-medium hover:bg-slate-50 hover:text-[#dc2626] transition-colors group"
                       >
-                        <div className="w-7 h-7 rounded-lg bg-gray-100 group-hover:bg-red-100 flex items-center justify-center transition-colors">
-                          <Ticket size={14} className="text-gray-500 group-hover:text-[#dc2626] transition-colors" />
-                        </div>
+                        <Ticket size={15} className="text-slate-400 group-hover:text-[#dc2626] transition-colors flex-shrink-0" />
                         Vé của tôi
                       </Link>
-
                       {currentUser.role === "admin" && (
                         <Link
                           to="/admin"
                           onClick={() => setIsDropdownOpen(false)}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 text-gray-700 text-sm font-semibold transition-colors group"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 text-sm font-medium hover:bg-slate-50 hover:text-[#dc2626] transition-colors group"
                         >
-                          <div className="w-7 h-7 rounded-lg bg-gray-100 group-hover:bg-red-100 flex items-center justify-center transition-colors">
-                            <LayoutDashboard size={14} className="text-gray-500 group-hover:text-[#dc2626] transition-colors" />
-                          </div>
+                          <LayoutDashboard size={15} className="text-slate-400 group-hover:text-[#dc2626] transition-colors flex-shrink-0" />
                           Quản trị
                         </Link>
                       )}
                     </div>
 
-                    <div className="px-1.5 pb-1.5">
+                    {/* Logout */}
+                    <div className="p-2 border-t border-slate-100">
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50 text-red-500 text-sm font-semibold transition-colors group border-t border-gray-100 pt-2.5 mt-0.5"
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-500 text-sm font-semibold hover:bg-red-50 transition-colors"
                       >
-                        <div className="w-7 h-7 rounded-lg bg-red-50 group-hover:bg-red-100 flex items-center justify-center transition-colors">
-                          <LogOut size={14} className="text-red-400 group-hover:text-red-600 transition-colors" />
-                        </div>
+                        <LogOut size={15} className="flex-shrink-0" />
                         Đăng xuất
                       </button>
                     </div>

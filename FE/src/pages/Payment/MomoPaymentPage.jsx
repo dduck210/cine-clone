@@ -88,7 +88,7 @@ const MomoPaymentPage = () => {
 
       {/* ── Paid overlay ── */}
       {isPaid && (
-        <div className="fixed inset-0 bg-slate-900/90 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-slate-900/90 z-[90] flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-[32px] shadow-2xl max-w-sm w-full overflow-hidden border border-slate-100">
             <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-8 text-center">
               <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 ring-4 ring-white/30">
