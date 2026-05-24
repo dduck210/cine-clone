@@ -42,6 +42,7 @@ app.use('/api/payments/momo', require('./routes/momo'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/tickets', require('./routes/tickets'));
 app.use('/api/reviews', require('./routes/reviews'));
+app.use('/api/vouchers', require('./routes/vouchers'));
 app.use('/api/push', require('./routes/push'));
 app.use('/api/admin', require('./routes/admin'));
 

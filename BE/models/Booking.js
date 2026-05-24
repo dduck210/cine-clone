@@ -21,6 +21,8 @@ const bookingSchema = new mongoose.Schema({
     expiresAt: { type: Date }, // 5-minute seat hold expiry
     reminder24hSentAt: { type: Date },
     reviewReminderSentAt: { type: Date },
+    voucher: { type: mongoose.Schema.Types.ObjectId, ref: 'Voucher', default: null },
+    voucherDiscount: { type: Number, default: 0 },
     extraItems: [{ // F&B combos
         name: String,
         quantity: Number,

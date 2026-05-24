@@ -4,6 +4,7 @@ const Booking = require('../models/Booking');
 const Showtime = require('../models/Showtime');
 const Seat = require('../models/Seat');
 const Payment = require('../models/Payment');
+const Voucher = require('../models/Voucher');
 const { protect } = require('../middleware/auth');
 const { sendRefundEmail } = require('../services/email-service');
 
@@ -49,7 +50,7 @@ async function validateNoGap(showtimeId, selectedSeatNumbers) {
 
 // Create booking
 router.post('/', protect, async (req, res) => {
-    const { showtimeId, seats: seatNumbers, extraItems = [] } = req.body;
+    const { showtimeId, seats: seatNumbers, extraItems = [], voucherCode } = req.body;
     try {
         const showtime = await Showtime.findById(showtimeId);
         if (!showtime) return res.status(404).json({ message: 'Showtime not found' });
@@ -78,8 +79,32 @@ router.post('/', protect, async (req, res) => {
         // Monday 20% discount — use UTC+7 (Vietnam) day to avoid server-timezone shift
         const vnDate = new Date(new Date(showtime.date).getTime() + 7 * 60 * 60 * 1000);
         const isMonday = vnDate.getUTCDay() === 1;
-        const totalPrice = isMonday ? Math.round(rawTotal * 0.8) : rawTotal;
+        const afterMonday = isMonday ? Math.round(rawTotal * 0.8) : rawTotal;
 
+        // Voucher discount
+        let voucherDiscount = 0;
+        let appliedVoucher = null;
+        if (voucherCode) {
+            const voucher = await Voucher.findOne({ code: voucherCode.toUpperCase().trim(), status: 'active' });
+            if (voucher && voucher.expiresAt > new Date() &&
+                (voucher.usageLimit === null || voucher.usedCount < voucher.usageLimit) &&
+                afterMonday >= voucher.minOrderAmount) {
+                const userUsed = voucher.usedBy.filter(id => id.toString() === req.user._id.toString()).length;
+                if (voucher.perUserLimit === null || userUsed < voucher.perUserLimit) {
+                    const raw = voucher.type === 'percent'
+                        ? Math.round(afterMonday * voucher.value / 100)
+                        : voucher.value;
+                    const capped = voucher.maxDiscount ? Math.min(raw, voucher.maxDiscount) : raw;
+                    voucherDiscount = Math.min(capped, afterMonday);
+                    voucher.usedCount += 1;
+                    voucher.usedBy.push(req.user._id);
+                    await voucher.save();
+                    appliedVoucher = voucher._id;
+                }
+            }
+        }
+
+        const totalPrice = Math.max(0, afterMonday - voucherDiscount);
         const expiresAt = new Date(Date.now() + HOLD_MINUTES * 60 * 1000);
 
         const booking = new Booking({
@@ -91,6 +116,8 @@ router.post('/', protect, async (req, res) => {
             status: 'pending',
             expiresAt,
             extraItems,
+            voucher: appliedVoucher,
+            voucherDiscount,
         });
         await booking.save();
 
