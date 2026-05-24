@@ -279,7 +279,7 @@ const MovieDetailPage = () => {
                 const d = new Date(+new Date() + i * 24 * 60 * 60 * 1000);
                 const val = toVNDateStr(d);
                 const isActive = selectedDate === val;
-                const dayLabel = i === 0 ? "Hôm nay" : i === 1 ? "Mai" : WEEKDAY[vnDay(d)];
+                const dayLabel = WEEKDAY[vnDay(d)];
                 const dateLabel = `${vnDate(d)}/${vnMonth(d) + 1}`;
                 return (
                   <button
