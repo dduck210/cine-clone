@@ -142,7 +142,7 @@ const MyTicketsPage = () => {
               ))}
             </div>
           </div>
-          <div className="border-l border-gray-100 pl-6">
+          <div className="w-full sm:w-auto border-t sm:border-t-0 sm:border-l border-gray-100 pt-4 sm:pt-0 sm:pl-6">
             <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2 flex items-center gap-1">
               <Printer size={10} /> Trạng thái vé (chỉ khi đã thanh toán)
             </p>
@@ -191,7 +191,7 @@ const MyTicketsPage = () => {
 
                   {/* Status bar on top */}
                   <div className="flex items-center justify-between px-4 sm:px-6 pt-4 pb-3 border-b border-dashed border-gray-100">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2 gap-y-1.5">
                       {/* Booking status */}
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-black uppercase tracking-wider text-gray-400 flex items-center gap-1">
@@ -220,8 +220,8 @@ const MyTicketsPage = () => {
                   </div>
 
                   {/* Card body */}
-                  <div className="flex flex-col sm:flex-row gap-4 p-4 sm:p-6">
-                    <div className="w-full sm:w-20 h-28 flex-shrink-0 rounded-xl overflow-hidden bg-gray-200 shadow-sm">
+                  <div className="sm:flex sm:flex-row sm:gap-4 sm:p-6">
+                    <div className="w-full aspect-[2/3] sm:w-20 sm:h-28 sm:aspect-auto flex-shrink-0 overflow-hidden bg-gray-200 sm:rounded-xl shadow-sm">
                       {movie.poster ? (
                         <img src={movie.poster} alt={movie.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                       ) : (
@@ -231,7 +231,7 @@ const MyTicketsPage = () => {
                       )}
                     </div>
 
-                    <div className="flex-1 flex flex-col justify-between">
+                    <div className="flex-1 flex flex-col justify-between p-4 sm:p-0">
                       <h3 className="font-bold text-lg text-gray-900 group-hover:text-red-600 transition-colors mb-3">
                         {movie.title || "Phim"}
                       </h3>

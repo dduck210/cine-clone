@@ -102,11 +102,7 @@ const CinemaDetailPage = () => {
     const day = vnDay(d);
     dateOptions.push({
       value: val,
-      label: (() => {
-        if (i === 0) return "Hôm nay";
-        if (i === 1) return "Ngày mai";
-        return `${WEEKDAY[day]}`;
-      })(),
+      label: WEEKDAY[day],
       fullDate: `${vnDate(d)}/${vnMonth(d)+1}`
     });
   }
@@ -121,165 +117,134 @@ const CinemaDetailPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] font-sans text-gray-900">
+    <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
       <Navbar />
 
-      <main className="container mx-auto px-4 sm:px-6 pt-24 md:pt-32 pb-16 max-w-6xl">
-        {loading ? (
-          <div className="animate-pulse space-y-8">
-            <div className="h-64 bg-gray-200 rounded-3xl"></div>
-            <div className="h-12 bg-gray-200 rounded-xl w-1/2 mx-auto"></div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1, 2, 3].map(i => <div key={i} className="h-40 bg-gray-200 rounded-2xl"></div>)}
-            </div>
-          </div>
-        ) : !cinema ? (
-          <div className="text-center py-24">
-            <p className="text-gray-400 font-bold text-lg">Không tìm thấy rạp chiếu này.</p>
-            <Link to="/cinemas" className="mt-4 inline-block text-red-600 font-bold hover:underline">Xem tất cả rạp</Link>
-          </div>
-        ) : (
-          <>
-            {/* ── HERO BANNER ── */}
-            <div className="relative rounded-[2.5rem] overflow-hidden mb-12 h-[320px] md:h-[440px] shadow-2xl group/banner">
-              <img
-                src={cinema.image || FALLBACK_IMAGE}
-                alt={cinema.name}
-                onError={(e) => { e.target.src = FALLBACK_IMAGE; }}
-                className="w-full h-full object-cover"
-              />
-              {/* Cinematic gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-black/10" />
-              {/* Subtle vignette */}
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.4)_100%)]" />
+      {loading ? (
+        <div className="pt-24 pb-16 max-w-6xl mx-auto px-4 sm:px-6 animate-pulse space-y-6">
+          <div className="h-64 bg-gray-200 rounded-2xl" />
+          <div className="h-8 bg-gray-200 rounded w-1/3" />
+          <div className="h-4 bg-gray-200 rounded w-1/2" />
+        </div>
+      ) : !cinema ? (
+        <div className="pt-24 text-center py-24 max-w-6xl mx-auto px-4">
+          <p className="text-gray-400 font-bold text-lg">Không tìm thấy rạp chiếu này.</p>
+          <Link to="/cinemas" className="mt-4 inline-block text-red-600 font-bold hover:underline">Xem tất cả rạp</Link>
+        </div>
+      ) : (
+        <>
+          {/* ── HERO: full-width, no rounded corners ── */}
+          <div className="relative h-[260px] sm:h-[340px] md:h-[420px] overflow-hidden mt-16 md:mt-20">
+            <img
+              src={cinema.image || FALLBACK_IMAGE}
+              alt={cinema.name}
+              onError={(e) => { e.target.src = FALLBACK_IMAGE; }}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
-              {/* Back button */}
-              <Link
-                to="/cinemas"
-                className="absolute top-6 left-6 inline-flex items-center gap-2 px-4 py-2.5 bg-white/15 backdrop-blur-xl text-white rounded-full text-sm font-bold hover:bg-white hover:text-black transition-all z-10 border border-white/20"
-              >
-                <ChevronLeft size={18} /> Quay lại
-              </Link>
+            <Link
+              to="/cinemas"
+              className="absolute top-4 left-4 sm:left-8 flex items-center gap-1.5 text-white/90 hover:text-white text-sm font-bold bg-black/30 backdrop-blur-sm px-3 py-2 rounded-full transition-all hover:bg-black/50"
+            >
+              <ChevronLeft size={16} /> Quay lại
+            </Link>
 
-              {/* Hero content */}
-              <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="bg-red-600 text-[10px] uppercase font-black px-3 py-1.5 rounded-full tracking-widest shadow-lg shadow-red-900/50">
-                    Cinema
-                  </span>
-                  <div className="flex text-yellow-400 gap-0.5">
-                    {[1, 2, 3, 4, 5].map(i => <Star key={i} size={14} fill="currentColor" />)}
-                  </div>
+            <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-8 pb-5 md:pb-8">
+              <div className="max-w-6xl mx-auto">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="bg-red-600 text-[10px] uppercase font-black px-2.5 py-1 rounded tracking-widest">Cinema</span>
+                  <div className="flex text-yellow-400 gap-0.5">{[1,2,3,4,5].map(i => <Star key={i} size={11} fill="currentColor" />)}</div>
                 </div>
-                <h1 className="text-3xl md:text-5xl font-black mb-3 uppercase tracking-tight text-white drop-shadow-lg">
-                  {cinema.name}
-                </h1>
-                <div className="flex flex-col sm:flex-row gap-4 text-white/80">
-                  <div className="flex items-start gap-2 max-w-xl">
-                    <MapPin size={18} className="text-red-400 shrink-0 mt-0.5" />
-                    <span className="font-medium text-sm md:text-base leading-snug">{cinema.address}</span>
-                  </div>
-                  {cinema.phone && (
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Phone size={18} className="text-red-400 shrink-0" />
-                      <span className="font-bold text-white">{cinema.phone}</span>
-                    </div>
-                  )}
+                <h1 className="text-xl sm:text-3xl md:text-4xl font-black text-white mb-2 leading-tight">{cinema.name}</h1>
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-white/80 text-xs sm:text-sm">
+                  <span className="flex items-center gap-1.5"><MapPin size={13} className="text-red-400 shrink-0" /><span className="line-clamp-1">{cinema.address}</span></span>
+                  {cinema.phone && <span className="flex items-center gap-1.5"><Phone size={13} className="text-red-400 shrink-0" /><span className="font-bold text-white">{cinema.phone}</span></span>}
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Tabs Navigation */}
-            <div className="flex justify-center mb-10">
-              <div className="relative flex bg-white border border-gray-200 p-1.5 rounded-2xl shadow-sm">
-                <div
-                  className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-gray-900 rounded-xl shadow-lg shadow-gray-300 transition-transform duration-300 ease-in-out ${activeTab === "info" ? "translate-x-full" : "translate-x-0"}`}
-                />
-                {[
-                  { key: "showtimes", icon: <Calendar size={16} />, label: "Lịch Chiếu" },
-                  { key: "info", icon: <Info size={16} />, label: "Thông Tin Rạp" },
-                ].map(({ key, icon, label }) => (
-                  <button
-                    key={key}
-                    onClick={() => setActiveTab(key)}
-                    className={`relative z-10 flex items-center gap-2 px-8 py-3 rounded-xl font-bold text-sm transition-colors duration-200 ${activeTab === key ? "text-white" : "text-gray-500 hover:text-gray-800"}`}
-                  >
-                    {icon}
-                    {label}
-                  </button>
-                ))}
-              </div>
+          {/* ── CONTENT ── */}
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-12">
+            {/* Underline tabs */}
+            <div className="flex border-b border-gray-200 mb-5 sticky top-16 md:top-20 bg-gray-50 z-10">
+              {[
+                { key: "showtimes", icon: <Calendar size={15} />, label: "Lịch Chiếu" },
+                { key: "info",      icon: <Info size={15} />,     label: "Thông Tin Rạp" },
+              ].map(({ key, icon, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setActiveTab(key)}
+                  className={`flex items-center gap-2 px-5 py-4 text-sm font-bold border-b-2 -mb-px transition-colors ${
+                    activeTab === key ? "border-red-600 text-red-600" : "border-transparent text-gray-500 hover:text-gray-800"
+                  }`}
+                >
+                  {icon}{label}
+                </button>
+              ))}
             </div>
 
-            {/* Tab Content */}
             {activeTab === "showtimes" ? (
-              <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                {/* Date picker */}
-                <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar">
+              <div>
+                {/* Date strip */}
+                <div className="flex gap-2 overflow-x-auto pb-3 no-scrollbar mb-5">
                   {dateOptions.map((d) => (
                     <button
                       key={d.value}
                       onClick={() => setSelectedDate(d.value)}
-                      className={`flex-shrink-0 min-w-[100px] p-3 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center gap-1 ${
+                      className={`flex-shrink-0 px-3 py-2.5 rounded-xl border font-bold text-xs transition-all flex flex-col items-center gap-0.5 min-w-[68px] ${
                         selectedDate === d.value
-                          ? "bg-red-600 border-red-600 text-white shadow-xl shadow-red-100 scale-105"
-                          : "bg-white border-gray-100 text-gray-500 hover:border-red-600 hover:text-red-600"
+                          ? "bg-red-600 border-red-600 text-white shadow-lg shadow-red-100"
+                          : "bg-white border-gray-200 text-gray-600 hover:border-red-400 hover:text-red-600"
                       }`}
                     >
-                      <span className="text-[10px] uppercase font-black tracking-widest">{d.label}</span>
-                      <span className="text-xl font-black">{d.fullDate.split('/')[0]}</span>
-                      <span className="text-[10px] font-bold">Tháng {d.fullDate.split('/')[1]}</span>
+                      <span className="text-[10px] uppercase tracking-wide font-black">{d.label}</span>
+                      <span className="text-lg font-black leading-none">{d.fullDate.split('/')[0]}</span>
+                      <span className="text-[10px] opacity-70">Th.{d.fullDate.split('/')[1]}</span>
                     </button>
                   ))}
                 </div>
 
-                {/* Movie list */}
                 {filteredGroups.length === 0 ? (
-                  <div className="text-center py-24 bg-white rounded-[2rem] border-2 border-dashed border-gray-200 shadow-sm">
-                    <Film size={48} className="text-gray-200 mx-auto mb-4" />
-                    <p className="text-gray-400 font-bold text-lg italic">Hiện không có suất chiếu nào cho ngày này.</p>
+                  <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
+                    <Film size={40} className="text-gray-200 mx-auto mb-3" />
+                    <p className="text-gray-400 font-semibold">Không có suất chiếu nào cho ngày này.</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 gap-8">
+                  <div className="space-y-3">
                     {filteredGroups.map(({ movie, showtimes }) => (
-                      <div key={movie._id} className="bg-white border border-gray-100 rounded-[2rem] overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 group">
-                        <div className="flex flex-col md:flex-row">
-                          {/* Poster — fixed aspect on mobile, full height on desktop */}
-                          <div className="md:w-56 shrink-0 bg-gray-900 flex items-center justify-center overflow-hidden">
+                      <div key={movie._id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex">
+                          <div className="w-[90px] sm:w-[110px] shrink-0 bg-gray-900">
                             <img
                               src={movie.poster}
                               alt={movie.title}
-                              className="w-full h-64 md:h-full object-cover md:object-cover transition-transform duration-700 group-hover:scale-105"
-                              onError={(e) => { e.target.src = "https://via.placeholder.com/300x450?text=No+Image"; }}
+                              className="w-full h-full object-cover"
+                              style={{ minHeight: '130px' }}
+                              onError={(e) => { e.target.src = "https://via.placeholder.com/200x300?text=No+Image"; }}
                             />
                           </div>
-
-                          <div className="flex-1 p-6 md:p-8">
-                            <div className="flex flex-wrap items-center gap-3 mb-4">
+                          <div className="flex-1 p-4 sm:p-5">
+                            <div className="flex flex-wrap items-center gap-2 mb-1.5">
                               {movie.ageRestriction && (
-                                <span className="bg-red-600 text-white text-[10px] px-2 py-1 rounded font-black">{movie.ageRestriction}</span>
+                                <span className="bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded font-black">{movie.ageRestriction}</span>
                               )}
-                              <span className="flex items-center gap-1 text-gray-400 text-xs font-bold uppercase tracking-wider">
-                                <Clock size={14} /> {movie.duration} phút
-                              </span>
-                              <span className="flex items-center gap-1 text-yellow-500 text-sm font-black">
-                                <Star size={14} fill="currentColor" /> {movie.rating || "8.5"}
-                              </span>
+                              <span className="text-gray-400 text-xs flex items-center gap-1"><Clock size={11} /> {movie.duration} phút</span>
+                              <span className="text-yellow-500 text-xs flex items-center gap-1 font-bold"><Star size={11} fill="currentColor" /> {movie.rating || "8.5"}</span>
                             </div>
-
                             <Link to={`/movie/${movie._id}`}>
-                              <h3 className="text-2xl font-black text-gray-900 mb-6 group-hover:text-red-600 transition-colors uppercase leading-tight">{movie.title}</h3>
+                              <h3 className="font-black text-gray-900 mb-3 hover:text-red-600 transition-colors text-sm sm:text-base leading-snug">{movie.title}</h3>
                             </Link>
-
-                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                            <div className="flex flex-wrap gap-2">
                               {showtimes.map((st) => (
                                 <button
                                   key={st._id}
                                   onClick={() => handleBooking(st, movie)}
-                                  className="group/time flex flex-col items-center px-3 py-3 rounded-2xl border-2 border-gray-100 hover:border-red-600 hover:bg-red-50 transition-all active:scale-95"
+                                  className="flex flex-col items-center min-w-[90px] px-4 py-3 rounded-xl font-bold text-sm border-2 transition-all hover:scale-[1.04] active:scale-[0.97] bg-slate-50 text-slate-700 border-slate-200 hover:border-[#dc2626] hover:text-[#dc2626] hover:bg-red-50"
                                 >
-                                  <span className="font-black text-base text-gray-800 group-hover/time:text-red-600">{st.startTime}</span>
-                                  <span className="text-[10px] text-gray-400 font-bold mt-1 group-hover/time:text-red-400">{st.price?.toLocaleString()}đ</span>
+                                  <span className="font-black text-base">{st.startTime}</span>
+                                  <span className="text-[10px] font-medium mt-0.5 text-slate-400">{st.availableSeats ?? "—"} ghế trống</span>
                                 </button>
                               ))}
                             </div>
@@ -291,92 +256,125 @@ const CinemaDetailPage = () => {
                 )}
               </div>
             ) : (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  <div className="lg:col-span-2 space-y-8">
-                    {/* Giới thiệu */}
-                    <section className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100">
-                      <h3 className="text-2xl font-black mb-6 uppercase tracking-tight flex items-center gap-3">
-                        <span className="w-1.5 h-8 bg-red-600 rounded-full"></span>
-                        Giới Thiệu
-                      </h3>
-                      <p className="text-gray-600 leading-loose font-medium">
-                        Chào mừng bạn đến với {cinema.name}. Đây là một trong những rạp chiếu phim hiện đại nhất trong hệ thống,
-                        được đầu tư kỹ lưỡng về trang thiết bị và không gian kiến trúc. Chúng tôi tự hào mang đến trải nghiệm
-                        điện ảnh chuẩn quốc tế với các phòng chiếu hiện đại, âm thanh vòm sống động và đội ngũ nhân viên phục vụ tận tâm.
+              <div className="space-y-6">
+                {/* Stats bar */}
+                <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                  {[
+                    { value: "6+",      label: "Phòng chiếu", icon: <Film size={18} /> },
+                    { value: "1.200+",  label: "Chỗ ngồi",    icon: <Ticket size={18} /> },
+                    { value: "Premium", label: "Hạng rạp",    icon: <Star size={18} /> },
+                  ].map((s, i) => (
+                    <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col items-center text-center gap-1">
+                      <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center text-red-600 mb-1">{s.icon}</div>
+                      <p className="font-black text-gray-900 text-lg leading-none">{s.value}</p>
+                      <p className="text-[11px] text-gray-400 font-semibold">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Left */}
+                  <div className="md:col-span-2 space-y-5">
+                    {/* About */}
+                    <section className="bg-white rounded-2xl border border-gray-100 border-l-4 border-l-red-600 shadow-sm px-6 py-5">
+                      <h3 className="font-black text-gray-900 mb-3">Giới Thiệu</h3>
+                      <p className="text-gray-500 leading-relaxed text-sm">
+                        Chào mừng bạn đến với <span className="font-bold text-gray-800">{cinema.name}</span> — một trong những rạp chiếu phim hiện đại bậc nhất trong hệ thống 5Cine. Được đầu tư kỹ lưỡng về trang thiết bị và không gian kiến trúc, chúng tôi mang đến trải nghiệm điện ảnh chuẩn quốc tế với âm thanh vòm sống động và đội ngũ nhân viên phục vụ tận tâm.
                       </p>
                     </section>
 
-                    {/* Tiện ích */}
-                    <section className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100">
-                      <h3 className="text-2xl font-black mb-8 uppercase tracking-tight flex items-center gap-3">
-                        <span className="w-1.5 h-8 bg-red-600 rounded-full"></span>
-                        Tiện Ích Tại Rạp
+                    {/* Amenities — horizontal list */}
+                    <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
+                      <h3 className="font-black text-gray-900 mb-4 flex items-center gap-2">
+                        <span className="w-1 h-5 bg-red-600 rounded-full" />Tiện Ích Tại Rạp
                       </h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                         {amenities.map((item, idx) => (
-                          <div key={idx} className="flex flex-col items-center text-center p-6 bg-gray-50 rounded-3xl hover:bg-red-50 transition-colors group">
-                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mb-4 text-gray-400 group-hover:text-red-600 shadow-sm transition-colors">
+                          <div key={idx} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group">
+                            <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center text-red-500 shrink-0 group-hover:bg-red-100 transition-colors">
                               {item.icon}
                             </div>
-                            <h4 className="font-black text-gray-800 text-sm mb-1">{item.label}</h4>
-                            <p className="text-xs text-gray-400 font-medium">{item.desc}</p>
+                            <div>
+                              <p className="font-bold text-gray-800 text-sm leading-tight">{item.label}</p>
+                              <p className="text-[11px] text-gray-400 mt-0.5">{item.desc}</p>
+                            </div>
                           </div>
                         ))}
                       </div>
                     </section>
                   </div>
 
-                  <div className="space-y-8">
-                    {/* Vị trí + Bản đồ */}
-                    <section className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100">
-                      <h3 className="text-xl font-black mb-6 uppercase tracking-tight">Vị Trí</h3>
-
-                      {/* Map visual */}
-                      <div className="aspect-[4/3] bg-gray-100 rounded-2xl overflow-hidden mb-5 relative group cursor-pointer" onClick={handleOpenMap}>
-                        <img
-                          src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-l+dc2626(${encodeURIComponent(cinema.address)})/auto/600x450?access_token=pk.eyJ1IjoiaG9hbmtoIiwiYSI6ImNscW5hN25qYjA1bmYya29qem9qem9qZW0ifQ.placeholder`}
-                          alt="Bản đồ"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                          onError={(e) => { e.target.style.display = 'none'; }}
+                  {/* Right */}
+                  <div className="space-y-5">
+                    {/* Map */}
+                    <section className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                      <div
+                        className="h-48 relative cursor-pointer group"
+                        onClick={handleOpenMap}
+                      >
+                        <iframe
+                          title="map"
+                          src={`https://maps.google.com/maps?q=${encodeURIComponent(cinema.address)}&t=&z=16&ie=UTF8&iwloc=&output=embed`}
+                          className="w-full h-full border-0 pointer-events-none"
+                          loading="lazy"
                         />
-                        <div className="absolute inset-0 bg-black/5 flex items-center justify-center">
-                          <div className="bg-red-600 p-3 rounded-full text-white shadow-xl group-hover:scale-110 transition-transform">
-                            <MapPin size={24} />
-                          </div>
+                        <div className="absolute inset-0 bg-transparent group-hover:bg-black/10 transition-colors flex items-end justify-center pb-3">
+                          <span className="bg-white/90 text-xs font-semibold px-3 py-1.5 rounded-full text-gray-700 shadow opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5">
+                            <Navigation size={11} /> Mở Google Maps
+                          </span>
                         </div>
                       </div>
-
-                      {/* Address */}
-                      <div className="flex items-start gap-3 mb-5 p-4 bg-gray-50 rounded-2xl">
-                        <MapPin size={18} className="text-red-500 shrink-0 mt-0.5" />
-                        <p className="text-sm font-medium text-gray-700 leading-relaxed">{cinema.address}</p>
+                      <div className="p-4 space-y-3">
+                        <div className="flex items-start gap-2">
+                          <MapPin size={14} className="text-red-500 shrink-0 mt-0.5" />
+                          <p className="text-xs text-gray-600 leading-relaxed">{cinema.address}</p>
+                        </div>
+                        <button
+                          onClick={handleOpenMap}
+                          className="w-full py-2.5 bg-gray-900 text-white rounded-xl font-bold text-xs hover:bg-red-600 transition-all flex items-center justify-center gap-1.5"
+                        >
+                          <Navigation size={13} /> Chỉ Đường
+                        </button>
                       </div>
-
-                      <button
-                        onClick={handleOpenMap}
-                        className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black text-sm hover:bg-red-600 transition-all shadow-lg shadow-gray-200 hover:shadow-red-200 flex items-center justify-center gap-2"
-                      >
-                        <Navigation size={18} /> Chỉ Đường Trên Google Maps
-                      </button>
                     </section>
 
-                    {/* Liên hệ */}
-                    <section className="bg-gradient-to-br from-red-600 to-red-800 p-8 rounded-[2rem] text-white shadow-xl shadow-red-100">
-                      <h3 className="text-xl font-black mb-4 uppercase">Liên Hệ Đặt Vé</h3>
-                      <p className="text-white/80 text-sm mb-6 font-medium">Liên hệ hotline để được hỗ trợ đặt vé đoàn hoặc tổ chức sự kiện.</p>
-                      <div className="flex items-center gap-4 text-2xl font-black tracking-tighter">
-                        <Phone size={24} />
-                        {cinema.phone || "1900 6606"}
+                    {/* Contact + Hours */}
+                    <section className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                      <div className="bg-gray-900 px-5 py-4">
+                        <p className="text-gray-400 text-xs font-semibold mb-1">Hotline đặt vé</p>
+                        <div className="flex items-center gap-2 text-white font-black text-xl">
+                          <Phone size={18} className="text-red-400" />
+                          {cinema.phone || "1900 6606"}
+                        </div>
+                      </div>
+                      <div className="p-4 space-y-2 border-b border-gray-100">
+                        <p className="text-xs font-black text-gray-500 uppercase tracking-wider mb-3">Giờ hoạt động</p>
+                        {[
+                          { day: "Thứ 2 — Thứ 6", hours: "09:00 – 23:00" },
+                          { day: "Thứ 7 — Chủ nhật", hours: "08:00 – 24:00" },
+                        ].map((h, i) => (
+                          <div key={i} className="flex justify-between items-center text-xs">
+                            <span className="text-gray-500">{h.day}</span>
+                            <span className="font-bold text-gray-800">{h.hours}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="p-4">
+                        <button
+                          onClick={() => setActiveTab("showtimes")}
+                          className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <Ticket size={13} /> Xem Lịch Chiếu
+                        </button>
                       </div>
                     </section>
                   </div>
                 </div>
               </div>
             )}
-          </>
-        )}
-      </main>
+          </div>
+        </>
+      )}
       <Footer />
     </div>
   );

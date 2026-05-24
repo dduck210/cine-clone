@@ -93,7 +93,7 @@ const CinemasPage = () => {
       <Navbar />
 
       {/* ── HERO ── */}
-      <div className="relative bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] pt-24 md:pt-32 pb-16 overflow-hidden">
+      <div className="relative bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] pt-24 md:pt-32 pb-10 overflow-hidden">
         {/* Decorative background icons */}
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none select-none">
           {Array.from({ length: 8 }).map((_, i) => (
@@ -105,8 +105,8 @@ const CinemasPage = () => {
         {/* Radial glow accent */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[280px] bg-red-700/10 blur-[100px] rounded-full pointer-events-none" />
 
-        <div className="relative container mx-auto px-6 opacity-0 animate-[fadeIn_0.7s_ease_forwards]">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="relative container mx-auto px-4 sm:px-6 opacity-0 animate-[fadeIn_0.7s_ease_forwards]">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
             <div>
               <p className="text-red-400 text-sm font-bold uppercase tracking-widest mb-2">5Cine</p>
               <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">Hệ Thống Rạp</h1>
@@ -121,36 +121,36 @@ const CinemasPage = () => {
               </div>
             </div>
           </div>
+
+          {/* Search & Filter — inside hero */}
+          <div className="opacity-0 animate-[fadeUp_0.5s_ease_0.3s_forwards] flex flex-col md:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input
+                type="text"
+                placeholder="Tìm tên rạp hoặc địa chỉ..."
+                className="w-full pl-11 pr-4 py-3.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white placeholder-slate-400 font-medium text-sm outline-none focus:bg-white/15 focus:border-white/40 transition-all"
+                value={searchTerm}
+                onChange={(e) => { setSearchTerm(e.target.value); setVisibleCount(PAGE_SIZE); }}
+              />
+            </div>
+            <div className="relative md:w-52">
+              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+              <select
+                className="w-full pl-10 pr-4 py-3.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white font-medium text-sm outline-none focus:bg-white/15 focus:border-white/40 transition-all cursor-pointer appearance-none"
+                value={selectedCity}
+                onChange={(e) => { setSelectedCity(e.target.value); setVisibleCount(PAGE_SIZE); }}
+              >
+                {cities.map((city) => (
+                  <option key={city} value={city} className="bg-[#16213e] text-white">{city}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
-      <main className="container mx-auto px-6 -mt-8 pb-20">
-        {/* Search & Filter Bar */}
-        <div className="relative z-10 bg-white rounded-2xl shadow-xl border border-gray-100 p-5 mb-10 flex flex-col md:flex-row gap-4 items-center opacity-0 animate-[fadeUp_0.5s_ease_0.15s_forwards]">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Tìm tên rạp hoặc địa chỉ..."
-              className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all font-medium text-sm"
-              value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setVisibleCount(PAGE_SIZE); }}
-            />
-          </div>
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <MapPin size={18} className="text-gray-400 hidden md:block shrink-0" />
-            <select
-              className="w-full md:w-48 bg-gray-50 border border-gray-100 rounded-xl py-3.5 px-4 focus:ring-2 focus:ring-red-500 outline-none cursor-pointer font-medium text-sm"
-              value={selectedCity}
-              onChange={(e) => { setSelectedCity(e.target.value); setVisibleCount(PAGE_SIZE); }}
-            >
-              {cities.map((city) => (
-                <option key={city} value={city}>{city}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
+      <main className="container mx-auto px-4 sm:px-6 pt-8 pb-20">
         {/* Grid */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

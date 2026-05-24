@@ -120,7 +120,7 @@ const Hero = ({ movies = [] }) => {
               )}
             </div>
 
-            <h1 className="font-sans font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white leading-tight drop-shadow-xl line-clamp-2">
+            <h1 className="font-sans font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white leading-tight drop-shadow-xl">
               {movie.title}
             </h1>
 
@@ -135,7 +135,7 @@ const Hero = ({ movies = [] }) => {
             )}
 
             {movie.description && (
-              <p className="hidden sm:block text-sm md:text-base text-gray-300/90 leading-relaxed line-clamp-2 md:line-clamp-3 max-w-lg">
+              <p className="hidden sm:block text-sm md:text-base text-gray-300/90 leading-relaxed line-clamp-3 max-w-lg">
                 {movie.description}
               </p>
             )}

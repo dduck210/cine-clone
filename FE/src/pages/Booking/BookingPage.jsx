@@ -423,7 +423,18 @@ const BookingPage = () => {
         </div>
       )}
 
-      <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-28 pb-28 lg:pb-16">
+      <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-28 pb-28 md:pb-16">
+        {/* Mobile-only movie info card */}
+        <div className="md:hidden mb-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex gap-3">
+          {poster && <img src={poster} alt={title} className="w-14 h-20 object-cover rounded-lg shrink-0" />}
+          <div className="min-w-0">
+            <p className="font-black text-slate-900 text-sm line-clamp-2">{title}</p>
+            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1"><MapPin size={10} className="shrink-0" />{cinemaName}</p>
+            <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1"><Calendar size={10} className="shrink-0" />{showDate}</p>
+            <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1"><Clock size={10} className="shrink-0" />{showTime}</p>
+          </div>
+        </div>
+
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           {renderStepBar()}
           {timerStarted && (
@@ -450,7 +461,7 @@ const BookingPage = () => {
           )}
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
+        <div className="flex flex-col md:flex-row gap-8 items-start">
 
           {/* LEFT panel */}
           <div className="flex-1 min-w-0 w-full">
@@ -597,7 +608,7 @@ const BookingPage = () => {
                           onChange={(e) => { setVoucherInput(e.target.value.toUpperCase()); setVoucherError(""); }}
                           onKeyDown={(e) => e.key === "Enter" && handleApplyVoucher()}
                           placeholder="Nhập mã voucher..."
-                          className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold uppercase tracking-widest outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 placeholder-slate-300 placeholder-normal"
+                          className="flex-1 min-w-0 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold uppercase tracking-widest outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 placeholder-slate-300 placeholder-normal"
                         />
                         <button
                           onClick={handleApplyVoucher}
@@ -642,15 +653,15 @@ const BookingPage = () => {
             )}
           </div>
 
-          {/* RIGHT: Summary panel (desktop only) */}
-          <div className="hidden lg:block w-full lg:w-[400px] shrink-0 sticky top-28">
+          {/* RIGHT: Summary panel (tablet+) */}
+          <div className="hidden md:block w-full md:w-[300px] lg:w-[400px] shrink-0 sticky top-28">
             {renderSummaryPanel()}
           </div>
         </div>
       </main>
 
       {/* Mobile sticky bottom bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-700 px-4 py-3 flex items-center justify-between gap-4">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-700 px-4 py-3 flex items-center justify-between gap-4">
         <div className="min-w-0">
           {selectedSeats.length > 0 ? (
             <>

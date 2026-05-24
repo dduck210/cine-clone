@@ -17,7 +17,7 @@ const MomoPaymentPage = () => {
     bookingId, bookingCode, payUrl, deeplink, qrCodeUrl, amount,
     movieTitle, cinemaName, roomName, showTime, showDate, showAddress,
     selectedSeats, duration, poster,
-    combos, originalPrice, discountAmount, promotionName, voucherCode,
+    combos, originalPrice, mondayDiscount = 0, voucherDiscount = 0, voucherCode, voucherType, voucherValue,
   } = location.state || {};
 
   const [isPaid, setIsPaid] = useState(false);
@@ -196,22 +196,24 @@ const MomoPaymentPage = () => {
 
                 {/* Price breakdown */}
                 <div className="space-y-3">
-                  {promotionName && discountAmount > 0 && (
-                    <div className="flex justify-between items-center bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Tag size={14} className="text-emerald-600 shrink-0" />
-                        <span className="text-emerald-700 font-bold text-sm">
-                          {promotionName}
-                          {voucherCode && <span className="text-emerald-500 text-xs ml-1">({voucherCode})</span>}
-                        </span>
+                  {(mondayDiscount > 0 || voucherDiscount > 0) && (
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-xs text-slate-400 font-medium">
+                        <span>Tạm tính</span>
+                        <span>{originalPrice?.toLocaleString()}đ</span>
                       </div>
-                      <span className="text-emerald-600 font-black text-sm">−{discountAmount?.toLocaleString()}đ</span>
-                    </div>
-                  )}
-                  {originalPrice && discountAmount > 0 && (
-                    <div className="flex justify-between text-xs text-slate-400 font-medium">
-                      <span>Tạm tính</span>
-                      <span className="line-through">{originalPrice?.toLocaleString()}đ</span>
+                      {mondayDiscount > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="flex items-center gap-1.5 text-emerald-600 font-semibold"><Tag size={12} /> Gold Monday −20%</span>
+                          <span className="text-emerald-600 font-bold">−{mondayDiscount?.toLocaleString()}đ</span>
+                        </div>
+                      )}
+                      {voucherDiscount > 0 && voucherCode && (
+                        <div className="flex justify-between text-sm">
+                          <span className="flex items-center gap-1.5 text-violet-600 font-semibold"><Tag size={12} /> {voucherCode} {voucherType === "percent" ? `−${voucherValue}%` : ""}</span>
+                          <span className="text-violet-600 font-bold">−{voucherDiscount?.toLocaleString()}đ</span>
+                        </div>
+                      )}
                     </div>
                   )}
                   <div className="flex justify-between items-center bg-slate-50 rounded-2xl p-5 border border-slate-100">
@@ -324,20 +326,25 @@ const MomoPaymentPage = () => {
 
               {/* Price */}
               <div className="space-y-2 pb-4 border-b border-dashed border-slate-200">
-                {promotionName && discountAmount > 0 && (
-                  <div className="flex justify-between items-center bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2.5">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <Tag size={12} className="text-emerald-600 shrink-0" />
-                      <span className="text-emerald-700 font-bold text-xs truncate">{promotionName}</span>
+                {(mondayDiscount > 0 || voucherDiscount > 0) && (
+                  <>
+                    <div className="flex justify-between text-xs text-slate-400">
+                      <span>Tạm tính</span>
+                      <span>{originalPrice?.toLocaleString()}đ</span>
                     </div>
-                    <span className="text-emerald-600 font-black text-xs shrink-0 ml-2">−{discountAmount?.toLocaleString()}đ</span>
-                  </div>
-                )}
-                {originalPrice && discountAmount > 0 && (
-                  <div className="flex justify-between text-xs text-slate-400">
-                    <span>Tạm tính</span>
-                    <span className="line-through">{originalPrice?.toLocaleString()}đ</span>
-                  </div>
+                    {mondayDiscount > 0 && (
+                      <div className="flex justify-between text-xs">
+                        <span className="flex items-center gap-1 text-emerald-600 font-semibold"><Tag size={11} /> Gold Monday −20%</span>
+                        <span className="text-emerald-600 font-bold">−{mondayDiscount?.toLocaleString()}đ</span>
+                      </div>
+                    )}
+                    {voucherDiscount > 0 && voucherCode && (
+                      <div className="flex justify-between text-xs">
+                        <span className="flex items-center gap-1 text-violet-600 font-semibold"><Tag size={11} /> {voucherCode} {voucherType === "percent" ? `−${voucherValue}%` : ""}</span>
+                        <span className="text-violet-600 font-bold">−{voucherDiscount?.toLocaleString()}đ</span>
+                      </div>
+                    )}
+                  </>
                 )}
                 <div className="flex justify-between items-center bg-slate-50 rounded-xl p-4">
                   <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Tổng cộng</span>
