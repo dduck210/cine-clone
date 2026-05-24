@@ -9,6 +9,7 @@ const { startExpireShowtimesJob } = require('./jobs/expire-showtimes');
 const { startUpcomingReminderJob } = require('./jobs/send-upcoming-reminders');
 const { startExpireMoviesJob } = require('./jobs/expire-movies');
 const { startUpdateMovieStatusJob } = require('./jobs/update-movie-status');
+const { startReviewReminderJob } = require('./jobs/send-review-reminders');
 const { Server } = require('socket.io');
 const { initNotificationService } = require('./services/notification-service');
 
@@ -56,4 +57,5 @@ server.listen(PORT, () => {
     startUpcomingReminderJob();
     startExpireMoviesJob();
     startUpdateMovieStatusJob();
+    startReviewReminderJob();
 });

@@ -7,6 +7,16 @@ const Booking = require('../models/Booking');
 const Showtime = require('../models/Showtime');
 const Movie = require('../models/Movie');
 
+// endTime is "HH:mm" Vietnam time (UTC+7); date is stored as UTC Date
+function isShowtimeEnded(showtime) {
+    if (!showtime.endTime) return false;
+    const d = new Date(showtime.date);
+    const [h, m] = showtime.endTime.split(':').map(Number);
+    // Convert VN endTime to UTC: subtract 7 hours (Date.UTC handles underflow)
+    const endUtc = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), h - 7, m);
+    return Date.now() > endUtc;
+}
+
 async function recalcMovieRating(movieId) {
     const result = await Review.aggregate([
         { $match: { movie: new mongoose.Types.ObjectId(movieId) } },
@@ -31,38 +41,62 @@ router.get('/movie/:movieId', async (req, res) => {
 // GET /api/reviews/can-review/:movieId — check eligibility (protected)
 router.get('/can-review/:movieId', protect, async (req, res) => {
     try {
-        const showtimes = await Showtime.find({ movie: req.params.movieId }).select('_id');
+        const showtimes = await Showtime.find({ movie: req.params.movieId }).select('_id date startTime endTime');
         const showtimeIds = showtimes.map(s => s._id);
 
-        const hasPaidBooking = await Booking.exists({
+        const paidBookings = await Booking.find({
             user: req.user._id,
             showtime: { $in: showtimeIds },
             status: 'paid',
-        });
+        }).select('showtime');
 
         const existingReview = await Review.findOne({ user: req.user._id, movie: req.params.movieId });
 
-        res.json({ canReview: !!hasPaidBooking, hasReviewed: !!existingReview, reviewId: existingReview?._id });
+        if (!paidBookings.length) {
+            return res.json({ canReview: false, hasReviewed: !!existingReview, reviewId: existingReview?._id, hasPendingShowtime: false });
+        }
+
+        const showtimeMap = Object.fromEntries(showtimes.map(s => [s._id.toString(), s]));
+        let canReview = false;
+        let hasPendingShowtime = false;
+
+        for (const booking of paidBookings) {
+            const st = showtimeMap[booking.showtime.toString()];
+            if (!st) continue;
+            if (isShowtimeEnded(st)) canReview = true;
+            else hasPendingShowtime = true;
+        }
+
+        res.json({ canReview, hasReviewed: !!existingReview, reviewId: existingReview?._id, hasPendingShowtime });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
-// POST /api/reviews — add review (protected, requires paid booking)
+// POST /api/reviews — add review (protected, requires paid booking after showtime ends)
 router.post('/', protect, async (req, res) => {
     const { movieId, rating, comment } = req.body;
     try {
-        const showtimes = await Showtime.find({ movie: movieId }).select('_id');
+        const showtimes = await Showtime.find({ movie: movieId }).select('_id date startTime endTime');
         const showtimeIds = showtimes.map(s => s._id);
 
-        const hasPaidBooking = await Booking.exists({
+        const paidBookings = await Booking.find({
             user: req.user._id,
             showtime: { $in: showtimeIds },
             status: 'paid',
+        }).select('showtime');
+
+        if (!paidBookings.length)
+            return res.status(403).json({ message: 'Bạn cần đặt vé xem phim này trước khi đánh giá' });
+
+        const showtimeMap = Object.fromEntries(showtimes.map(s => [s._id.toString(), s]));
+        const hasEndedShowtime = paidBookings.some(b => {
+            const st = showtimeMap[b.showtime.toString()];
+            return st && isShowtimeEnded(st);
         });
 
-        if (!hasPaidBooking)
-            return res.status(403).json({ message: 'Bạn cần đặt vé xem phim này trước khi đánh giá' });
+        if (!hasEndedShowtime)
+            return res.status(403).json({ message: 'Bạn chỉ có thể đánh giá sau khi phim kết thúc' });
 
         const review = await Review.create({ user: req.user._id, movie: movieId, rating, comment });
         await review.populate('user', 'name');
