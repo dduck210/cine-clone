@@ -41,7 +41,7 @@ const PaymentPage = () => {
   const {
     showtimeId, movieTitle, cinemaName, roomName, showTime, showDate, showAddress,
     selectedSeats = [], combos = [], finalTotalPrice, poster, duration,
-    existingBookingId, existingBookingCode, originalPrice, discountAmount, promotionName,
+    existingBookingId, existingBookingCode, originalPrice, discountAmount, promotionName, voucherCode,
   } = location.state || {};
 
   const [paymentMethod, setPaymentMethod] = useState("momo");
@@ -89,7 +89,7 @@ const PaymentPage = () => {
       if (existingBookingId) { bookingId = existingBookingId; bookingCode = existingBookingCode || ""; }
       else {
         const extraItems = combos.filter((c) => c.quantity > 0).map((c) => ({ name: c.name, quantity: c.quantity, price: c.price }));
-        const bookingRes = await axiosInstance.post("/bookings", { showtimeId, seats: selectedSeats, extraItems });
+        const bookingRes = await axiosInstance.post("/bookings", { showtimeId, seats: selectedSeats, extraItems, voucherCode: voucherCode || undefined });
         bookingId = bookingRes.data._id;
         bookingCode = bookingRes.data.bookingCode;
       }

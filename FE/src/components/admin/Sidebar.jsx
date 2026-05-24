@@ -11,6 +11,7 @@ import {
   Grid,
   Star,
   Building2,
+  Tag,
 } from "lucide-react";
 
 const Sidebar = ({ activeTab, onTabChange }) => {
@@ -24,6 +25,7 @@ const Sidebar = ({ activeTab, onTabChange }) => {
     { id: "orders", label: "Đơn đặt vé", icon: ShoppingCart },
     { id: "users", label: "Người dùng", icon: Users },
     { id: "reviews", label: "Đánh giá", icon: Star },
+    { id: "vouchers", label: "Voucher", icon: Tag },
   ];
 
   return (

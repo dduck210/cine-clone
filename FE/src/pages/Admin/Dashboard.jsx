@@ -14,6 +14,7 @@ import { UsersManager } from "../../components/admin/UsersTab";
 import { RoomsManager } from "../../components/admin/RoomsTab";
 import { CinemasManager } from "../../components/admin/CinemasTab";
 import { ReviewsManager } from "../../components/admin/ReviewsTab";
+import { VouchersManager } from "../../components/admin/VouchersTab";
 
 const toastConfig = {
   position: "top-right",
@@ -735,6 +736,7 @@ const Dashboard = () => {
     orders: "Đơn Hàng",
     users: "Thành Viên",
     reviews: "Đánh Giá Phim",
+    vouchers: "Quản Lý Voucher",
   };
 
   return (
@@ -887,6 +889,7 @@ const Dashboard = () => {
               <OrdersManager orders={orders} loading={ordersLoading} onViewTicket={handleViewTicket} onConfirm={handleConfirmOrder} onPrint={handlePrintTicket} />
             )}
             {activeTab === "reviews" && <ReviewsManager />}
+            {activeTab === "vouchers" && <VouchersManager />}
           </div>
         </div>
       </main>

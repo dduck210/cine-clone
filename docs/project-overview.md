@@ -161,7 +161,7 @@ sequenceDiagram
 **Phim & Rạp**
 - Danh sách phim đang chiếu / sắp chiếu · chi tiết phim · trailer
 - Lịch chiếu theo rạp hoặc theo phim
-- Đánh giá phim (chỉ mở nếu đã có vé đã xem — kiểm tra qua DB)
+- Đánh giá phim (chỉ mở sau khi suất chiếu kết thúc — kiểm tra `endTime` suất chiếu qua DB)
 
 **Đặt vé**
 - Chọn ghế trực quan trên ma trận (thường / VIP / đôi)
@@ -212,6 +212,19 @@ Danh sách ngày lễ Việt Nam được tích hợp:
 | Tết Nguyên Đán | 5 ngày/năm (30 Tết + Mùng 1–4) — 2024–2030 |
 | Giỗ Tổ Hùng Vương | 10/3 âm lịch — 2024–2030 |
 
+**Khuyến mãi & Giảm giá**
+- **Gold Monday**: tự động giảm 20% tổng đơn khi suất chiếu vào Thứ Hai (tính theo giờ Việt Nam)
+- **Mã voucher**: nhập mã tại trang đặt vé (step 2), hỗ trợ giảm theo % hoặc số tiền cố định, có thể stack với Gold Monday
+
+| Thuộc tính voucher | Mô tả |
+|---|---|
+| `type: percent` | Giảm X% tổng đơn (có thể đặt `maxDiscount` để chặn giảm quá nhiều) |
+| `type: fixed` | Giảm số tiền cố định |
+| `minOrderAmount` | Đơn tối thiểu để áp dụng mã |
+| `usageLimit` | Tổng số lượt dùng cho tất cả user |
+| `perUserLimit` | Mỗi user được dùng tối đa N lần |
+| `expiresAt` | Ngày hết hạn |
+
 **Thanh toán & Đơn hàng**
 - Thanh toán qua MoMo (tạo đơn → xác nhận OTP → callback IPN)
 - Tiếp tục thanh toán đơn còn pending · hủy đơn thủ công
@@ -228,7 +241,8 @@ Danh sách ngày lễ Việt Nam được tích hợp:
 |---|---|
 | Web Push | Đơn được xác nhận / hủy / hoàn tiền |
 | Email vé | Ngay sau khi thanh toán thành công |
-| Email nhắc | Trước suất chiếu 24 giờ (gửi đúng 1 lần) |
+| Email nhắc lịch | Trước suất chiếu 24 giờ (gửi đúng 1 lần) |
+| Email nhắc đánh giá | Sau khi suất chiếu kết thúc — "Phim có hay không? Đánh giá giúp chúng tôi nhé!" (gửi đúng 1 lần) |
 | SSE real-time | Trạng thái vé thay đổi (không cần reload trang) |
 
 ---
@@ -274,9 +288,14 @@ Màu trạng thái ghế trong admin:
 - Quản lý người dùng (xem, sửa, xóa)
 - Thông báo realtime qua SSE khi có sự kiện mới
 
+**Quản lý Voucher**
+- Tạo mã giảm giá với đầy đủ điều kiện (loại, giá trị, hạn dùng, lượt dùng)
+- Toggle bật/tắt voucher · xóa voucher
+- Theo dõi số lượt đã sử dụng
+
 ---
 
-## Cron Jobs tự động (5 jobs)
+## Cron Jobs tự động (6 jobs)
 
 | Job | Tần suất | Chức năng |
 |---|---|---|
@@ -284,7 +303,8 @@ Màu trạng thái ghế trong admin:
 | `expire-showtimes` | Định kỳ | Chuyển suất chiếu đã qua thành `expired` |
 | `expire-movies` | Định kỳ | Tự ẩn phim hết lịch chiếu |
 | `update-movie-status` | Định kỳ | Phim `coming_soon` tự chuyển `now_showing` đúng ngày phát hành |
-| `send-upcoming-reminders` | Định kỳ | Email nhắc khách trước suất chiếu 24 giờ (flag `reminder24hSentAt` tránh gửi lại) |
+| `send-upcoming-reminders` | Mỗi giờ (:00) | Email nhắc khách trước suất chiếu 24 giờ (flag `reminder24hSentAt` tránh gửi lại) |
+| `send-review-reminders` | Mỗi giờ (:30) | Email nhắc đánh giá sau khi phim kết thúc (flag `reviewReminderSentAt` tránh gửi lại) |
 
 ---
 
@@ -298,9 +318,10 @@ Màu trạng thái ghế trong admin:
 | `CinemaRoom` | name · cinema · rows · cols · totalSeats · roomType · seatMatrix · status |
 | `Seat` | room · showtime · label · type · status (available/reserved/booked/locked) |
 | `Showtime` | movie · cinema · room · date · startTime · endTime · price · status |
-| `Booking` | user · showtime · seatNumbers · seats · extraItems · totalPrice · status · expiresAt · bookingCode |
+| `Booking` | user · showtime · seatNumbers · seats · extraItems · totalPrice · status · expiresAt · bookingCode · voucher · voucherDiscount · reminder24hSentAt · reviewReminderSentAt |
 | `Payment` | booking · user · method · amount · status · momoOrderId |
 | `Review` | user · movie · rating · comment |
+| `Voucher` | code · type · value · minOrderAmount · maxDiscount · expiresAt · usageLimit · usedCount · perUserLimit · usedBy · status · description |
 | `PendingRegistration` | email · name · hashedPassword · otp · expiresAt |
 
 ---
@@ -389,8 +410,9 @@ Hệ thống hỗ trợ 2 phương thức:
 
 **Đánh giá phim**
 1. Vào trang chi tiết phim → kéo xuống phần **Đánh giá**
-2. Nút viết đánh giá chỉ hiện ra nếu đã có vé đã thanh toán cho phim đó
-3. Chọn số sao (1–5) + nội dung → gửi
+2. Nếu đã mua vé nhưng phim chưa chiếu xong → hiện banner vàng nhắc quay lại sau
+3. Sau khi suất chiếu kết thúc → ô viết đánh giá mở ra, hệ thống cũng tự gửi email nhắc
+4. Chọn số sao (1–5) + nội dung → gửi
 
 ---
 
@@ -410,6 +432,7 @@ Truy cập: `http://localhost:5173/admin` → đăng nhập bằng tài khoản 
 | Đơn đặt vé | Xem tất cả đơn, xác nhận, đánh dấu in vé |
 | Người dùng | Xem, sửa, xóa tài khoản |
 | Đánh giá | Duyệt và xóa đánh giá phim |
+| Voucher | Tạo / bật / tắt / xóa mã giảm giá |
 
 **Thêm phim mới:**
 1. Tab **Quản lý Phim** → bấm **Thêm phim**
@@ -427,6 +450,12 @@ Truy cập: `http://localhost:5173/admin` → đăng nhập bằng tài khoản 
 2. Bấm **Đóng N phòng** → hệ thống hiện preview: bao nhiêu suất bị ảnh hưởng, bao nhiêu đơn cần hoàn tiền
 3. Tích xác nhận → bấm **Xác nhận đóng phòng**
 4. Hệ thống tự hủy suất + hoàn tiền tất cả đơn đã thanh toán
+
+**Tạo mã giảm giá:**
+1. Tab **Voucher** → bấm **Tạo voucher**
+2. Điền mã code, loại (% hoặc đ), giá trị, đơn tối thiểu, ngày hết hạn, số lượt dùng
+3. Bấm **Tạo voucher** → mã xuất hiện trong bảng, mặc định trạng thái **Đang bật**
+4. Click toggle để bật/tắt · click thùng rác để xóa
 
 **Soát vé tại rạp:**
 1. Vào `/scan` (hoặc tab scan trên navbar nhân viên)
@@ -455,6 +484,11 @@ Truy cập: `http://localhost:5173/admin` → đăng nhập bằng tài khoản 
 | Tickets | `GET /api/tickets/:bookingId/pdf` | Tải vé PDF |
 | Tickets | `POST /api/tickets/:bookingId/email` | Gửi vé qua email |
 | Tickets | `POST /api/tickets/scan` | Soát vé bằng QR |
+| Vouchers | `POST /api/vouchers/validate` | Kiểm tra mã + trả về discountAmount |
+| Vouchers | `GET /api/vouchers/admin` | Admin: danh sách tất cả voucher |
+| Vouchers | `POST /api/vouchers/admin` | Admin: tạo voucher mới |
+| Vouchers | `PUT /api/vouchers/admin/:id` | Admin: cập nhật / toggle trạng thái |
+| Vouchers | `DELETE /api/vouchers/admin/:id` | Admin: xóa voucher |
 | Admin | `GET /api/admin/reports/revenue` | Báo cáo doanh thu |
 | Admin | `POST /api/admin/emergency-close/:id` | Đóng rạp khẩn cấp |
 | Admin | `POST /api/admin/rooms/reopen` | Mở lại phòng |

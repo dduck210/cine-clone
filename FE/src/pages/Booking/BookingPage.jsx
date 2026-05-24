@@ -118,6 +118,10 @@ const BookingPage = () => {
   const warnedRef = useRef(false);
 
   const [combos, setCombos] = useState(COMBOS.map((c) => ({ ...c, quantity: 0 })));
+  const [voucherInput, setVoucherInput] = useState("");
+  const [appliedVoucher, setAppliedVoucher] = useState(null); // { code, discountAmount }
+  const [voucherError, setVoucherError] = useState("");
+  const [voucherLoading, setVoucherLoading] = useState(false);
 
   useEffect(() => {
     if (!showtimeId) return;
@@ -210,6 +214,24 @@ const BookingPage = () => {
   const totalComboPrice = combos.reduce((acc, c) => acc + c.price * c.quantity, 0);
   const finalTotalPrice = totalTicketPrice + totalComboPrice;
 
+  const handleApplyVoucher = async () => {
+    if (!voucherInput.trim()) return;
+    setVoucherError("");
+    setVoucherLoading(true);
+    try {
+      const res = await axiosInstance.post("/vouchers/validate", {
+        code: voucherInput.trim(),
+        orderAmount: discountedPrice,
+      });
+      setAppliedVoucher({ code: res.data.voucher.code, discountAmount: res.data.discountAmount });
+      setVoucherInput("");
+    } catch (err) {
+      setVoucherError(err.response?.data?.message || "Mã không hợp lệ");
+    } finally {
+      setVoucherLoading(false);
+    }
+  };
+
   // Always use Vietnam timezone (UTC+7) for Monday discount check
   const isMonday = (() => {
     const vnStr = (d) => new Date(+d + 7 * 60 * 60 * 1000).toISOString().split("T")[0];
@@ -219,6 +241,8 @@ const BookingPage = () => {
     return new Date(y, m - 1, d).getDay() === 1;
   })();
   const discountedPrice = isMonday ? Math.round(finalTotalPrice * 0.8) : finalTotalPrice;
+  const voucherDiscount = appliedVoucher?.discountAmount || 0;
+  const priceAfterVoucher = Math.max(0, discountedPrice - voucherDiscount);
 
   const showDate = new Date(selectedShowtime?.date || fallbackShowDate).toLocaleDateString("vi-VN", {
     timeZone: "Asia/Ho_Chi_Minh",
@@ -234,10 +258,11 @@ const BookingPage = () => {
   const goToPayment = () => navigate("/payment", {
     state: {
       showtimeId, movieTitle: title, poster, cinemaName, showTime, showDate,
-      showAddress, selectedSeats, combos, finalTotalPrice: discountedPrice, roomName, duration,
+      showAddress, selectedSeats, combos, finalTotalPrice: priceAfterVoucher, roomName, duration,
       originalPrice: finalTotalPrice,
-      discountAmount: isMonday ? finalTotalPrice - discountedPrice : 0,
+      discountAmount: (isMonday ? finalTotalPrice - discountedPrice : 0) + voucherDiscount,
       promotionName: isMonday ? "Siêu giảm giá Gold Monday" : null,
+      voucherCode: appliedVoucher?.code || null,
       seatMap: Object.fromEntries(selectedSeats.map((sn) => [sn, { type: seatMap[sn]?.type, price: seatMap[sn]?.price }])),
     },
   });
@@ -314,18 +339,29 @@ const BookingPage = () => {
           </div>
         )}
 
-        <div className="border-t-2 border-dashed border-slate-300 pt-3 mt-auto">
-          {isMonday && (
-            <div className="flex justify-between text-xs text-slate-500 mb-1">
+        <div className="border-t-2 border-dashed border-slate-300 pt-3 mt-auto space-y-1">
+          {(isMonday || voucherDiscount > 0) && (
+            <div className="flex justify-between text-xs text-slate-500">
               <span>Gốc</span>
               <span className="line-through">{finalTotalPrice.toLocaleString()}đ</span>
             </div>
           )}
-          <div className="flex justify-between items-center">
+          {isMonday && (
+            <div className="flex justify-between text-xs text-emerald-600 font-bold">
+              <span>Gold Monday −20%</span>
+              <span>−{(finalTotalPrice - discountedPrice).toLocaleString()}đ</span>
+            </div>
+          )}
+          {voucherDiscount > 0 && (
+            <div className="flex justify-between text-xs text-violet-600 font-bold">
+              <span>Voucher {appliedVoucher?.code}</span>
+              <span>−{voucherDiscount.toLocaleString()}đ</span>
+            </div>
+          )}
+          <div className="flex justify-between items-center pt-1">
             <span className="font-bold text-slate-700 text-sm">Tổng cộng</span>
-            <span className="font-black text-[#dc2626] text-2xl">{discountedPrice.toLocaleString()}<span className="text-sm"> ₫</span></span>
+            <span className="font-black text-[#dc2626] text-2xl">{priceAfterVoucher.toLocaleString()}<span className="text-sm"> ₫</span></span>
           </div>
-          {isMonday && <p className="text-right text-xs text-emerald-600 font-bold mt-0.5">Đã giảm 20% Thứ Hai 🎉</p>}
         </div>
 
         {step === 1 ? (
@@ -537,6 +573,42 @@ const BookingPage = () => {
                   </h2>
                   <p className="text-sm text-slate-400 mb-6">Không bắt buộc — bỏ qua để thanh toán ngay</p>
 
+                  {/* Voucher input */}
+                  <div className="mb-6 p-4 bg-violet-50 border border-violet-200 rounded-2xl">
+                    <p className="text-sm font-bold text-violet-800 mb-3 flex items-center gap-2">
+                      <Tag size={15} /> Mã giảm giá
+                    </p>
+                    {appliedVoucher ? (
+                      <div className="flex items-center justify-between bg-white rounded-xl px-4 py-3 border border-violet-300">
+                        <div>
+                          <span className="font-black text-violet-700 text-sm">{appliedVoucher.code}</span>
+                          <span className="ml-2 text-xs text-emerald-600 font-bold">−{appliedVoucher.discountAmount.toLocaleString()}đ</span>
+                        </div>
+                        <button onClick={() => setAppliedVoucher(null)} className="text-slate-400 hover:text-red-500 transition-colors">
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input
+                          value={voucherInput}
+                          onChange={(e) => { setVoucherInput(e.target.value.toUpperCase()); setVoucherError(""); }}
+                          onKeyDown={(e) => e.key === "Enter" && handleApplyVoucher()}
+                          placeholder="Nhập mã voucher..."
+                          className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold uppercase tracking-widest outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 placeholder-slate-300 placeholder-normal"
+                        />
+                        <button
+                          onClick={handleApplyVoucher}
+                          disabled={voucherLoading || !voucherInput.trim()}
+                          className="px-4 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-300 text-white font-bold rounded-xl text-sm transition-colors shrink-0"
+                        >
+                          {voucherLoading ? "..." : "Áp dụng"}
+                        </button>
+                      </div>
+                    )}
+                    {voucherError && <p className="text-red-500 text-xs font-bold mt-2">{voucherError}</p>}
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                     {combos.map((combo) => (
                       <div key={combo.id} className={`rounded-2xl border-2 p-5 flex flex-col gap-3 transition-all ${combo.quantity > 0 ? "border-[#dc2626] bg-red-50" : "border-slate-200 bg-white hover:border-slate-300"}`}>
@@ -580,7 +652,7 @@ const BookingPage = () => {
         <div className="min-w-0">
           {selectedSeats.length > 0 ? (
             <>
-              <p className="text-white font-black text-lg leading-none">{discountedPrice.toLocaleString()} ₫</p>
+              <p className="text-white font-black text-lg leading-none">{priceAfterVoucher.toLocaleString()} ₫</p>
               <p className="text-slate-400 text-xs mt-0.5 truncate">{selectedSeats.length} ghế · {selectedSeats.join(", ")}</p>
             </>
           ) : (
