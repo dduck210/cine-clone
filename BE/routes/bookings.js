@@ -4,7 +4,7 @@ const Booking = require('../models/Booking');
 const Showtime = require('../models/Showtime');
 const Seat = require('../models/Seat');
 const Payment = require('../models/Payment');
-const Voucher = require('../models/Voucher');
+const voucherService = require('../services/voucher-service');
 const { protect } = require('../middleware/auth');
 const { sendRefundEmail } = require('../services/email-service');
 
@@ -85,22 +85,11 @@ router.post('/', protect, async (req, res) => {
         let voucherDiscount = 0;
         let appliedVoucher = null;
         if (voucherCode) {
-            const voucher = await Voucher.findOne({ code: voucherCode.toUpperCase().trim(), status: 'active' });
-            if (voucher && voucher.expiresAt > new Date() &&
-                (voucher.usageLimit === null || voucher.usedCount < voucher.usageLimit) &&
-                afterMonday >= voucher.minOrderAmount) {
-                const userUsed = voucher.usedBy.filter(id => id.toString() === req.user._id.toString()).length;
-                if (voucher.perUserLimit === null || userUsed < voucher.perUserLimit) {
-                    const raw = voucher.type === 'percent'
-                        ? Math.round(afterMonday * voucher.value / 100)
-                        : voucher.value;
-                    const capped = voucher.maxDiscount ? Math.min(raw, voucher.maxDiscount) : raw;
-                    voucherDiscount = Math.min(capped, afterMonday);
-                    voucher.usedCount += 1;
-                    voucher.usedBy.push(req.user._id);
-                    await voucher.save();
-                    appliedVoucher = voucher._id;
-                }
+            const result = await voucherService.validateVoucher(voucherCode, req.user._id, afterMonday);
+            if (result.valid) {
+                voucherDiscount = result.discountAmount;
+                appliedVoucher = result.voucher._id;
+                await voucherService.applyVoucher(result.voucher._id, req.user._id);
             }
         }
 

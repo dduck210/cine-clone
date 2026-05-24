@@ -2,36 +2,30 @@ const express = require('express');
 const router = express.Router();
 const Voucher = require('../models/Voucher');
 const { protect, admin } = require('../middleware/auth');
-
-function calcDiscount(voucher, amount) {
-    let discount = voucher.type === 'percent'
-        ? Math.round(amount * voucher.value / 100)
-        : voucher.value;
-    if (voucher.maxDiscount) discount = Math.min(discount, voucher.maxDiscount);
-    return Math.min(discount, amount);
-}
+const voucherService = require('../services/voucher-service');
+const voucherStatusService = require('../services/voucher-status-service');
 
 // POST /api/vouchers/validate — check code and return discount amount (protected)
 router.post('/validate', protect, async (req, res) => {
     const { code, orderAmount } = req.body;
     try {
         if (!code) return res.status(400).json({ message: 'Vui lòng nhập mã giảm giá' });
-        const voucher = await Voucher.findOne({ code: code.toUpperCase().trim(), status: 'active' });
-        if (!voucher) return res.status(404).json({ message: 'Mã giảm giá không tồn tại hoặc đã hết hạn' });
-        if (voucher.expiresAt < new Date()) return res.status(400).json({ message: 'Mã giảm giá đã hết hạn' });
-        if (voucher.usageLimit !== null && voucher.usedCount >= voucher.usageLimit)
-            return res.status(400).json({ message: 'Mã giảm giá đã hết lượt sử dụng' });
-        if (orderAmount < voucher.minOrderAmount)
-            return res.status(400).json({ message: `Đơn tối thiểu ${voucher.minOrderAmount.toLocaleString('vi-VN')}đ để dùng mã này` });
-        const userUsed = voucher.usedBy.filter(id => id.toString() === req.user._id.toString()).length;
-        if (voucher.perUserLimit !== null && userUsed >= voucher.perUserLimit)
-            return res.status(400).json({ message: 'Bạn đã sử dụng mã này rồi' });
 
-        const discountAmount = calcDiscount(voucher, orderAmount);
+        const result = await voucherService.validateVoucher(code, req.user._id, orderAmount || 0);
+
+        if (!result.valid) {
+            return res.status(400).json({ message: result.error });
+        }
+
         res.json({
             valid: true,
-            discountAmount,
-            voucher: { code: voucher.code, type: voucher.type, value: voucher.value, description: voucher.description },
+            discountAmount: result.discountAmount,
+            voucher: {
+                code: result.voucher.code,
+                type: result.voucher.type,
+                value: result.voucher.value,
+                description: result.voucher.description,
+            },
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -42,7 +36,8 @@ router.post('/validate', protect, async (req, res) => {
 router.get('/admin', protect, admin, async (req, res) => {
     try {
         const vouchers = await Voucher.find().sort({ createdAt: -1 });
-        res.json(vouchers);
+        const enriched = vouchers.map((v) => voucherStatusService.enrichVoucher(v));
+        res.json(enriched);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -50,14 +45,32 @@ router.get('/admin', protect, admin, async (req, res) => {
 
 router.post('/admin', protect, admin, async (req, res) => {
     try {
-        const { code, type, value, minOrderAmount, maxDiscount, expiresAt, usageLimit, perUserLimit, description } = req.body;
+        const {
+            code, type, value,
+            minOrderAmount, maxDiscount,
+            startsAt, expiresAt,
+            maxUsers, maxUsagePerUser, totalUsageLimit,
+            description,
+        } = req.body;
+
+        const toNumberOrNull = (v) => (v === '' || v === undefined || v === null ? null : Number(v));
+
         const voucher = await Voucher.create({
-            code: code.toUpperCase().trim(), type, value,
-            minOrderAmount: minOrderAmount || 0,
-            maxDiscount: maxDiscount || null,
-            expiresAt,
-            usageLimit: usageLimit || null,
-            perUserLimit: perUserLimit ?? 1,
+            code: code.toUpperCase().trim(),
+            type,
+            value: Number(value),
+            minOrderAmount: Number(minOrderAmount) || 0,
+            maxDiscount: toNumberOrNull(maxDiscount),
+            startsAt: startsAt || null,
+            expiresAt: new Date(expiresAt),
+            maxUsers: toNumberOrNull(maxUsers),
+            maxUsagePerUser: toNumberOrNull(maxUsagePerUser),
+            totalUsageLimit: toNumberOrNull(totalUsageLimit),
+            // Legacy fields for backward compat
+            usageLimit: toNumberOrNull(totalUsageLimit),
+            perUserLimit: toNumberOrNull(maxUsagePerUser) ?? 1,
+            usedCount: 0,
+            totalUsedCount: 0,
             description: description || '',
         });
         res.status(201).json(voucher);
@@ -69,7 +82,24 @@ router.post('/admin', protect, admin, async (req, res) => {
 
 router.put('/admin/:id', protect, admin, async (req, res) => {
     try {
-        const voucher = await Voucher.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
+        const update = { ...req.body };
+
+        // Sync legacy fields when new fields are present
+        if (req.body.totalUsageLimit !== undefined) {
+            update.usageLimit = req.body.totalUsageLimit === '' || req.body.totalUsageLimit === null
+                ? null : Number(req.body.totalUsageLimit);
+        }
+        if (req.body.maxUsagePerUser !== undefined) {
+            update.perUserLimit = req.body.maxUsagePerUser === '' || req.body.maxUsagePerUser === null
+                ? null : Number(req.body.maxUsagePerUser);
+        }
+
+        // Normalize empty strings to null for numeric fields
+        ['maxUsers', 'maxUsagePerUser', 'totalUsageLimit', 'maxDiscount'].forEach((k) => {
+            if (update[k] === '') update[k] = null;
+        });
+
+        const voucher = await Voucher.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true });
         if (!voucher) return res.status(404).json({ message: 'Không tìm thấy voucher' });
         res.json(voucher);
     } catch (error) {
