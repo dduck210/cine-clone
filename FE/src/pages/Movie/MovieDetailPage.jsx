@@ -43,6 +43,7 @@ const MovieDetailPage = () => {
         const [movieRes, showtimeRes] = await Promise.all([
           axiosInstance.get(`/movies/${id}`),
           axiosInstance.get(`/showtimes?movieId=${id}`),
+          new Promise((r) => setTimeout(r, 1000)),
         ]);
         setMovie(movieRes.data);
         const grouped = {};

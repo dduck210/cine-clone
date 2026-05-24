@@ -1091,6 +1091,19 @@ export const RoomsManager = ({ cinemas }) => {
     (r) => r.status !== "active",
   );
 
+  const getRoomCinemaId = (room) =>
+    room?.cinema?._id || (typeof room?.cinema === "string" ? room.cinema : "") || "";
+  const activeCinemaId = selectedCinema || getRoomCinemaId(selectedActiveRooms[0]);
+  const activeCinemaName =
+    selectedCinemaData?.name ||
+    cinemas.find((c) => c._id === activeCinemaId)?.name ||
+    "Rạp";
+  const maintenanceCinemaId = selectedCinema || getRoomCinemaId(selectedMaintenanceRooms[0]);
+  const maintenanceCinemaName =
+    selectedCinemaData?.name ||
+    cinemas.find((c) => c._id === maintenanceCinemaId)?.name ||
+    "Rạp";
+
   const loadRooms = async (cinemaId) => {
     setLoading(true);
     try {
@@ -1214,7 +1227,7 @@ export const RoomsManager = ({ cinemas }) => {
           </p>
         </div>
         <div className="flex gap-2">
-          {selectedCinema && selectedMaintenanceRooms.length > 0 && (
+          {selectedMaintenanceRooms.length > 0 && (
             <button
               onClick={() => setShowReopen(true)}
               className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all duration-150 active:scale-95 hover:-translate-y-0.5 shadow-md shadow-emerald-200 shrink-0 text-sm"
@@ -1222,7 +1235,7 @@ export const RoomsManager = ({ cinemas }) => {
               <RotateCcw size={16} /> Mở {selectedMaintenanceRooms.length} phòng
             </button>
           )}
-          {selectedCinema && selectedActiveRooms.length > 0 && (
+          {selectedActiveRooms.length > 0 && (
             <button
               onClick={() => setShowEmergency(true)}
               className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-all duration-150 active:scale-95 hover:-translate-y-0.5 shadow-md shadow-amber-200 shrink-0 text-sm"
@@ -1476,14 +1489,14 @@ export const RoomsManager = ({ cinemas }) => {
         document.body
       )}
 
-      {showEmergency && selectedCinema && createPortal(
+      {showEmergency && createPortal(
         <EmergencyCloseModal
-          cinemaId={selectedCinema}
-          cinemaName={selectedCinemaData?.name || "Rạp"}
+          cinemaId={activeCinemaId}
+          cinemaName={activeCinemaName}
           selectedRooms={selectedActiveRooms}
           onClose={() => setShowEmergency(false)}
           onDone={() => {
-            setCinemaStatus("incident");
+            if (selectedCinema) setCinemaStatus("incident");
             setSelectedRoomIds([]);
             loadRooms(selectedCinema);
           }}
@@ -1491,14 +1504,14 @@ export const RoomsManager = ({ cinemas }) => {
         document.body
       )}
 
-      {showReopen && selectedCinema && createPortal(
+      {showReopen && createPortal(
         <ReopenModal
-          cinemaId={selectedCinema}
-          cinemaName={selectedCinemaData?.name || "Rạp"}
+          cinemaId={maintenanceCinemaId}
+          cinemaName={maintenanceCinemaName}
           selectedRooms={selectedMaintenanceRooms}
           onClose={() => setShowReopen(false)}
           onDone={(cinemaRestored) => {
-            if (cinemaRestored) setCinemaStatus("active");
+            if (cinemaRestored && selectedCinema) setCinemaStatus("active");
             setSelectedRoomIds([]);
             loadRooms(selectedCinema);
           }}

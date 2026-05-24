@@ -13,10 +13,10 @@ const CinemasPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axiosInstance.get("/admin/cinemas")
-      .then((res) => setCinemas(res.data))
-      .catch(() => setCinemas([]))
-      .finally(() => setLoading(false));
+    Promise.all([
+      axiosInstance.get("/admin/cinemas").then((res) => setCinemas(res.data)).catch(() => setCinemas([])),
+      new Promise((r) => setTimeout(r, 1000)),
+    ]).finally(() => setLoading(false));
   }, []);
 
   return (

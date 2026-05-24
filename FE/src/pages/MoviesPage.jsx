@@ -9,10 +9,10 @@ import axiosInstance from "../api/axiosConfig";
 const MoviesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get("q") || "";
+  const activeTab = searchParams.get("tab") || "now";
 
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("now");
   const [visibleCount, setVisibleCount] = useState(10);
 
   const PAGE_SIZE = 10;
@@ -20,10 +20,10 @@ const MoviesPage = () => {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   useEffect(() => {
-    axiosInstance.get("/movies")
-      .then((res) => setMovies(res.data))
-      .catch(() => setMovies([]))
-      .finally(() => setLoading(false));
+    Promise.all([
+      axiosInstance.get("/movies").then((res) => setMovies(res.data)).catch(() => setMovies([])),
+      new Promise((r) => setTimeout(r, 1000)),
+    ]).finally(() => setLoading(false));
   }, []);
 
   const nowShowing = movies.filter((m) => m.status === "now_showing");
@@ -34,7 +34,10 @@ const MoviesPage = () => {
   const displayMovies = allDisplay.slice(0, visibleCount);
   const hasMore = visibleCount < allDisplay.length;
 
-  const handleTabChange = (tab) => { setActiveTab(tab); setVisibleCount(PAGE_SIZE); };
+  const handleTabChange = (tab) => {
+    setSearchParams((prev) => { const n = new URLSearchParams(prev); n.set("tab", tab); return n; });
+    setVisibleCount(PAGE_SIZE);
+  };
 
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans text-gray-900">

@@ -43,10 +43,10 @@ const MyTicketsPage = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
-    axiosInstance.get("/bookings/user/all")
-      .then((res) => setBookings(res.data))
-      .catch(() => setBookings([]))
-      .finally(() => setLoading(false));
+    Promise.all([
+      axiosInstance.get("/bookings/user/all").then((res) => setBookings(res.data)).catch(() => setBookings([])),
+      new Promise((r) => setTimeout(r, 1000)),
+    ]).finally(() => setLoading(false));
   }, [navigate]);
 
   const filteredBookings = activeTab === "all"

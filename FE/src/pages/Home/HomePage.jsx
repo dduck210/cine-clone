@@ -41,10 +41,10 @@ const HomePage = () => {
   const [newsSectionRef, newsSectionVisible] = useInView(0.05);
 
   useEffect(() => {
-    axiosInstance.get("/movies")
-      .then((res) => setMovies(res.data))
-      .catch(() => setMovies([]))
-      .finally(() => setLoading(false));
+    Promise.all([
+      axiosInstance.get("/movies").then((res) => setMovies(res.data)).catch(() => setMovies([])),
+      new Promise((r) => setTimeout(r, 1000)),
+    ]).finally(() => setLoading(false));
   }, []);
 
   const nowShowing = movies.filter((m) => m.status === "now_showing");
@@ -202,18 +202,18 @@ const HomePage = () => {
                   key={item.id}
                   to={`/news/${item.id}`}
                   onDragStart={(e) => e.preventDefault()}
-                  className="min-w-[300px] md:min-w-[360px] bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group/card border border-gray-100 block hover:-translate-y-1 flex-shrink-0"
+                  className="w-[300px] md:w-[360px] flex-shrink-0 flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group/card border border-gray-100 hover:-translate-y-1"
                 >
-                  <div className="h-48 overflow-hidden">
+                  <div className="h-48 flex-shrink-0 overflow-hidden">
                     <img
                       src={item.image}
                       alt={item.title}
                       className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-500"
                     />
                   </div>
-                  <div className="p-5">
+                  <div className="p-5 flex flex-col flex-1">
                     <span className="text-[10px] font-black text-red-600 uppercase tracking-widest">{item.category}</span>
-                    <h3 className="font-bold text-gray-800 mt-1.5 mb-3 text-[15px] line-clamp-2 group-hover/card:text-red-600 transition-colors leading-snug">
+                    <h3 className="font-bold text-gray-800 mt-1.5 mb-3 text-[15px] line-clamp-2 group-hover/card:text-red-600 transition-colors leading-snug flex-1">
                       {item.title}
                     </h3>
                     <p className="text-xs text-gray-400 font-semibold flex items-center gap-1.5">
