@@ -86,10 +86,13 @@ router.post('/', protect, admin, async (req, res) => {
             const endTime = calcEndTime(startTime, movie.duration);
             const priceConfig = calcPriceConfig(basePrice, timeSlot, dayType);
 
-            // Conflict check: same room, same date, overlapping time
-            const conflict = await Showtime.findOne({
+            const dayStart = new Date(new Date(date).setHours(0, 0, 0, 0));
+            const dayEnd   = new Date(new Date(date).setHours(23, 59, 59, 999));
+
+            // Room-level: no overlapping showtimes in same room
+            const roomConflict = await Showtime.findOne({
                 room: roomId,
-                date: { $gte: new Date(new Date(date).setHours(0,0,0,0)), $lt: new Date(new Date(date).setHours(23,59,59,999)) },
+                date: { $gte: dayStart, $lt: dayEnd },
                 status: 'active',
                 $or: [
                     { startTime: { $gte: startTime, $lt: endTime } },
@@ -97,9 +100,20 @@ router.post('/', protect, admin, async (req, res) => {
                     { startTime: { $lte: startTime }, endTime: { $gte: endTime } },
                 ],
             });
+            if (roomConflict) {
+                errors.push({ date, startTime, error: `Room conflict with showtime at ${roomConflict.startTime}` });
+                continue;
+            }
 
-            if (conflict) {
-                errors.push({ date, startTime, error: `Time conflict with showtime at ${conflict.startTime}` });
+            // Cinema-level: no duplicate startTime in same cinema on same day
+            const cinemaConflict = await Showtime.findOne({
+                cinema: cinemaId,
+                date: { $gte: dayStart, $lt: dayEnd },
+                startTime,
+                status: 'active',
+            });
+            if (cinemaConflict) {
+                errors.push({ date, startTime, error: `Cinema already has a showtime at ${startTime}` });
                 continue;
             }
 

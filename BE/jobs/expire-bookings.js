@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const Booking = require('../models/Booking');
 const Seat = require('../models/Seat');
+const Showtime = require('../models/Showtime');
 const Payment = require('../models/Payment');
 
 // Run every minute: expire pending bookings past their 5-minute hold
@@ -22,6 +23,16 @@ function startExpireBookingsJob() {
                 { _id: { $in: seatIds } },
                 { $set: { status: 'available', bookedBy: null } }
             );
+
+            // Restore availableSeats per showtime
+            const seatCountByShowtime = {};
+            for (const b of expiredBookings) {
+                const sid = b.showtime.toString();
+                seatCountByShowtime[sid] = (seatCountByShowtime[sid] || 0) + b.seats.length;
+            }
+            for (const [showtimeId, count] of Object.entries(seatCountByShowtime)) {
+                await Showtime.findByIdAndUpdate(showtimeId, { $inc: { availableSeats: count } });
+            }
 
             // Mark bookings as expired
             await Booking.updateMany(

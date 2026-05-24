@@ -94,11 +94,12 @@ router.post('/', protect, async (req, res) => {
         });
         await booking.save();
 
-        // Mark seats as reserved
+        // Mark seats as reserved and decrement available count
         await Seat.updateMany(
             { _id: { $in: availableSeats.map(s => s._id) } },
             { status: 'reserved', bookedBy: booking._id }
         );
+        await Showtime.findByIdAndUpdate(showtimeId, { $inc: { availableSeats: -availableSeats.length } });
 
         res.status(201).json(booking);
     } catch (error) {
@@ -163,6 +164,7 @@ router.put('/:id/cancel', protect, async (req, res) => {
             { _id: { $in: booking.seats } },
             { status: 'available', bookedBy: null }
         );
+        await Showtime.findByIdAndUpdate(booking.showtime, { $inc: { availableSeats: booking.seats.length } });
 
         if (wasConfirmed && booking.paymentId) {
             await Payment.findByIdAndUpdate(booking.paymentId, {

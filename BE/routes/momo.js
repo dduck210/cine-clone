@@ -239,4 +239,26 @@ async function processSuccessfulPayment(bookingId, transactionId, amount) {
     });
 }
 
+// POST /api/payments/momo/confirm-demo/:bookingId — Simulate MoMo success for localhost demo
+router.post('/confirm-demo/:bookingId', protect, async (req, res) => {
+    try {
+        const booking = await Booking.findById(req.params.bookingId);
+        if (!booking) return res.status(404).json({ message: 'Booking not found' });
+        if (booking.user.toString() !== req.user._id.toString())
+            return res.status(403).json({ message: 'Not authorized' });
+        if (booking.status === 'paid')
+            return res.json({ paid: true, bookingCode: booking.bookingCode });
+        if (booking.status !== 'pending')
+            return res.status(400).json({ message: 'Booking is not pending' });
+
+        const transactionId = `DEMO_MOMO_${Date.now()}`;
+        await processSuccessfulPayment(booking._id, transactionId, booking.totalPrice);
+
+        const updated = await Booking.findById(booking._id);
+        res.json({ paid: true, bookingCode: updated.bookingCode });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 module.exports = router;
