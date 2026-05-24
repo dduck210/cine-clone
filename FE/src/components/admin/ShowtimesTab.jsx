@@ -721,15 +721,15 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-bold">
-                  <th className="p-4 pl-6">Phim</th>
-                  <th className="p-4">Rạp · Phòng</th>
-                  <th className="p-4">Ngày chiếu</th>
-                  <th className="p-4">Giờ</th>
-                  <th className="p-4">Giá (Thường/VIP/Đôi)</th>
-                  <th className="p-4">Ghế còn</th>
-                  <th className="p-4 text-center">Trạng thái</th>
-                  <th className="p-4 pr-6 text-right">Thao tác</th>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-[13px] uppercase tracking-wider text-slate-500 font-bold">
+                  <th className="p-5 pl-6">Phim</th>
+                  <th className="p-5">Rạp · Phòng</th>
+                  <th className="p-5">Ngày chiếu</th>
+                  <th className="p-5">Giờ</th>
+                  <th className="p-5">Giá (Thường/VIP/Đôi)</th>
+                  <th className="p-5">Ghế còn</th>
+                  <th className="p-5 text-center">Trạng thái</th>
+                  <th className="p-5 pr-6 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody key={currentPage} className="divide-y divide-slate-100">
@@ -741,56 +741,56 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
 
                     return (
                       <tr key={st._id} onClick={() => setDetailShowtime(st)} className="hover:bg-slate-50/80 transition-all duration-150 group cursor-pointer" style={{ animation: "rowIn 0.25s cubic-bezier(0.22,1,0.36,1) both", animationDelay: `${idx * 40}ms` }}>
-                      <td className="p-4 pl-6">
-                        <div className="flex items-center gap-3">
+                      <td className="p-5 pl-6">
+                        <div className="flex items-center gap-4">
                           {st.movie?.poster && (
-                            <img src={st.movie.poster} alt="" className="w-9 h-12 object-cover rounded-lg border border-slate-100 shrink-0"
+                            <img src={st.movie.poster} alt="" className="w-14 h-[76px] object-cover rounded-xl border border-slate-100 shrink-0"
                               onError={(e) => { e.target.style.display = "none"; }} />
                           )}
-                          <span className="font-bold text-slate-800 text-sm line-clamp-2">{st.movie?.title || "—"}</span>
+                          <span className="font-bold text-slate-800 text-[16px] line-clamp-2">{st.movie?.title || "—"}</span>
                         </div>
                       </td>
-                      <td className="p-4 text-sm text-slate-600">
+                      <td className="p-5 text-[15px] text-slate-600">
                         <p className="font-medium">{st.cinema?.name || "—"}</p>
-                        <p className="text-xs text-slate-400">{st.room?.name || "—"}</p>
+                        <p className="text-[13px] text-slate-400 mt-0.5">{st.room?.name || "—"}</p>
                       </td>
-                      <td className="p-4 text-sm text-slate-600">
+                      <td className="p-5 text-[15px] text-slate-600">
                         <span className="flex items-center gap-1.5">
-                          <Calendar size={13} className="text-slate-400" />
+                          <Calendar size={14} className="text-slate-400" />
                           {st.date ? new Date(st.date).toLocaleDateString("vi-VN") : "—"}
                         </span>
                       </td>
-                      <td className="p-4">
-                        <span className="flex items-center gap-1.5 font-bold text-slate-800 text-sm">
-                          <Clock size={13} className="text-[#dc2626]" /> {st.startTime}
+                      <td className="p-5">
+                        <span className="flex items-center gap-1.5 font-bold text-slate-800 text-[16px]">
+                          <Clock size={15} className="text-[#dc2626]" /> {st.startTime}
                         </span>
                       </td>
-                      <td className="p-4 text-xs text-slate-600 space-y-0.5">
+                      <td className="p-5 text-[13px] text-slate-600 space-y-1">
                         <p><span className="font-medium text-slate-400">T:</span> <span className="font-bold text-slate-700">{st.priceConfig?.normal?.toLocaleString() || st.basePrice?.toLocaleString() || "—"}đ</span></p>
-                        <p><span className="font-medium text-amber-400">V:</span> <span className="font-bold text-slate-700">{st.priceConfig?.vip?.toLocaleString() || "—"}đ</span></p>
+                        <p><span className="font-medium text-amber-500">V:</span> <span className="font-bold text-amber-600">{st.priceConfig?.vip?.toLocaleString() || "—"}đ</span></p>
                         <p><span className="font-medium text-pink-400">Đ:</span> <span className="font-bold text-slate-700">{st.priceConfig?.couple?.toLocaleString() || "—"}đ</span></p>
                       </td>
-                      <td className="p-4 text-sm font-medium text-slate-600">
+                      <td className="p-5 text-[15px] font-medium text-slate-600">
                         {st.availableSeats ?? "—"} / {st.totalSeats ?? "—"}
                       </td>
-                      <td className="p-4 text-center">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${statusMeta.badge}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`}></span>
+                      <td className="p-5 text-center">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${statusMeta.badge}`}>
+                          <span className={`w-2 h-2 rounded-full ${statusMeta.dot}`}></span>
                           {statusMeta.label}
                         </span>
                       </td>
-                      <td className="p-4 pr-6 text-right" onClick={(e) => e.stopPropagation()}>
+                      <td className="p-5 pr-6 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-1 justify-end">
                           <button onClick={() => setDetailShowtime(st)}
-                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                            className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
                             title="Xem chi tiết">
-                            <Eye size={16} />
+                            <Eye size={18} />
                           </button>
                           {st.effectiveStatus === "active" && (
                             <button onClick={(e) => { e.stopPropagation(); setCancelTarget(st); }}
-                              className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                              className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                               title="Hủy suất chiếu">
-                              <Ban size={16} />
+                              <Ban size={18} />
                             </button>
                           )}
                         </div>
@@ -806,30 +806,30 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between px-2">
-        <p className="text-sm text-slate-500">
+      <div className="flex items-center justify-between px-2 py-1">
+        <p className="text-[15px] text-slate-500">
           Hiển thị <span className="font-bold text-slate-700">
             {filtered.length === 0 ? 0 : (currentPage - 1) * SHOWTIMES_PAGE_SIZE + 1}–{Math.min(currentPage * SHOWTIMES_PAGE_SIZE, filtered.length)}
           </span> / <span className="font-bold text-slate-700">{filtered.length}</span> suất chiếu
         </p>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}
-            className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95">
+            className="px-4 py-2 rounded-lg text-[15px] font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95">
             ‹ Trước
           </button>
           {Array.from({ length: Math.max(totalPages, 1) }, (_, i) => i + 1)
             .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
             .reduce((acc, p, i, arr) => { if (i > 0 && p - arr[i - 1] > 1) acc.push("..."); acc.push(p); return acc; }, [])
             .map((p, i) => p === "..." ? (
-              <span key={`d${i}`} className="px-2 text-slate-400 text-sm">…</span>
+              <span key={`d${i}`} className="px-2 text-slate-400 text-[15px]">…</span>
             ) : (
               <button key={p} onClick={() => setCurrentPage(p)}
-                className={`w-9 h-9 rounded-lg text-sm font-bold transition-all duration-150 active:scale-95 ${currentPage === p ? "bg-[#dc2626] text-white shadow-sm" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                className={`w-10 h-10 rounded-lg text-[15px] font-bold transition-all duration-150 active:scale-95 ${currentPage === p ? "bg-[#dc2626] text-white shadow-sm" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                 {p}
               </button>
             ))}
           <button onClick={() => setCurrentPage((p) => Math.min(Math.max(totalPages, 1), p + 1))} disabled={currentPage >= totalPages}
-            className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95">
+            className="px-4 py-2 rounded-lg text-[15px] font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95">
             Sau ›
           </button>
         </div>

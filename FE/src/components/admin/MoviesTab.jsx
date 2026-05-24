@@ -602,14 +602,14 @@ export const MoviesManager = ({
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50/80 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-bold">
-              <th className="p-4 pl-5 w-12">STT</th>
-              <th className="p-4">Tên phim</th>
-              <th className="p-4">Thể loại</th>
-              <th className="p-4">Thời lượng</th>
-              <th className="p-4">Đánh giá</th>
-              <th className="p-4 text-center">Trạng thái</th>
-              <th className="p-4 pr-5 text-right">Thao tác</th>
+            <tr className="bg-slate-50/80 border-b border-slate-200 text-[13px] uppercase tracking-wider text-slate-500 font-bold">
+              <th className="p-5 pl-6 w-12">STT</th>
+              <th className="p-5">Tên phim</th>
+              <th className="p-5">Thể loại</th>
+              <th className="p-5">Thời lượng</th>
+              <th className="p-5">Đánh giá</th>
+              <th className="p-5 text-center">Trạng thái</th>
+              <th className="p-5 pr-6 text-right">Thao tác</th>
             </tr>
           </thead>
           <tbody key={currentPage} className="divide-y divide-slate-100">
@@ -630,47 +630,47 @@ export const MoviesManager = ({
                   className="hover:bg-slate-50/80 transition-all duration-150 cursor-pointer"
                   style={{ animation: "rowIn 0.25s cubic-bezier(0.22,1,0.36,1) both", animationDelay: `${idx * 40}ms` }}
                 >
-                  <td className="p-4 pl-5 text-sm font-bold text-slate-400">
+                  <td className="p-5 pl-6 text-[15px] font-bold text-slate-400">
                     {(currentPage - 1) * MOVIES_PAGE_SIZE + idx + 1}
                   </td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
+                  <td className="p-5">
+                    <div className="flex items-center gap-4">
                       <img
                         src={movie.poster}
                         alt=""
-                        className="w-9 h-12 object-cover rounded-lg border border-slate-100 shrink-0"
+                        className="w-14 h-[76px] object-cover rounded-xl border border-slate-100 shrink-0"
                         onError={(e) => { e.target.style.display = "none"; }}
                       />
                       <div>
-                        <p className="font-bold text-slate-800 text-sm line-clamp-1">{movie.title}</p>
-                        <p className="text-xs text-slate-400 font-mono">#{movie._id?.toString().slice(-6)}</p>
+                        <p className="font-bold text-slate-800 text-[16px] line-clamp-1">{movie.title}</p>
+                        <p className="text-[13px] text-slate-400 font-mono mt-0.5">#{movie._id?.toString().slice(-6)}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="p-4 text-sm text-slate-600">{genreText}</td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-1.5 text-sm text-slate-500">
-                      <Clock size={13} className="text-slate-400" /> {movie.duration} phút
+                  <td className="p-5 text-[15px] text-slate-600">{genreText}</td>
+                  <td className="p-5">
+                    <div className="flex items-center gap-1.5 text-[15px] text-slate-500">
+                      <Clock size={14} className="text-slate-400" /> {movie.duration} phút
                     </div>
                   </td>
-                  <td className="p-4">
+                  <td className="p-5">
                     {movie.rating ? (
-                      <div className="flex items-center gap-1 text-sm font-bold text-amber-500">
-                        <Star size={13} fill="currentColor" /> {movie.rating}
+                      <div className="flex items-center gap-1 text-[15px] font-bold text-amber-500">
+                        <Star size={14} fill="currentColor" /> {movie.rating}
                       </div>
-                    ) : <span className="text-slate-300 text-sm">—</span>}
+                    ) : <span className="text-slate-300 text-[15px]">—</span>}
                   </td>
-                  <td className="p-4 text-center">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${sc.bg} ${sc.text} ${sc.border}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
+                  <td className="p-5 text-center">
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${sc.bg} ${sc.text} ${sc.border}`}>
+                      <span className={`w-2 h-2 rounded-full ${sc.dot}`} />
                       {sc.label}
                     </span>
                   </td>
-                  <td className="p-4 pr-5 text-right" onClick={(e) => e.stopPropagation()}>
+                  <td className="p-5 pr-6 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-1">
-                      <button onClick={() => setDetailMovie(movie)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Xem"><Eye size={15} /></button>
-                      <button onClick={() => handleEdit(movie)} className="p-1.5 text-slate-400 hover:text-[#dc2626] hover:bg-red-50 rounded-lg transition-all" title="Sửa"><Edit size={15} /></button>
-                      <button onClick={() => handleDeleteClick(movie)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all" title="Xóa"><Trash2 size={15} /></button>
+                      <button onClick={() => setDetailMovie(movie)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Xem"><Eye size={18} /></button>
+                      <button onClick={() => handleEdit(movie)} className="p-2 text-slate-400 hover:text-[#dc2626] hover:bg-red-50 rounded-xl transition-all" title="Sửa"><Edit size={18} /></button>
+                      <button onClick={() => handleDeleteClick(movie)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all" title="Xóa"><Trash2 size={18} /></button>
                     </div>
                   </td>
                 </tr>
@@ -685,30 +685,30 @@ export const MoviesManager = ({
       </div>
 
       {/* Pagination — always visible */}
-      <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100">
-        <p className="text-sm text-slate-500">
+      <div className="flex items-center justify-between px-5 py-4 border-t border-slate-100">
+        <p className="text-[15px] text-slate-500">
           Hiển thị <span className="font-bold text-slate-700">
             {filteredMovies.length === 0 ? 0 : (currentPage - 1) * MOVIES_PAGE_SIZE + 1}–{Math.min(currentPage * MOVIES_PAGE_SIZE, filteredMovies.length)}
           </span> / <span className="font-bold text-slate-700">{filteredMovies.length}</span> phim
         </p>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}
-            className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95">
+            className="px-4 py-2 rounded-lg text-[15px] font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95">
             ‹ Trước
           </button>
           {Array.from({ length: Math.max(totalPages, 1) }, (_, i) => i + 1)
             .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
             .reduce((acc, p, i, arr) => { if (i > 0 && p - arr[i - 1] > 1) acc.push("..."); acc.push(p); return acc; }, [])
             .map((p, i) => p === "..." ? (
-              <span key={`d${i}`} className="px-2 text-slate-400 text-sm">…</span>
+              <span key={`d${i}`} className="px-2 text-slate-400 text-[15px]">…</span>
             ) : (
               <button key={p} onClick={() => setCurrentPage(p)}
-                className={`w-9 h-9 rounded-lg text-sm font-bold transition-all duration-150 active:scale-95 ${currentPage === p ? "bg-[#dc2626] text-white shadow-sm" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                className={`w-10 h-10 rounded-lg text-[15px] font-bold transition-all duration-150 active:scale-95 ${currentPage === p ? "bg-[#dc2626] text-white shadow-sm" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                 {p}
               </button>
             ))}
           <button onClick={() => setCurrentPage((p) => Math.min(Math.max(totalPages, 1), p + 1))} disabled={currentPage >= totalPages}
-            className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95">
+            className="px-4 py-2 rounded-lg text-[15px] font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95">
             Sau ›
           </button>
         </div>
