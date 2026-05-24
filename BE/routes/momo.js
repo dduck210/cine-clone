@@ -62,8 +62,9 @@ router.post('/create', protect, async (req, res) => {
             return res.status(400).json({ message: data.message || 'Tạo thanh toán MoMo thất bại' });
         }
 
-        // Save orderId to booking for polling
+        // Extend booking hold to 15 min so it doesn't expire while user is on MoMo page
         booking.momoOrderId = orderId;
+        booking.expiresAt = new Date(Date.now() + 15 * 60 * 1000);
         await booking.save();
 
         res.json({
