@@ -21,6 +21,16 @@ const PAYMENT_METHODS = [
     ),
     color: "border-[#AE2070] bg-[#AE2070]/5", dot: "bg-[#AE2070]",
   },
+  {
+    id: "bank", label: "MB Bank", desc: "Chuyển khoản qua QR VietQR — tự động xác nhận",
+    icon: (
+      <svg viewBox="0 0 48 48" className="w-7 h-7" fill="none">
+        <circle cx="24" cy="24" r="24" fill="#004C97" />
+        <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="11" fontWeight="bold" fontFamily="Arial">MB</text>
+      </svg>
+    ),
+    color: "border-[#004C97] bg-[#004C97]/5", dot: "bg-[#004C97]",
+  },
 ];
 
 const PaymentPage = () => {
@@ -77,24 +87,24 @@ const PaymentPage = () => {
         bookingCode = bookingRes.data.bookingCode;
       }
 
+      const navState = {
+        bookingId, bookingCode, amount: finalTotalPrice,
+        movieTitle, cinemaName, roomName, showTime, showDate, showAddress,
+        selectedSeats, duration, poster,
+        combos, originalPrice, mondayDiscount, voucherDiscount, voucherCode, voucherType, voucherValue,
+      };
+
       if (paymentMethod === "momo") {
         const momoRes = await axiosInstance.post("/payments/momo/create", { bookingId });
         toast.dismiss(loadingToast);
         setIsProcessing(false);
-        
-        // Always go to our internal page to guarantee QR display & Cinematic UI
         navigate("/payment/momo", {
-          state: {
-            bookingId, bookingCode,
-            payUrl: momoRes.data.payUrl,
-            deeplink: momoRes.data.deeplink,
-            qrCodeUrl: momoRes.data.qrCodeUrl,
-            amount: finalTotalPrice,
-            movieTitle, cinemaName, roomName, showTime, showDate, showAddress,
-            selectedSeats, duration, poster,
-            combos, originalPrice, mondayDiscount, voucherDiscount, voucherCode, voucherType, voucherValue,
-          },
+          state: { ...navState, payUrl: momoRes.data.payUrl, deeplink: momoRes.data.deeplink, qrCodeUrl: momoRes.data.qrCodeUrl },
         });
+      } else if (paymentMethod === "bank") {
+        toast.dismiss(loadingToast);
+        setIsProcessing(false);
+        navigate("/payment/bank", { state: navState });
       }
     } catch (err) {
       toast.dismiss(loadingToast);
@@ -292,12 +302,12 @@ const PaymentPage = () => {
                 )}
 
                 <button onClick={handlePayment} disabled={isProcessing}
-                  className={`w-full font-black py-4 rounded-2xl shadow-xl transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-3 ${isProcessing ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none" : "bg-[#AE2070] hover:bg-[#8f1a5c] text-white shadow-pink-200 transform hover:-translate-y-1"}`}>
+                  className={`w-full font-black py-4 rounded-2xl shadow-xl transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-3 ${isProcessing ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none" : paymentMethod === "bank" ? "bg-[#004C97] hover:bg-[#003a75] text-white shadow-blue-200 transform hover:-translate-y-1" : "bg-[#AE2070] hover:bg-[#8f1a5c] text-white shadow-pink-200 transform hover:-translate-y-1"}`}>
                   {isProcessing ? (<><svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>ĐANG XỬ LÝ...</>) : "THANH TOÁN NGAY"}
                 </button>
 
                 <p className="text-center text-slate-400 text-xs mt-3 font-medium">
-                  Quét mã QR bằng app MoMo để thanh toán
+                  {paymentMethod === "bank" ? "Chuyển khoản MB Bank — hệ thống tự động xác nhận" : "Quét mã QR bằng app MoMo để thanh toán"}
                 </p>
               </div>
             </div>
