@@ -68,14 +68,12 @@ const getStatusMeta = (status) => {
     switch (status) {
         case 'active':
             return { label: 'Còn hiệu lực', color: 'emerald', icon: '🟢' };
-        case 'expired':
-            return { label: 'Hết hạn', color: 'red', icon: '🔴' };
         case 'upcoming':
             return { label: 'Sắp diễn ra', color: 'amber', icon: '🟡' };
+        case 'expired':
         case 'used-up':
-            return { label: 'Hết lượt', color: 'purple', icon: '🟣' };
         case 'inactive':
-            return { label: 'Đã tắt', color: 'slate', icon: '⚫' };
+            return { label: 'Hết hiệu lực', color: 'red', icon: '🔴' };
         default:
             return { label: 'Không xác định', color: 'slate', icon: '⚪' };
     }

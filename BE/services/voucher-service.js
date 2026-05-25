@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const Voucher = require('../models/Voucher');
 const VoucherUsage = require('../models/VoucherUsage');
 const { getVoucherStatus } = require('./voucher-status-service');
@@ -63,53 +62,38 @@ async function validateVoucher(code, userId, orderAmount) {
 }
 
 /**
- * Atomic apply — increments counters inside a transaction.
- * Call AFTER payment succeeds (or during booking creation).
+ * Apply voucher — increments usage counters.
+ * Uses individual atomic $inc operations (no multi-doc transaction needed).
+ * Call AFTER validation passes (during booking creation or payment success).
  */
 async function applyVoucher(voucherId, userId) {
-    const session = await mongoose.startSession();
-    try {
-        session.startTransaction();
+    // 1. Increment totalUsedCount (atomic $inc on single doc)
+    const voucher = await Voucher.findByIdAndUpdate(
+        voucherId,
+        { $inc: { totalUsedCount: 1 } },
+        { new: true }
+    );
+    if (!voucher) return null;
 
-        // Increment totalUsedCount
-        const voucher = await Voucher.findByIdAndUpdate(
+    // 2. Upsert per-user usage record
+    const existing = await VoucherUsage.findOneAndUpdate(
+        { voucher: voucherId, user: userId },
+        {
+            $inc: { usageCount: 1 },
+            $set: { lastUsedAt: new Date() },
+        },
+        { upsert: true, new: true }
+    );
+
+    // 3. If first time this user uses the voucher, increment uniqueUserCount
+    if (existing && existing.usageCount === 1) {
+        await Voucher.findByIdAndUpdate(
             voucherId,
-            { $inc: { totalUsedCount: 1 } },
-            { new: true, session }
+            { $inc: { uniqueUserCount: 1 } }
         );
-        if (!voucher) {
-            await session.abortTransaction();
-            session.endSession();
-            return null;
-        }
-
-        // Upsert VoucherUsage
-        const existing = await VoucherUsage.findOneAndUpdate(
-            { voucher: voucherId, user: userId },
-            {
-                $inc: { usageCount: 1 },
-                $set: { lastUsedAt: new Date() },
-            },
-            { upsert: true, new: true, session }
-        );
-
-        // If this was a new document (first time user), increment uniqueUserCount
-        if (existing.usageCount === 1) {
-            await Voucher.findByIdAndUpdate(
-                voucherId,
-                { $inc: { uniqueUserCount: 1 } },
-                { session }
-            );
-        }
-
-        await session.commitTransaction();
-        session.endSession();
-        return existing;
-    } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
-        throw error;
     }
+
+    return existing;
 }
 
 module.exports = { calcDiscount, validateVoucher, applyVoucher };

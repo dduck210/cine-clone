@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Trash2, Tag, Users, Clock, Archive, Ticket } from "lucide-react";
+import { Plus, Trash2, Tag, Users, Clock, Ticket } from "lucide-react";
 import toast from "react-hot-toast";
 import axiosInstance from "../../api/axiosConfig";
 
@@ -16,9 +16,7 @@ const STATUS_COLORS = {
   emerald: "bg-emerald-50 text-emerald-700 border-emerald-200",
   red:     "bg-red-50 text-red-600 border-red-200",
   amber:   "bg-amber-50 text-amber-700 border-amber-200",
-  zinc:    "bg-gray-100 text-gray-600 border-gray-200",
   slate:   "bg-slate-100 text-slate-600 border-slate-200",
-  purple:  "bg-purple-50 text-purple-600 border-purple-200",
 };
 
 const normalizeVoucher = (raw) => {
@@ -200,9 +198,8 @@ const PAGE_SIZE = 8;
 const FILTER_CHIPS = [
   { label: "Tất cả",     value: "all" },
   { label: "Còn hiệu lực", value: "active" },
-  { label: "Hết hạn",   value: "expired" },
   { label: "Sắp diễn ra", value: "upcoming" },
-  { label: "Hết lượt",  value: "used-up" },
+  { label: "Hết hiệu lực", value: "ended" },
 ];
 
 export const VouchersManager = () => {
@@ -240,8 +237,11 @@ export const VouchersManager = () => {
   }, []);
 
   const filteredVouchers = useMemo(() => {
-    const list = activeTab === "all" ? vouchers : vouchers.filter((v) => v.computedStatus === activeTab);
-    return list;
+    if (activeTab === "all") return vouchers;
+    if (activeTab === "ended") return vouchers.filter((v) =>
+      v.computedStatus === "expired" || v.computedStatus === "used-up" || v.computedStatus === "inactive"
+    );
+    return vouchers.filter((v) => v.computedStatus === activeTab);
   }, [vouchers, activeTab]);
 
   const totalPages = Math.max(1, Math.ceil(filteredVouchers.length / PAGE_SIZE));
@@ -261,15 +261,9 @@ export const VouchersManager = () => {
     if (!confirm) return;
     setActing(true);
     try {
-      if (confirm.type === "archive") {
-        await axiosInstance.put(`/vouchers/admin/${confirm.voucher._id}`, { status: "archived" });
-        toast.success("Đã lưu trữ voucher");
-        await load();
-      } else {
-        await axiosInstance.delete(`/vouchers/admin/${confirm.voucher._id}`);
-        setVouchers((p) => p.filter((v) => v._id !== confirm.voucher._id));
-        toast.success("Đã xóa voucher");
-      }
+      await axiosInstance.delete(`/vouchers/admin/${confirm.voucher._id}`);
+      setVouchers((p) => p.filter((v) => v._id !== confirm.voucher._id));
+      toast.success("Đã xóa voucher");
       setConfirm(null);
     } catch {
       toast.error("Thao tác thất bại");
@@ -283,12 +277,10 @@ export const VouchersManager = () => {
       {showModal && <VoucherModal onClose={() => setShowModal(false)} onSaved={() => { setShowModal(false); load(); }} />}
       {confirm && (
         <ConfirmModal
-          title={confirm.type === "archive" ? "Lưu trữ voucher?" : "Xóa voucher?"}
-          message={confirm.type === "archive"
-            ? `Voucher "${confirm.voucher.code}" sẽ không thể sử dụng được nữa.`
-            : `Xóa vĩnh viễn voucher "${confirm.voucher.code}"? Hành động này không thể hoàn tác.`}
-          confirmLabel={confirm.type === "archive" ? "Lưu trữ" : "Xóa"}
-          confirmClass={confirm.type === "archive" ? "bg-amber-500 hover:bg-amber-600" : "bg-red-600 hover:bg-red-700"}
+          title="Xóa voucher?"
+          message={`Xóa vĩnh viễn voucher "${confirm.voucher.code}"? Hành động này không thể hoàn tác.`}
+          confirmLabel="Xóa"
+          confirmClass="bg-red-600 hover:bg-red-700"
           onConfirm={handleConfirmAction}
           onClose={() => setConfirm(null)}
           loading={acting}
@@ -478,17 +470,8 @@ export const VouchersManager = () => {
                       {/* Actions */}
                       <td className="px-4 py-4 text-center">
                         <div className="flex items-center gap-1 justify-center">
-                          {v.status !== "archived" && (
-                            <button
-                              onClick={() => setConfirm({ type: "archive", voucher: v })}
-                              className="p-2 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-all"
-                              title="Lưu trữ"
-                            >
-                              <Archive size={15} />
-                            </button>
-                          )}
                           <button
-                            onClick={() => setConfirm({ type: "delete", voucher: v })}
+                            onClick={() => setConfirm({ voucher: v })}
                             className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
                             title="Xóa vĩnh viễn"
                           >
