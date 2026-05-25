@@ -27,7 +27,7 @@ const UserAvatar = ({ name }) => {
   const initials = (name || "?").split(" ").slice(-2).map((w) => w[0]).join("").toUpperCase();
   const color = AVATAR_COLORS[(name || "").charCodeAt(0) % AVATAR_COLORS.length];
   return (
-    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black shrink-0 ${color}`}>
+    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${color}`}>
       {initials}
     </div>
   );
@@ -36,7 +36,7 @@ const UserAvatar = ({ name }) => {
 const Stars = ({ value }) => (
   <div className="flex gap-0.5">
     {[1, 2, 3, 4, 5].map((s) => (
-      <Star key={s} size={11} className={s <= value ? "fill-yellow-400 text-yellow-400" : "text-gray-200 fill-gray-200"} />
+      <Star key={s} size={13} className={s <= value ? "fill-yellow-400 text-yellow-400" : "text-gray-200 fill-gray-200"} />
     ))}
   </div>
 );
@@ -134,8 +134,8 @@ export const ReviewsManager = () => {
         {loading ? (
           <div className="space-y-0 divide-y divide-slate-50">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-4 px-5 py-4 animate-pulse">
-                <div className="w-9 h-12 bg-slate-100 rounded-lg shrink-0" />
+              <div key={i} className="flex items-center gap-4 px-5 py-5 animate-pulse">
+                <div className="w-11 h-16 bg-slate-100 rounded-lg shrink-0" />
                 <div className="flex-1 space-y-2">
                   <div className="h-3.5 bg-slate-100 rounded w-1/3" />
                   <div className="h-3 bg-slate-100 rounded w-1/2" />
@@ -150,12 +150,12 @@ export const ReviewsManager = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-100">
-                    <th className="text-left px-5 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Phim</th>
-                    <th className="text-left px-5 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Người dùng</th>
-                    <th className="text-left px-5 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Đánh giá</th>
-                    <th className="text-left px-5 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Nội dung</th>
-                    <th className="text-left px-5 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80 hidden md:table-cell">Ngày</th>
-                    <th className="px-5 py-3 bg-slate-50/80 w-12" />
+                    <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Phim</th>
+                    <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Người dùng</th>
+                    <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Đánh giá</th>
+                    <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Nội dung</th>
+                    <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80 hidden md:table-cell">Ngày</th>
+                    <th className="text-center px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80 whitespace-nowrap">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -173,62 +173,62 @@ export const ReviewsManager = () => {
                       style={{ animationDelay: `${i * 45}ms` }}
                     >
                       {/* Movie */}
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2.5">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
                           {r.movie?.poster
-                            ? <img src={r.movie.poster} alt="" className="w-8 h-11 object-cover rounded-md shrink-0 shadow-sm" />
-                            : <div className="w-8 h-11 bg-slate-100 rounded-md shrink-0" />
+                            ? <img src={r.movie.poster} alt="" className="w-10 h-14 object-cover rounded-lg shrink-0 shadow-sm" />
+                            : <div className="w-10 h-14 bg-slate-100 rounded-lg shrink-0" />
                           }
-                          <span className="font-semibold text-slate-800 text-xs leading-snug line-clamp-2 max-w-[130px]">
+                          <span className="font-semibold text-slate-800 text-sm leading-snug line-clamp-2 max-w-[140px]">
                             {r.movie?.title || "—"}
                           </span>
                         </div>
                       </td>
 
                       {/* User */}
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2.5">
                           <UserAvatar name={r.user?.name} />
                           <div className="min-w-0">
-                            <p className="font-semibold text-slate-800 text-xs truncate max-w-[110px]">{r.user?.name || "Ẩn danh"}</p>
-                            <p className="text-[11px] text-slate-400 truncate max-w-[160px]">{r.user?.email || ""}</p>
+                            <p className="font-semibold text-slate-800 text-sm truncate max-w-[130px]">{r.user?.name || "Ẩn danh"}</p>
+                            <p className="text-xs text-slate-400 truncate max-w-[170px]">{r.user?.email || ""}</p>
                           </div>
                         </div>
                       </td>
 
                       {/* Rating */}
-                      <td className="px-5 py-3.5">
-                        <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-black ${ratingBadge(r.rating)}`}>
-                          <Star size={10} className="fill-current" />
+                      <td className="px-5 py-4">
+                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-black ${ratingBadge(r.rating)}`}>
+                          <Star size={12} className="fill-current" />
                           {r.rating}.0
                         </div>
-                        <div className="mt-1.5">
+                        <div className="mt-2">
                           <Stars value={r.rating} />
                         </div>
                       </td>
 
                       {/* Comment */}
-                      <td className="px-5 py-3.5 max-w-[220px]">
-                        <p className="text-slate-500 text-xs leading-relaxed line-clamp-2 border-l-2 border-slate-200 pl-2">
+                      <td className="px-5 py-4 max-w-[240px]">
+                        <p className="text-slate-500 text-sm leading-relaxed line-clamp-2 border-l-2 border-slate-200 pl-2.5">
                           {r.comment || <span className="italic text-slate-300">Không có nội dung</span>}
                         </p>
                       </td>
 
                       {/* Date */}
-                      <td className="px-5 py-3.5 hidden md:table-cell whitespace-nowrap">
-                        <span className="text-xs text-slate-400 font-medium">
+                      <td className="px-5 py-4 hidden md:table-cell whitespace-nowrap">
+                        <span className="text-sm text-slate-400 font-medium">
                           {new Date(r.createdAt).toLocaleDateString("vi-VN")}
                         </span>
                       </td>
 
                       {/* Actions */}
-                      <td className="px-4 py-3.5 text-right">
+                      <td className="px-4 py-4 text-center">
                         <button
                           onClick={() => setDeleteTarget(r)}
-                          className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 text-slate-300 hover:text-red-500 transition-all duration-150"
+                          className="p-2 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all duration-150"
                           title="Xóa đánh giá"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={15} />
                         </button>
                       </td>
                     </tr>
