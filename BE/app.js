@@ -16,21 +16,30 @@ const { initNotificationService } = require('./services/notification-service');
 dotenv.config();
 connectDB();
 
+const allowedOrigins = [
+    process.env.CLIENT_URL,
+    'http://localhost:5173',
+    'http://localhost:5174',
+].filter(Boolean);
+
+const corsOptions = {
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) callback(null, true);
+        else callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+};
+
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-    cors: {
-        origin: process.env.CLIENT_URL || 'http://localhost:5173',
-        credentials: true,
-    },
-});
+const io = new Server(server, { cors: corsOptions });
 
 io.on('connection', (socket) => {
     socket.on('admin:join', () => socket.join('admins'));
 });
 initNotificationService(io);
 
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Routes
