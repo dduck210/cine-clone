@@ -33,6 +33,7 @@ const bookingSchema = new mongoose.Schema({
     otpExpiry: { type: Date },
     momoTransId: { type: String },
     momoOrderId: { type: String },
+    payosOrderCode: { type: Number },
 }, { timestamps: true });
 
 bookingSchema.pre('save', async function () {
