@@ -73,7 +73,7 @@ const getStatusMeta = (status) => {
         case 'upcoming':
             return { label: 'Sắp diễn ra', color: 'amber', icon: '🟡' };
         case 'used-up':
-            return { label: 'Hết lượt', color: 'zinc', icon: '🟣' };
+            return { label: 'Hết lượt', color: 'purple', icon: '🟣' };
         case 'inactive':
             return { label: 'Đã tắt', color: 'slate', icon: '⚫' };
         default:

@@ -32,13 +32,13 @@ const normalizeVoucher = (raw) => {
 
   return {
     id: raw._id || raw.id || `v-${Math.random().toString(36).substr(2, 9)}`,
-    _id: raw._id || raw.id, // Keep _id for consistency if used elsewhere
+    _id: raw._id || raw.id, 
     code: raw.code || "",
     description: raw.description || "",
     
-    // Aligned fields
-    type: raw.type || "percent",
-    value: Number(raw.value) || 0,
+    // Aligned fields as per log.md Standard
+    discountType: raw.discountType || raw.type || "percent",
+    discountValue: Number(raw.discountValue || raw.value) || 0,
     minOrderAmount: Number(raw.minOrderAmount) || 0,
     maxDiscount: raw.maxDiscount ?? null,
 
@@ -49,9 +49,9 @@ const normalizeVoucher = (raw) => {
     // Usage normalization
     usageLimit: raw.usageLimit ?? -1,
     usedCount: raw.usedCount ?? 0,
-    uniqueUserCount: raw.uniqueUserCount ?? 0,
+    uniqueUserCount: raw.uniqueUserCount ?? raw.usedUsersCount ?? 0,
     maxUsers: raw.maxUsers ?? null,
-    maxUsagePerUser: raw.maxUsagePerUser ?? null,
+    maxUsagePerUser: raw.maxUsagePerUser ?? raw.perUserLimit ?? null,
 
     // Computed Logic from BE (Source of Truth)
     computedStatus: raw.computedStatus || "unknown",
@@ -197,8 +197,12 @@ export const VouchersManager = () => {
     setLoading(true);
     try { 
       const res = await axiosInstance.get("/vouchers/admin"); 
+      console.log("RAW API:", res.data);
+
       // Principal: Normalize data immediately after fetch to ensure consistency
       const normalized = (res.data || []).map(v => normalizeVoucher(v));
+      console.log("NORMALIZED:", normalized);
+
       setVouchers(normalized); 
     }
     catch { toast.error("Không tải được danh sách voucher"); }
@@ -310,13 +314,16 @@ export const VouchersManager = () => {
                   const display = v.displayStatus || { label: 'Unknown', color: 'slate', icon: '⚪' };
                   const cd = v.expiryCountdown;
 
+                  // Principal: Mandatory RENDER log
+                  console.log("RENDER:", v);
+
                   return (
                     <tr key={v.id || v._id || idx} className="hover:bg-slate-50/50 transition-colors group">
                       {/* Mã */}
                       <td className="p-5 pl-6">
                         <div className="flex items-center gap-3">
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs ${v.computedStatus === 'active' ? 'bg-violet-50 text-violet-600' : 'bg-slate-50 text-slate-400'}`}>
-                            {v.type === 'percent' ? '%' : 'đ'}
+                            {v.discountType === 'percent' ? '%' : 'đ'}
                           </div>
                           <div>
                             <p className="font-black text-slate-800 text-[15px] tracking-widest leading-none mb-1.5">{v.code}</p>
@@ -328,7 +335,7 @@ export const VouchersManager = () => {
                       {/* Giảm giá */}
                       <td className="p-5">
                         <p className="font-black text-slate-900 text-[16px]">
-                          {v.type === "percent" ? `−${v.value}%` : `−${v.value.toLocaleString("vi-VN")}đ`}
+                          {v.discountType === "percent" ? `−${v.discountValue}%` : `−${v.discountValue.toLocaleString("vi-VN")}đ`}
                         </p>
                         {v.maxDiscount && <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">Tối đa {v.maxDiscount.toLocaleString()}đ</p>}
                         {v.minOrderAmount > 0 && (
