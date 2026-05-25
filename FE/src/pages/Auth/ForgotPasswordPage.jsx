@@ -1,67 +1,133 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Mail, Lock, ArrowLeft, KeyRound } from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
+import { Mail, Lock, ArrowLeft, KeyRound, CheckCircle, AlertCircle } from "lucide-react";
 import axiosInstance from "../../api/axiosConfig";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const FieldError = ({ msg }) => msg ? <p className="text-red-500 text-xs mt-1 ml-1">{msg}</p> : null;
+
+const validateField = (name, value, allValues = {}) => {
+  if (name === "email") {
+    if (!value.trim()) return "Email không được để trống";
+    if (!EMAIL_RE.test(value)) return "Email không đúng định dạng";
+    return "";
+  }
+  if (name === "otp") {
+    if (!value.trim() || value.length !== 6) return "Mã OTP gồm 6 chữ số";
+    return "";
+  }
+  if (name === "newPassword") {
+    if (!value) return "Mật khẩu không được để trống";
+    if (value.length < 6) return "Mật khẩu phải có ít nhất 6 ký tự";
+    return "";
+  }
+  if (name === "confirmPassword") {
+    if (!value) return "Vui lòng xác nhận mật khẩu";
+    if (value !== allValues.newPassword) return "Mật khẩu xác nhận không khớp";
+    return "";
+  }
+  return "";
+};
+
+const FieldError = ({ msg }) =>
+  msg ? (
+    <p className="flex items-center gap-1 text-red-500 text-xs mt-1.5 ml-1 animate-[fadeDown_0.15s_ease]">
+      <AlertCircle size={11} className="shrink-0" />
+      {msg}
+    </p>
+  ) : null;
 
 const ForgotPasswordPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [step, setStep] = useState(1);
-  const [email, setEmail] = useState(searchParams.get("email") || "");
-  const [otp, setOtp] = useState(searchParams.get("code") || "");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [fields, setFields] = useState({
+    email: searchParams.get("email") || "",
+    otp: searchParams.get("code") || "",
+    newPassword: "",
+    confirmPassword: "",
+  });
   const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [serverError, setServerError] = useState("");
+  const [otpPreFilled, setOtpPreFilled] = useState(false);
 
-  // Cleanup toasts on unmount
+  // Auto-advance to step 2 when URL has both email + code
   useEffect(() => {
-    return () => { toast.dismiss("otp"); toast.dismiss("reset"); };
-  }, []);
-
-  // Auto-fill from email link
-  useEffect(() => {
-    const codeFromUrl = searchParams.get("code");
-    const emailFromUrl = searchParams.get("email");
-    if (codeFromUrl && emailFromUrl) {
+    if (searchParams.get("code") && searchParams.get("email")) {
       setStep(2);
-      toast.success("Đã điền mã OTP từ email!", { duration: 2000 });
+      setOtpPreFilled(true);
     }
   }, []);
 
-  const validateStep1 = () => {
-    const e = {};
-    if (!email.trim()) e.email = "Email không được để trống";
-    else if (!EMAIL_RE.test(email)) e.email = "Email không đúng định dạng";
-    setErrors(e);
-    return Object.keys(e).length === 0;
+  const handleChange = useCallback(
+    (name, value) => {
+      const updated = { ...fields, [name]: value };
+      setFields(updated);
+      if (serverError) setServerError("");
+      const newErrors = { ...errors };
+      if (touched[name]) newErrors[name] = validateField(name, value, updated);
+      // Re-validate confirmPassword khi newPassword thay đổi
+      if (name === "newPassword" && touched.confirmPassword) {
+        newErrors.confirmPassword = validateField("confirmPassword", updated.confirmPassword, updated);
+      }
+      setErrors(newErrors);
+    },
+    [fields, errors, touched, serverError]
+  );
+
+  const handleBlur = useCallback(
+    (name) => {
+      setTouched((prev) => ({ ...prev, [name]: true }));
+      setErrors((prev) => ({ ...prev, [name]: validateField(name, fields[name], fields) }));
+    },
+    [fields]
+  );
+
+  const fieldState = (name) => {
+    if (!touched[name]) return "idle";
+    return errors[name] ? "error" : "success";
   };
 
-  const validateStep2 = () => {
-    const e = {};
-    if (!otp.trim() || otp.length !== 6) e.otp = "Mã OTP gồm 6 chữ số";
-    if (!newPassword) e.newPassword = "Mật khẩu không được để trống";
-    else if (newPassword.length < 6) e.newPassword = "Mật khẩu phải có ít nhất 6 ký tự";
-    if (confirmPassword !== newPassword) e.confirmPassword = "Mật khẩu xác nhận không khớp";
-    setErrors(e);
-    return Object.keys(e).length === 0;
+  const inputClass = (name, extra = "pr-10") => {
+    const base = `w-full bg-gray-50 border rounded-xl pl-12 ${extra} py-3 focus:ring-2 outline-none transition-all duration-200 font-medium`;
+    const state = fieldState(name);
+    if (state === "error") return `${base} border-red-400 focus:ring-red-100 focus:border-red-500`;
+    if (state === "success") return `${base} border-green-400 focus:ring-green-100 focus:border-green-500 bg-green-50/30`;
+    return `${base} border-gray-200 focus:ring-red-100 focus:border-[#dc2626]`;
+  };
+
+  const leadIconColor = (name) => {
+    const state = fieldState(name);
+    if (state === "error") return "text-red-400";
+    if (state === "success") return "text-green-500";
+    return "text-gray-400";
+  };
+
+  const TrailIcon = ({ name }) => {
+    const state = fieldState(name);
+    if (state === "success") return <CheckCircle size={16} className="absolute right-3.5 top-3.5 text-green-500 pointer-events-none" />;
+    if (state === "error") return <AlertCircle size={16} className="absolute right-3.5 top-3.5 text-red-400 pointer-events-none" />;
+    return null;
   };
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
-    if (!validateStep1()) return;
+    const err = validateField("email", fields.email);
+    if (err) {
+      setErrors({ email: err });
+      setTouched({ email: true });
+      return;
+    }
     setIsLoading(true);
-    toast.loading("Đang gửi OTP...", { id: "otp" });
+    setServerError("");
     try {
-      await axiosInstance.post("/auth/forgot-password", { email });
-      toast.success("OTP đã được gửi tới email của bạn!", { id: "otp" });
+      await axiosInstance.post("/auth/forgot-password", { email: fields.email });
       setStep(2);
+      setErrors({});
+      setTouched({});
     } catch (err) {
-      toast.error(err.response?.data?.message || "Không thể gửi OTP", { id: "otp" });
+      setServerError(err.response?.data?.message || "Không thể gửi OTP, vui lòng thử lại");
     } finally {
       setIsLoading(false);
     }
@@ -69,22 +135,47 @@ const ForgotPasswordPage = () => {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    if (!validateStep2()) return;
+    const e1 = validateField("otp", fields.otp);
+    const e2 = validateField("newPassword", fields.newPassword);
+    const e3 = validateField("confirmPassword", fields.confirmPassword, fields);
+    if (e1 || e2 || e3) {
+      setErrors({ otp: e1, newPassword: e2, confirmPassword: e3 });
+      setTouched({ otp: true, newPassword: true, confirmPassword: true });
+      return;
+    }
     setIsLoading(true);
-    toast.loading("Đang đặt lại mật khẩu...", { id: "reset" });
+    setServerError("");
     try {
-      await axiosInstance.post("/auth/reset-password", { email, otp, newPassword });
-      toast.success("Đặt lại mật khẩu thành công!", { id: "reset" });
+      await axiosInstance.post("/auth/reset-password", {
+        email: fields.email,
+        otp: fields.otp,
+        newPassword: fields.newPassword,
+      });
       navigate("/login");
     } catch (err) {
-      toast.error(err.response?.data?.message || "OTP không hợp lệ hoặc đã hết hạn", { id: "reset" });
+      setServerError(err.response?.data?.message || "OTP không hợp lệ hoặc đã hết hạn");
     } finally {
       setIsLoading(false);
     }
   };
 
+  const goBackToStep1 = () => {
+    setStep(1);
+    setErrors({});
+    setTouched({});
+    setServerError("");
+    setOtpPreFilled(false);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <style>{`
+        @keyframes fadeDown {
+          from { opacity: 0; transform: translateY(-4px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
       <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row min-h-[600px]">
         {/* Left panel */}
         <div className="hidden md:block w-1/2 bg-gray-900 relative">
@@ -115,9 +206,7 @@ const ForgotPasswordPage = () => {
             <div className="mb-10 text-center md:text-left">
               <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Đặt lại mật khẩu</h1>
               <p className="text-gray-500">
-                {step === 1
-                  ? "Nhập email để nhận mã OTP xác nhận."
-                  : `Nhập mã OTP đã gửi đến ${email}`}
+                {step === 1 ? "Nhập email để nhận mã OTP xác nhận." : `Nhập mã OTP đã gửi đến ${fields.email}`}
               </p>
             </div>
 
@@ -138,18 +227,29 @@ const ForgotPasswordPage = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                   <div className="relative">
-                    <Mail className={`absolute left-4 top-3.5 ${errors.email ? "text-red-400" : "text-gray-400"}`} size={20} />
+                    <Mail className={`absolute left-4 top-3.5 ${leadIconColor("email")}`} size={20} />
                     <input
                       type="text"
-                      value={email}
-                      onChange={(e) => { setEmail(e.target.value); if (errors.email) setErrors((p) => ({ ...p, email: "" })); }}
+                      value={fields.email}
+                      onChange={(e) => handleChange("email", e.target.value)}
+                      onBlur={() => handleBlur("email")}
                       placeholder="name@example.com"
-                      className={`w-full bg-gray-50 border rounded-xl pl-12 pr-4 py-3 focus:ring-2 outline-none transition-all font-medium ${errors.email ? "border-red-400 focus:ring-red-100 focus:border-red-500" : "border-gray-200 focus:ring-red-100 focus:border-[#dc2626]"}`}
+                      className={inputClass("email")}
                       disabled={isLoading}
+                      autoComplete="email"
                     />
+                    <TrailIcon name="email" />
                   </div>
                   <FieldError msg={errors.email} />
                 </div>
+
+                {serverError && (
+                  <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 animate-[fadeDown_0.2s_ease]">
+                    <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                    <span>{serverError}</span>
+                  </div>
+                )}
+
                 <button
                   type="submit"
                   disabled={isLoading}
@@ -160,53 +260,81 @@ const ForgotPasswordPage = () => {
               </form>
             ) : (
               <form onSubmit={handleResetPassword} className="space-y-5">
+                {otpPreFilled && (
+                  <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3">
+                    <CheckCircle size={16} className="shrink-0" />
+                    <span>Đã điền mã OTP từ email!</span>
+                  </div>
+                )}
+
+                {/* OTP */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Mã OTP (6 chữ số)</label>
                   <div className="relative">
-                    <KeyRound className={`absolute left-4 top-3.5 ${errors.otp ? "text-red-400" : "text-gray-400"}`} size={20} />
+                    <KeyRound className={`absolute left-4 top-3.5 ${leadIconColor("otp")}`} size={20} />
                     <input
                       type="text"
-                      value={otp}
-                      onChange={(e) => { setOtp(e.target.value.replace(/\D/g, "").slice(0, 6)); if (errors.otp) setErrors((p) => ({ ...p, otp: "" })); }}
+                      value={fields.otp}
+                      onChange={(e) => handleChange("otp", e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      onBlur={() => handleBlur("otp")}
                       placeholder="123456"
-                      autocomplete="one-time-code"
-                      className={`w-full bg-gray-50 border rounded-xl pl-12 pr-4 py-3 focus:ring-2 outline-none transition-all font-medium tracking-widest text-center text-lg ${errors.otp ? "border-red-400 focus:ring-red-100 focus:border-red-500" : "border-gray-200 focus:ring-red-100 focus:border-[#dc2626]"}`}
+                      autoComplete="one-time-code"
+                      className={`${inputClass("otp")} tracking-widest text-center text-lg`}
                       disabled={isLoading}
                       maxLength={6}
                     />
+                    <TrailIcon name="otp" />
                   </div>
                   <FieldError msg={errors.otp} />
                 </div>
+
+                {/* Mật khẩu mới */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Mật khẩu mới</label>
                   <div className="relative">
-                    <Lock className={`absolute left-4 top-3.5 ${errors.newPassword ? "text-red-400" : "text-gray-400"}`} size={20} />
+                    <Lock className={`absolute left-4 top-3.5 ${leadIconColor("newPassword")}`} size={20} />
                     <input
                       type="password"
-                      value={newPassword}
-                      onChange={(e) => { setNewPassword(e.target.value); if (errors.newPassword) setErrors((p) => ({ ...p, newPassword: "" })); }}
+                      value={fields.newPassword}
+                      onChange={(e) => handleChange("newPassword", e.target.value)}
+                      onBlur={() => handleBlur("newPassword")}
                       placeholder="••••••••"
-                      className={`w-full bg-gray-50 border rounded-xl pl-12 pr-4 py-3 focus:ring-2 outline-none transition-all font-medium ${errors.newPassword ? "border-red-400 focus:ring-red-100 focus:border-red-500" : "border-gray-200 focus:ring-red-100 focus:border-[#dc2626]"}`}
+                      className={inputClass("newPassword")}
                       disabled={isLoading}
+                      autoComplete="new-password"
                     />
+                    <TrailIcon name="newPassword" />
                   </div>
                   <FieldError msg={errors.newPassword} />
                 </div>
+
+                {/* Xác nhận mật khẩu */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Xác nhận mật khẩu</label>
                   <div className="relative">
-                    <Lock className={`absolute left-4 top-3.5 ${errors.confirmPassword ? "text-red-400" : "text-gray-400"}`} size={20} />
+                    <Lock className={`absolute left-4 top-3.5 ${leadIconColor("confirmPassword")}`} size={20} />
                     <input
                       type="password"
-                      value={confirmPassword}
-                      onChange={(e) => { setConfirmPassword(e.target.value); if (errors.confirmPassword) setErrors((p) => ({ ...p, confirmPassword: "" })); }}
+                      value={fields.confirmPassword}
+                      onChange={(e) => handleChange("confirmPassword", e.target.value)}
+                      onBlur={() => handleBlur("confirmPassword")}
                       placeholder="••••••••"
-                      className={`w-full bg-gray-50 border rounded-xl pl-12 pr-4 py-3 focus:ring-2 outline-none transition-all font-medium ${errors.confirmPassword ? "border-red-400 focus:ring-red-100 focus:border-red-500" : "border-gray-200 focus:ring-red-100 focus:border-[#dc2626]"}`}
+                      className={inputClass("confirmPassword")}
                       disabled={isLoading}
+                      autoComplete="new-password"
                     />
+                    <TrailIcon name="confirmPassword" />
                   </div>
                   <FieldError msg={errors.confirmPassword} />
                 </div>
+
+                {serverError && (
+                  <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 animate-[fadeDown_0.2s_ease]">
+                    <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                    <span>{serverError}</span>
+                  </div>
+                )}
+
                 <button
                   type="submit"
                   disabled={isLoading}
@@ -214,9 +342,10 @@ const ForgotPasswordPage = () => {
                 >
                   {isLoading ? "Đang xử lý..." : "Đặt lại mật khẩu"}
                 </button>
+
                 <button
                   type="button"
-                  onClick={() => setStep(1)}
+                  onClick={goBackToStep1}
                   className="w-full text-gray-500 text-sm hover:text-red-600 transition-colors"
                 >
                   Đổi email khác

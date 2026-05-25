@@ -1,72 +1,163 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, User, ArrowLeft, ShieldCheck } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User, ArrowLeft, ShieldCheck, CheckCircle, AlertCircle } from "lucide-react";
+import toast from "react-hot-toast";
 import axiosInstance from "../../api/axiosConfig";
-import toast, { Toaster } from "react-hot-toast";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const FieldError = ({ msg }) => msg ? (
-  <p className="text-red-500 text-xs mt-1 ml-1">{msg}</p>
-) : null;
+const validateField = (name, value, allValues = {}) => {
+  if (name === "name") {
+    if (!value.trim()) return "Họ tên không được để trống";
+    if (value.trim().length < 2) return "Họ tên phải có ít nhất 2 ký tự";
+    return "";
+  }
+  if (name === "email") {
+    if (!value.trim()) return "Email không được để trống";
+    if (!EMAIL_RE.test(value)) return "Email không đúng định dạng";
+    return "";
+  }
+  if (name === "password") {
+    if (!value) return "Mật khẩu không được để trống";
+    if (value.length < 6) return "Mật khẩu phải có ít nhất 6 ký tự";
+    return "";
+  }
+  if (name === "confirmPassword") {
+    if (!value) return "Vui lòng nhập lại mật khẩu";
+    if (value !== allValues.password) return "Mật khẩu không khớp";
+    return "";
+  }
+  return "";
+};
+
+const FieldError = ({ msg }) =>
+  msg ? (
+    <p className="flex items-center gap-1 text-red-500 text-xs mt-1.5 ml-1 animate-[fadeDown_0.15s_ease]">
+      <AlertCircle size={11} className="shrink-0" />
+      {msg}
+    </p>
+  ) : null;
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+  const [fields, setFields] = useState({ name: "", email: "", password: "", confirmPassword: "" });
   const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [serverError, setServerError] = useState("");
 
-  const set = (field) => (e) => {
-    setForm((p) => ({ ...p, [field]: e.target.value }));
-    if (errors[field]) setErrors((p) => ({ ...p, [field]: "" }));
-  };
+  const handleChange = useCallback(
+    (name, value) => {
+      const updated = { ...fields, [name]: value };
+      setFields(updated);
+      if (serverError) setServerError("");
+      const newErrors = { ...errors };
+      if (touched[name]) {
+        newErrors[name] = validateField(name, value, updated);
+      }
+      // Re-validate confirmPassword live khi password thay đổi
+      if (name === "password" && touched.confirmPassword) {
+        newErrors.confirmPassword = validateField("confirmPassword", updated.confirmPassword, updated);
+      }
+      setErrors(newErrors);
+    },
+    [fields, errors, touched, serverError]
+  );
 
-  const validate = () => {
-    const errs = {};
-    if (!form.name.trim()) errs.name = "Họ tên không được để trống";
-    else if (form.name.trim().length < 2) errs.name = "Họ tên phải có ít nhất 2 ký tự";
-    if (!form.email.trim()) errs.email = "Email không được để trống";
-    else if (!EMAIL_RE.test(form.email)) errs.email = "Email không đúng định dạng";
-    if (!form.password) errs.password = "Mật khẩu không được để trống";
-    else if (form.password.length < 6) errs.password = "Mật khẩu phải có ít nhất 6 ký tự";
-    if (!form.confirmPassword) errs.confirmPassword = "Vui lòng nhập lại mật khẩu";
-    else if (form.confirmPassword !== form.password) errs.confirmPassword = "Mật khẩu không khớp";
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
+  const handleBlur = useCallback(
+    (name) => {
+      setTouched((prev) => ({ ...prev, [name]: true }));
+      setErrors((prev) => ({ ...prev, [name]: validateField(name, fields[name], fields) }));
+    },
+    [fields]
+  );
+
+  const validateAll = () => {
+    const e = {
+      name: validateField("name", fields.name, fields),
+      email: validateField("email", fields.email, fields),
+      password: validateField("password", fields.password, fields),
+      confirmPassword: validateField("confirmPassword", fields.confirmPassword, fields),
+    };
+    setErrors(e);
+    setTouched({ name: true, email: true, password: true, confirmPassword: true });
+    return Object.values(e).every((v) => !v);
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
+    if (!validateAll()) return;
     setLoading(true);
+    setServerError("");
     try {
       const res = await axiosInstance.post("/auth/register", {
-        name: form.name,
-        email: form.email,
-        password: form.password,
+        name: fields.name,
+        email: fields.email,
+        password: fields.password,
       });
-      // Clear any old session data to prevent auth conflicts
       localStorage.removeItem("token");
       localStorage.removeItem("currentUser");
-      if (res.data.emailFailed) {
-        toast.error(res.data.message);
-      } else {
-        toast.success(res.data.message || "Vui lòng kiểm tra email để xác thực tài khoản.");
-      }
-      navigate("/verify-email", { state: { email: res.data.email || form.email } });
+      toast.success(res.data.message || "Vui lòng kiểm tra email để xác thực tài khoản.");
+      navigate("/verify-email", {
+        state: { email: res.data.email || fields.email, emailFailed: !!res.data.emailFailed },
+      });
     } catch (err) {
-      toast.error(err.response?.data?.message || "Đăng ký thất bại, thử lại sau");
+      setServerError(err.response?.data?.message || "Đăng ký thất bại, vui lòng thử lại");
     } finally {
       setLoading(false);
     }
   };
 
+  const fieldState = (name) => {
+    if (!touched[name]) return "idle";
+    return errors[name] ? "error" : "success";
+  };
+
+  const inputClass = (name, extraRight = "pr-10") => {
+    const base = `w-full bg-gray-50 border rounded-xl pl-11 ${extraRight} py-3 text-sm focus:ring-2 outline-none transition-all duration-200 font-medium`;
+    const state = fieldState(name);
+    if (state === "error") return `${base} border-red-400 focus:ring-red-100 focus:border-red-500`;
+    if (state === "success") return `${base} border-green-400 focus:ring-green-100 focus:border-green-500 bg-green-50/30`;
+    return `${base} border-gray-200 focus:ring-red-100 focus:border-[#dc2626]`;
+  };
+
+  const leadIconColor = (name) => {
+    const state = fieldState(name);
+    if (state === "error") return "text-red-400";
+    if (state === "success") return "text-green-500";
+    return "text-gray-400";
+  };
+
+  const TrailIcon = ({ name }) => {
+    const state = fieldState(name);
+    if (state === "success") return <CheckCircle size={16} className="text-green-500 pointer-events-none" />;
+    if (state === "error") return <AlertCircle size={16} className="text-red-400 pointer-events-none" />;
+    return null;
+  };
+
+  // Ô password/confirmPassword có thêm nút toggle nên trail phức tạp hơn
+  const PasswordTrail = ({ name, show, onToggle }) => (
+    <div className="absolute right-3.5 top-3 flex items-center gap-1.5">
+      <TrailIcon name={name} />
+      <button type="button" onClick={onToggle} className="text-gray-400 hover:text-gray-600 p-0.5" tabIndex={-1}>
+        {show ? <EyeOff size={18} /> : <Eye size={18} />}
+      </button>
+    </div>
+  );
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
+      <style>{`
+        @keyframes fadeDown {
+          from { opacity: 0; transform: translateY(-4px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
       <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row">
-        {/* Left panel — hidden on mobile */}
+        {/* Left panel */}
         <div className="hidden md:block md:w-1/2 bg-gray-900 relative min-h-[680px]">
           <img
             src="https://image.tmdb.org/t/p/original/mXLOHHc1Zeuwsl4xYKjKh2280oL.jpg"
@@ -85,10 +176,7 @@ const RegisterPage = () => {
         {/* Right panel — form */}
         <div className="w-full md:w-1/2 flex flex-col justify-center px-6 py-10 sm:px-10 sm:py-12">
           <div className="max-w-md mx-auto w-full">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors text-sm font-medium mb-8"
-            >
+            <Link to="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors text-sm font-medium mb-8">
               <ArrowLeft size={16} /> Về trang chủ
             </Link>
 
@@ -98,75 +186,86 @@ const RegisterPage = () => {
             </div>
 
             <form onSubmit={handleRegister} className="space-y-4">
+              {/* Họ tên */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Họ và tên</label>
                 <div className="relative">
-                  <User className={`absolute left-4 top-3.5 ${errors.name ? "text-red-400" : "text-gray-400"}`} size={18} />
+                  <User className={`absolute left-4 top-3.5 ${leadIconColor("name")}`} size={18} />
                   <input
                     type="text"
                     placeholder="Nguyễn Văn A"
-                    value={form.name}
-                    onChange={set("name")}
-                    className={`w-full bg-gray-50 border rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 outline-none transition-all font-medium ${errors.name ? "border-red-400 focus:ring-red-100 focus:border-red-500" : "border-gray-200 focus:ring-red-100 focus:border-[#dc2626]"}`}
+                    value={fields.name}
+                    onChange={(e) => handleChange("name", e.target.value)}
+                    onBlur={() => handleBlur("name")}
+                    className={inputClass("name")}
+                    autoComplete="name"
                   />
+                  <div className="absolute right-3.5 top-3.5"><TrailIcon name="name" /></div>
                 </div>
                 <FieldError msg={errors.name} />
               </div>
 
+              {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                 <div className="relative">
-                  <Mail className={`absolute left-4 top-3.5 ${errors.email ? "text-red-400" : "text-gray-400"}`} size={18} />
+                  <Mail className={`absolute left-4 top-3.5 ${leadIconColor("email")}`} size={18} />
                   <input
                     type="text"
                     placeholder="name@example.com"
-                    value={form.email}
-                    onChange={set("email")}
-                    className={`w-full bg-gray-50 border rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 outline-none transition-all font-medium ${errors.email ? "border-red-400 focus:ring-red-100 focus:border-red-500" : "border-gray-200 focus:ring-red-100 focus:border-[#dc2626]"}`}
+                    value={fields.email}
+                    onChange={(e) => handleChange("email", e.target.value)}
+                    onBlur={() => handleBlur("email")}
+                    className={inputClass("email")}
+                    autoComplete="email"
                   />
+                  <div className="absolute right-3.5 top-3.5"><TrailIcon name="email" /></div>
                 </div>
                 <FieldError msg={errors.email} />
               </div>
 
+              {/* Mật khẩu */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Mật khẩu</label>
                 <div className="relative">
-                  <Lock className={`absolute left-4 top-3.5 ${errors.password ? "text-red-400" : "text-gray-400"}`} size={18} />
+                  <Lock className={`absolute left-4 top-3.5 ${leadIconColor("password")}`} size={18} />
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
-                    value={form.password}
-                    onChange={set("password")}
-                    className={`w-full bg-gray-50 border rounded-xl pl-11 pr-12 py-3 text-sm focus:ring-2 outline-none transition-all font-medium ${errors.password ? "border-red-400 focus:ring-red-100 focus:border-red-500" : "border-gray-200 focus:ring-red-100 focus:border-[#dc2626]"}`}
+                    value={fields.password}
+                    onChange={(e) => handleChange("password", e.target.value)}
+                    onBlur={() => handleBlur("password")}
+                    className={inputClass("password", "pr-20")}
+                    autoComplete="new-password"
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600">
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
+                  <PasswordTrail name="password" show={showPassword} onToggle={() => setShowPassword((p) => !p)} />
                 </div>
                 <FieldError msg={errors.password} />
-                {form.password.length > 0 && form.password.length < 6 && !errors.password && (
-                  <p className="text-amber-500 text-xs mt-1 ml-1">{form.password.length}/6 ký tự tối thiểu</p>
+                {fields.password.length > 0 && fields.password.length < 6 && !errors.password && (
+                  <p className="text-amber-500 text-xs mt-1.5 ml-1">{fields.password.length}/6 ký tự tối thiểu</p>
                 )}
               </div>
 
+              {/* Nhập lại mật khẩu */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Nhập lại mật khẩu</label>
                 <div className="relative">
-                  <ShieldCheck className={`absolute left-4 top-3.5 ${errors.confirmPassword ? "text-red-400" : "text-gray-400"}`} size={18} />
+                  <ShieldCheck className={`absolute left-4 top-3.5 ${leadIconColor("confirmPassword")}`} size={18} />
                   <input
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="••••••••"
-                    value={form.confirmPassword}
-                    onChange={set("confirmPassword")}
-                    className={`w-full bg-gray-50 border rounded-xl pl-11 pr-12 py-3 text-sm focus:ring-2 outline-none transition-all font-medium ${errors.confirmPassword ? "border-red-400 focus:ring-red-100 focus:border-red-500" : "border-gray-200 focus:ring-red-100 focus:border-[#dc2626]"}`}
+                    value={fields.confirmPassword}
+                    onChange={(e) => handleChange("confirmPassword", e.target.value)}
+                    onBlur={() => handleBlur("confirmPassword")}
+                    className={inputClass("confirmPassword", "pr-20")}
+                    autoComplete="new-password"
                   />
-                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600">
-                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
+                  <PasswordTrail name="confirmPassword" show={showConfirmPassword} onToggle={() => setShowConfirmPassword((p) => !p)} />
                 </div>
                 <FieldError msg={errors.confirmPassword} />
               </div>
 
+              {/* Terms */}
               <div className="flex items-center gap-2 pt-1">
                 <input
                   type="checkbox"
@@ -182,10 +281,18 @@ const RegisterPage = () => {
                 </label>
               </div>
 
+              {/* Server error */}
+              {serverError && (
+                <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 animate-[fadeDown_0.2s_ease]">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                  <span>{serverError}</span>
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#dc2626] hover:bg-red-700 disabled:bg-red-400 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-red-200 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 text-sm sm:text-base"
+                className="w-full bg-[#dc2626] hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl shadow-lg shadow-red-200 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 text-sm sm:text-base"
               >
                 {loading && (
                   <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
