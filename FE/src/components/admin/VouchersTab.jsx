@@ -38,6 +38,7 @@ const normalizeVoucher = (raw) => {
     usedCount: raw.usedCount ?? 0,
     maxUsers: raw.maxUsers ?? null,
     maxUsagePerUser: raw.maxUsagePerUser ?? raw.perUserLimit ?? null,
+    uniqueUserCount: raw.uniqueUserCount ?? raw.usedUsersCount ?? 0,
     computedStatus: raw.computedStatus || "unknown",
     displayStatus: raw.displayStatus || { label: "Không xác định", color: "slate", icon: "" },
     usagePercent: Number(raw.usagePercent) || 0,
@@ -227,6 +228,17 @@ export const VouchersManager = () => {
 
   useEffect(() => { load(); }, []);
 
+  // Auto-refresh usage counters every 20s without loading spinner
+  useEffect(() => {
+    const id = setInterval(async () => {
+      try {
+        const res = await axiosInstance.get("/vouchers/admin");
+        setVouchers((res.data || []).map(normalizeVoucher));
+      } catch { /* silent — keep stale data on error */ }
+    }, 20000);
+    return () => clearInterval(id);
+  }, []);
+
   const filteredVouchers = useMemo(() => {
     const list = activeTab === "all" ? vouchers : vouchers.filter((v) => v.computedStatus === activeTab);
     return list;
@@ -397,6 +409,12 @@ export const VouchersManager = () => {
                             <Ticket size={13} className="text-slate-400 shrink-0" />
                             {v.usageLimit !== -1 ? `${v.usageLimit} lượt` : "Không giới hạn"}
                           </div>
+                          {v.maxUsagePerUser != null && (
+                            <div className="flex items-center gap-1.5">
+                              <Ticket size={13} className="text-slate-400 shrink-0 opacity-60" />
+                              <span className="text-xs">{v.maxUsagePerUser} lần / user</span>
+                            </div>
+                          )}
                           <div className="flex items-center gap-1.5">
                             <Users size={13} className="text-slate-400 shrink-0" />
                             {v.maxUsers != null ? `${v.maxUsers} users` : "Không giới hạn"}
@@ -421,20 +439,31 @@ export const VouchersManager = () => {
 
                       {/* Usage */}
                       <td className="px-5 py-4">
-                        <div className="min-w-[120px]">
+                        <div className="min-w-[140px]">
                           <p className="text-sm font-bold text-slate-700">
                             {v.usedCount ?? 0}{v.usageLimit !== -1 ? ` / ${v.usageLimit}` : ""} lượt
                           </p>
-                          <p className="text-xs text-slate-400">{v.usageLimit !== -1 ? `${v.usagePercent}%` : "Không giới hạn"}</p>
+                          {v.maxUsers != null && (
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              <Users size={11} className="inline text-slate-400 mr-1" />
+                              {v.uniqueUserCount ?? 0} / {v.maxUsers} users
+                            </p>
+                          )}
+                          {v.usageLimit === -1 && v.maxUsers == null && (
+                            <p className="text-xs text-slate-400">Không giới hạn</p>
+                          )}
                           {v.usageLimit !== -1 && (
-                            <div className="mt-1.5 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all duration-700 ${
-                                  v.computedStatus === "used-up" ? "bg-red-400" : v.usagePercent > 80 ? "bg-amber-400" : "bg-emerald-400"
-                                }`}
-                                style={{ width: `${Math.min(v.usagePercent || 0, 100)}%` }}
-                              />
-                            </div>
+                            <>
+                              <p className="text-xs text-slate-400">{v.usagePercent}%</p>
+                              <div className="mt-1.5 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-700 ${
+                                    v.computedStatus === "used-up" ? "bg-red-400" : v.usagePercent > 80 ? "bg-amber-400" : "bg-emerald-400"
+                                  }`}
+                                  style={{ width: `${Math.min(v.usagePercent || 0, 100)}%` }}
+                                />
+                              </div>
+                            </>
                           )}
                         </div>
                       </td>
