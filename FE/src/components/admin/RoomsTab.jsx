@@ -603,11 +603,13 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
     }
     const allErrors = [];
 
-    // Rule 1: Exact seat count must match totalSeats
+    // Rule 1: Actual seats must not exceed configured totalSeats
+    // After admin customizes layout (deleting seats, adding aisles),
+    // actualSeats can be LESS than totalSeats — that's valid.
     const actual = countActualSeats(m);
-    if (actual !== totalSeats) {
+    if (actual > totalSeats) {
       allErrors.push(
-        `Số ghế thực tế (${actual}) không khớp với tổng số ghế (${totalSeats}). Chênh lệch: ${actual > totalSeats ? "+" : ""}${actual - totalSeats}`,
+        `Số ghế thực tế (${actual}) vượt quá tổng số ghế cấu hình (${totalSeats}). Vui lòng giảm bớt ${actual - totalSeats} ghế.`,
       );
     }
 

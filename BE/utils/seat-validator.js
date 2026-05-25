@@ -104,20 +104,23 @@ function validateRoomSeatRules(seatMatrix, roomType) {
 }
 
 /**
- * Full integrity check: counts must match and business rules must pass.
+ * Full integrity check: actual seats must not exceed expected total,
+ * and business rules must pass. Admin customization (aisles, deletions)
+ * may reduce actual count below expected — that is valid.
  * @param {Array<Array<{type: string}>>} seatMatrix
- * @param {number} expectedTotalSeats
+ * @param {number} expectedTotalSeats - the configured maximum
  * @param {string} roomType
  * @returns {{ valid: boolean, errors: string[] }}
  */
 function validateSeatMatrixIntegrity(seatMatrix, expectedTotalSeats, roomType) {
   const errors = [];
 
-  // Rule 1: Actual seat count must match expected
+  // Rule 1: Actual seat count must not exceed configured total
+  // After admin customization (aisles, deletions), actual can be LESS than expected.
   const actual = countActualSeats(seatMatrix);
-  if (actual !== expectedTotalSeats) {
+  if (actual > expectedTotalSeats) {
     errors.push(
-      `Số ghế thực tế trong ma trận (${actual}) không khớp với totalSeats (${expectedTotalSeats}). Chênh lệch: ${actual - expectedTotalSeats}`,
+      `Số ghế thực tế trong ma trận (${actual}) vượt quá totalSeats (${expectedTotalSeats}). Vượt: ${actual - expectedTotalSeats} ghế.`,
     );
   }
 
