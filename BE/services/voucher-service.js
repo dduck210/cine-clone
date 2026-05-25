@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Voucher = require('../models/Voucher');
 const VoucherUsage = require('../models/VoucherUsage');
-const { getEffectiveStatus, getUsageStatus } = require('./voucher-status-service');
+const { getVoucherStatus } = require('./voucher-status-service');
 
 function calcDiscount(voucher, orderAmount) {
     let discount = voucher.type === 'percent'
@@ -16,18 +16,25 @@ function calcDiscount(voucher, orderAmount) {
  * Returns { valid: true, discountAmount, voucher } or { valid: false, error }
  */
 async function validateVoucher(code, userId, orderAmount) {
-    const voucher = await Voucher.findOne({ code: code.toUpperCase().trim(), status: 'active' });
+    const voucher = await Voucher.findOne({ code: code.toUpperCase().trim() });
     if (!voucher) {
-        return { valid: false, error: 'Mã giảm giá không tồn tại hoặc đã bị vô hiệu hóa' };
+        return { valid: false, error: 'Mã giảm giá không tồn tại' };
     }
 
-    // Check effective status (time-based)
-    const effective = getEffectiveStatus(voucher);
-    if (effective === 'upcoming') {
-        return { valid: false, error: 'Mã giảm giá chưa có hiệu lực' };
+    const status = getVoucherStatus(voucher);
+
+    // Specific error messages based on status
+    if (status === 'inactive') {
+        return { valid: false, error: 'Mã giảm giá đã bị vô hiệu hóa' };
     }
-    if (effective === 'expired') {
+    if (status === 'upcoming') {
+        return { valid: false, error: 'Mã giảm giá chưa đến thời gian sử dụng' };
+    }
+    if (status === 'expired') {
         return { valid: false, error: 'Mã giảm giá đã hết hạn' };
+    }
+    if (status === 'used-up') {
+        return { valid: false, error: 'Mã giảm giá đã hết lượt sử dụng' };
     }
 
     // Check min order
@@ -36,12 +43,6 @@ async function validateVoucher(code, userId, orderAmount) {
             valid: false,
             error: `Đơn tối thiểu ${voucher.minOrderAmount.toLocaleString('vi-VN')}đ để dùng mã này`,
         };
-    }
-
-    // Check usage status (quota-based)
-    const usage = getUsageStatus(voucher);
-    if (usage === 'sold_out') {
-        return { valid: false, error: 'Mã giảm giá đã hết lượt sử dụng' };
     }
 
     // Check per-user limits via VoucherUsage
@@ -70,10 +71,10 @@ async function applyVoucher(voucherId, userId) {
     try {
         session.startTransaction();
 
-        // Increment totalUsedCount (and legacy usedCount for backward compat)
+        // Increment totalUsedCount
         const voucher = await Voucher.findByIdAndUpdate(
             voucherId,
-            { $inc: { totalUsedCount: 1, usedCount: 1 } },
+            { $inc: { totalUsedCount: 1 } },
             { new: true, session }
         );
         if (!voucher) {

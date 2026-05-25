@@ -54,6 +54,13 @@ router.post('/admin', protect, admin, async (req, res) => {
         } = req.body;
 
         const toNumberOrNull = (v) => (v === '' || v === undefined || v === null ? null : Number(v));
+        
+        // Senior: Assume ICT (UTC+7) for datetime-local strings if no offset
+        const parseClientDate = (d) => {
+            if (!d) return null;
+            if (d.includes('+') || d.endsWith('Z')) return new Date(d);
+            return new Date(d + ":00+07:00");
+        };
 
         const voucher = await Voucher.create({
             code: code.toUpperCase().trim(),
@@ -61,19 +68,15 @@ router.post('/admin', protect, admin, async (req, res) => {
             value: Number(value),
             minOrderAmount: Number(minOrderAmount) || 0,
             maxDiscount: toNumberOrNull(maxDiscount),
-            startsAt: startsAt || null,
-            expiresAt: new Date(expiresAt),
+            startsAt: parseClientDate(startsAt),
+            expiresAt: parseClientDate(expiresAt) || new Date(), // Defensive
             maxUsers: toNumberOrNull(maxUsers),
             maxUsagePerUser: toNumberOrNull(maxUsagePerUser),
             totalUsageLimit: toNumberOrNull(totalUsageLimit),
-            // Legacy fields for backward compat
-            usageLimit: toNumberOrNull(totalUsageLimit),
-            perUserLimit: toNumberOrNull(maxUsagePerUser) ?? 1,
-            usedCount: 0,
-            totalUsedCount: 0,
             description: description || '',
+            status: 'active'
         });
-        res.status(201).json(voucher);
+        res.status(201).json(voucherStatusService.enrichVoucher(voucher));
     } catch (error) {
         if (error.code === 11000) return res.status(400).json({ message: 'Mã voucher đã tồn tại' });
         res.status(500).json({ message: error.message });
@@ -83,25 +86,26 @@ router.post('/admin', protect, admin, async (req, res) => {
 router.put('/admin/:id', protect, admin, async (req, res) => {
     try {
         const update = { ...req.body };
+        
+        const parseClientDate = (d) => {
+            if (!d) return null;
+            if (typeof d !== 'string') return d;
+            if (d.includes('+') || d.endsWith('Z')) return new Date(d);
+            return new Date(d + ":00+07:00");
+        };
 
-        // Sync legacy fields when new fields are present
-        if (req.body.totalUsageLimit !== undefined) {
-            update.usageLimit = req.body.totalUsageLimit === '' || req.body.totalUsageLimit === null
-                ? null : Number(req.body.totalUsageLimit);
-        }
-        if (req.body.maxUsagePerUser !== undefined) {
-            update.perUserLimit = req.body.maxUsagePerUser === '' || req.body.maxUsagePerUser === null
-                ? null : Number(req.body.maxUsagePerUser);
-        }
+        if (update.startsAt !== undefined) update.startsAt = parseClientDate(update.startsAt);
+        if (update.expiresAt !== undefined) update.expiresAt = parseClientDate(update.expiresAt);
 
-        // Normalize empty strings to null for numeric fields
-        ['maxUsers', 'maxUsagePerUser', 'totalUsageLimit', 'maxDiscount'].forEach((k) => {
+        // Normalize numeric fields
+        ['maxUsers', 'maxUsagePerUser', 'totalUsageLimit', 'maxDiscount', 'minOrderAmount', 'value'].forEach((k) => {
             if (update[k] === '') update[k] = null;
+            else if (update[k] !== undefined) update[k] = Number(update[k]);
         });
 
         const voucher = await Voucher.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true });
         if (!voucher) return res.status(404).json({ message: 'Không tìm thấy voucher' });
-        res.json(voucher);
+        res.json(voucherStatusService.enrichVoucher(voucher));
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

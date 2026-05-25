@@ -1,151 +1,158 @@
 /**
- * Voucher Status Service — fully runtime-computed.
- * Corrected to handle legacy fields and strict date comparisons.
+ * Voucher Status Service — Single Source of Truth (SSOT)
+ * Aligned with log.md Principal Engineering Standards.
  */
 
-const EFFECTIVE_STATUS = {
-    UPCOMING: 'upcoming',
-    ACTIVE: 'active',
-    EXPIRED: 'expired',
+/**
+ * Core Status Logic — MUST match log.md exactly.
+ * Returns: 'active' | 'inactive' | 'used-up' | 'upcoming' | 'expired'
+ */
+const getVoucherStatus = (voucher) => {
+    const now = new Date();
+
+    // Helper to parse date safely
+    const parseDate = (d) => {
+        if (!d) return null;
+        const date = new Date(d);
+        return isNaN(date.getTime()) ? null : date;
+    };
+
+    const startDate = parseDate(voucher.startsAt || voucher.startDate);
+    const endDate = parseDate(voucher.expiresAt || voucher.endDate);
+    
+    // Normalize usageLimit: -1 is unlimited
+    let usageLimit = -1;
+    // Senior: Priority order for usage limit source
+    if (voucher.totalUsageLimit !== undefined && voucher.totalUsageLimit !== null) {
+        usageLimit = Number(voucher.totalUsageLimit);
+    } else if (voucher.usageLimit !== undefined && voucher.usageLimit !== null) {
+        usageLimit = Number(voucher.usageLimit);
+    }
+    if (isNaN(usageLimit)) usageLimit = -1;
+
+    // Senior: Priority order for used count source
+    const usedCount = Math.max(
+        Number(voucher.totalUsedCount) || 0, 
+        Number(voucher.usedCount) || 0,
+        Array.isArray(voucher.usedBy) ? voucher.usedBy.length : 0
+    );
+
+    // 1. Inactive check (Admin toggle)
+    if (voucher.isActive === false || voucher.status === 'inactive' || voucher.status === 'archived') {
+        return 'inactive';
+    }
+
+    // 2. Usage limit check
+    if (usageLimit !== -1 && usedCount >= usageLimit) {
+        return 'used-up';
+    }
+
+    // 3. Upcoming check
+    if (startDate && now < startDate) {
+        return 'upcoming';
+    }
+
+    // 4. Expired check
+    if (endDate && now > endDate) {
+        return 'expired';
+    }
+
+    // 5. Default Active
+    return 'active';
 };
 
-const USAGE_STATUS = {
-    UNLIMITED: 'unlimited',
-    AVAILABLE: 'available',
-    LIMITED: 'limited',
-    SOLD_OUT: 'sold_out',
+/**
+ * Display Metadata for UI
+ */
+const getStatusMeta = (status) => {
+    switch (status) {
+        case 'active':
+            return { label: 'Còn hiệu lực', color: 'emerald', icon: '🟢' };
+        case 'expired':
+            return { label: 'Hết hạn', color: 'red', icon: '🔴' };
+        case 'upcoming':
+            return { label: 'Sắp diễn ra', color: 'amber', icon: '🟡' };
+        case 'used-up':
+            return { label: 'Hết lượt', color: 'zinc', icon: '🟣' };
+        case 'inactive':
+            return { label: 'Đã tắt', color: 'slate', icon: '⚫' };
+        default:
+            return { label: 'Không xác định', color: 'slate', icon: '⚪' };
+    }
 };
 
 /**
- * Compute effective status based on current time.
+ * Enrichment for API Response
  */
-function getEffectiveStatus(voucher, now = new Date()) {
-    const start = voucher.startsAt ? new Date(voucher.startsAt) : null;
-    const end = new Date(voucher.expiresAt);
-
-    if (start && start > now) return EFFECTIVE_STATUS.UPCOMING;
-    if (end < now) return EFFECTIVE_STATUS.EXPIRED; // Strict less than
-    return EFFECTIVE_STATUS.ACTIVE;
-}
-
-/**
- * Compute usage status based on quota counters.
- * Handles both new and legacy fields.
- */
-function getUsageStatus(voucher) {
-    const limit = voucher.totalUsageLimit ?? voucher.usageLimit;
-    
-    if (limit === null || limit === undefined) {
-        return USAGE_STATUS.UNLIMITED;
-    }
-
-    const used = voucher.totalUsedCount ?? voucher.usedCount ?? 0;
-    
-    if (used >= limit) return USAGE_STATUS.SOLD_OUT;
-    
-    const remaining = limit - used;
-    if (limit > 0 && (remaining / limit) <= 0.1) return USAGE_STATUS.LIMITED;
-    
-    return USAGE_STATUS.AVAILABLE;
-}
-
-/**
- * Master display status.
- */
-function getDisplayStatus(voucher, now = new Date()) {
-    const sys = voucher.status;
-
-    if (sys === 'inactive') return { label: 'Đã tắt', key: 'inactive', color: 'slate' };
-    if (sys === 'draft') return { label: 'Bản nháp', key: 'draft', color: 'purple' };
-    if (sys === 'archived') return { label: 'Lưu trữ', key: 'archived', color: 'zinc' };
-
-    const effective = getEffectiveStatus(voucher, now);
-    const usage = getUsageStatus(voucher);
-
-    if (effective === EFFECTIVE_STATUS.EXPIRED) {
-        return { label: 'Đã hết hạn', key: 'expired', color: 'red' };
-    }
-    if (effective === EFFECTIVE_STATUS.UPCOMING) {
-        return { label: 'Sắp diễn ra', key: 'upcoming', color: 'amber' };
-    }
-    if (usage === USAGE_STATUS.SOLD_OUT) {
-        return { label: 'Hết lượt', key: 'sold_out', color: 'zinc' };
-    }
-    if (usage === USAGE_STATUS.LIMITED) {
-        return { label: 'Sắp hết', key: 'limited', color: 'orange' };
-    }
-    return { label: 'Đang hoạt động', key: 'active', color: 'emerald' };
-}
-
-function getExpiryCountdown(voucher, now = new Date()) {
-    const expiresAt = new Date(voucher.expiresAt);
-    const diffMs = expiresAt - now;
-    if (diffMs <= 0) return { days: 0, hours: 0, urgency: 'expired' };
-    const diffHours = diffMs / (1000 * 60 * 60);
-    const days = Math.floor(diffHours / 24);
-    const hours = Math.floor(diffHours % 24);
-    let urgency = 'normal';
-    if (days <= 1) urgency = 'critical';
-    else if (days <= 3) urgency = 'warning';
-    return { days, hours, urgency };
-}
-
-function getStatusTooltip(voucher, now = new Date()) {
-    const display = getDisplayStatus(voucher, now);
-    const limit = voucher.totalUsageLimit ?? voucher.usageLimit;
-    const used = voucher.totalUsedCount ?? voucher.usedCount ?? 0;
-
-    switch (display.key) {
-        case 'inactive': return 'Admin đã tắt voucher này';
-        case 'draft': return 'Voucher đang ở chế độ nháp';
-        case 'archived': return 'Voucher đã được lưu trữ';
-        case 'expired': return `Đã hết hạn từ ${new Date(voucher.expiresAt).toLocaleDateString('vi-VN')}`;
-        case 'upcoming': return `Sẽ có hiệu lực từ ${voucher.startsAt ? new Date(voucher.startsAt).toLocaleDateString('vi-VN') : 'ngay'}`;
-        case 'sold_out': return `Đã đạt giới hạn ${limit?.toLocaleString('vi-VN')} lượt dùng`;
-        case 'limited': return `Chỉ còn ${limit - used} lượt dùng`;
-        case 'active': return 'Voucher đang hoạt động bình thường';
-        default: return '';
-    }
-}
-
-function enrichVoucher(voucher, now = new Date()) {
+const enrichVoucher = (voucher) => {
     const obj = voucher.toObject ? voucher.toObject() : voucher;
     
-    // Ensure numeric fields are present even if legacy
-    const maxUsers = obj.maxUsers ?? null;
-    const maxUsagePerUser = obj.maxUsagePerUser ?? obj.perUserLimit ?? null;
-    const totalUsageLimit = obj.totalUsageLimit ?? obj.usageLimit ?? null;
-    const totalUsedCount = obj.totalUsedCount ?? obj.usedCount ?? 0;
+    // SSOT Status - MUST use the same normalization logic
+    const status = getVoucherStatus(obj);
+    const meta = getStatusMeta(status);
 
-    const effective = getEffectiveStatus(obj, now);
-    const usage = getUsageStatus(obj);
-    const display = getDisplayStatus(obj, now);
-    const countdown = getExpiryCountdown(obj, now);
-    const tooltip = getStatusTooltip(obj, now);
+    // Principal: Consistent normalization for derived stats
+    let usageLimit = -1;
+    if (obj.totalUsageLimit !== undefined && obj.totalUsageLimit !== null) {
+        usageLimit = Number(obj.totalUsageLimit);
+    } else if (obj.usageLimit !== undefined && obj.usageLimit !== null) {
+        usageLimit = Number(obj.usageLimit);
+    }
+    if (isNaN(usageLimit)) usageLimit = -1;
+
+    const usedCount = Math.max(
+        Number(obj.totalUsedCount) || 0, 
+        Number(obj.usedCount) || 0,
+        Array.isArray(obj.usedBy) ? obj.usedBy.length : 0
+    );
+
+    const usagePercent = (usageLimit !== -1 && usageLimit > 0) ? Math.round((usedCount / usageLimit) * 100) : 0;
+
+    // Principal Engineering: Production-grade Debugging
+    if (process.env.NODE_ENV !== 'test') {
+        console.log(`[Voucher Audit] Code: ${obj.code} | Status: ${status} | Usage: ${usedCount}/${usageLimit} (${usagePercent}%)`);
+    }
 
     return {
         ...obj,
-        maxUsers,
-        maxUsagePerUser,
-        totalUsageLimit,
-        totalUsedCount,
-        effectiveStatus: effective,
-        usageStatus: usage,
-        usageRemaining: totalUsageLimit !== null ? Math.max(0, totalUsageLimit - totalUsedCount) : null,
-        usagePercent: totalUsageLimit ? Math.round((totalUsedCount / totalUsageLimit) * 100) : null,
-        displayStatus: display,
-        expiryCountdown: countdown,
-        statusTooltip: tooltip,
+        // Normalized fields for FE (Final Source of Truth)
+        startDate: obj.startsAt || obj.startDate || null,
+        endDate: obj.expiresAt || obj.endDate || null,
+        usageLimit,
+        usedCount,
+        isActive: obj.status === 'active',
+        
+        // Computed Status
+        computedStatus: status,
+        displayStatus: meta,
+        usagePercent,
+
+        // Countdown logic
+        expiryCountdown: getExpiryCountdown(obj.expiresAt || obj.endDate),
     };
-}
+};
+
+const getExpiryCountdown = (expiresAt) => {
+    if (!expiresAt) return null;
+    const now = new Date();
+    const end = new Date(expiresAt);
+    const diffMs = end - now;
+    
+    if (diffMs <= 0) return { days: 0, hours: 0, urgency: 'expired' };
+    
+    const diffHours = diffMs / (1000 * 60 * 60);
+    const days = Math.floor(diffHours / 24);
+    const hours = Math.floor(diffHours % 24);
+    
+    let urgency = 'normal';
+    if (days <= 1) urgency = 'critical';
+    else if (days <= 3) urgency = 'warning';
+    
+    return { days, hours, urgency };
+};
 
 module.exports = {
-    EFFECTIVE_STATUS,
-    USAGE_STATUS,
-    getEffectiveStatus,
-    getUsageStatus,
-    getDisplayStatus,
-    getExpiryCountdown,
-    getStatusTooltip,
+    getVoucherStatus,
+    getStatusMeta,
     enrichVoucher,
 };
