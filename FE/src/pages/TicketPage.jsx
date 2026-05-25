@@ -106,7 +106,7 @@ const TicketPage = () => {
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center py-8 px-4">
       <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 flex flex-col items-center gap-5">
         <p className="text-xs text-gray-400 uppercase tracking-widest font-black text-center">
-          Đưa mã QR này cho nhân viên rạp xác nhận
+          Vui lòng đưa mã này cho nhân viên rạp để xác nhận vé
         </p>
         <QRCodeSVG
           value={`${window.location.origin}/ticket/${ticket.bookingCode}`}
@@ -117,9 +117,6 @@ const TicketPage = () => {
         />
         <p className="font-mono font-bold text-gray-700 text-sm tracking-[0.2em] uppercase">
           {ticket.bookingCode}
-        </p>
-        <p className={`text-xs font-bold ${sseConnected ? 'text-emerald-500' : 'text-red-400'}`}>
-          {sseConnected ? '● Đã kết nối — vé sẽ tự cập nhật' : '○ Đang kết nối real-time...'}
         </p>
       </div>
     </div>

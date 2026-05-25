@@ -188,17 +188,6 @@ const PaymentSuccessPage = () => {
                   {bookingCode}
                 </span>
               </p>
-              {bookingStatus === "paid" && (
-                isTicketIssued ? (
-                  <div className="mt-3 inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-2 rounded-full text-sm font-bold">
-                    <CheckCircle size={16} /> Vé điện tử đã được nhân viên rạp xác nhận
-                  </div>
-                ) : (
-                  <div className="mt-3 inline-flex items-center gap-2 bg-orange-50 border border-orange-200 text-orange-700 px-4 py-2 rounded-full text-sm font-bold">
-                    <Clock size={16} /> Vé điện tử đang chờ nhân viên rạp xác nhận
-                  </div>
-                )
-              )}
             </>
           ) : isCash ? (
             <>
@@ -259,7 +248,7 @@ const PaymentSuccessPage = () => {
         ) : bookingCode ? (
           <div className="mx-auto w-full max-w-sm bg-white rounded-3xl shadow-2xl p-8 flex flex-col items-center gap-5">
             <p className="text-xs text-gray-400 uppercase tracking-widest font-black text-center">
-              Đưa mã QR này cho nhân viên rạp xác nhận
+              Vui lòng đưa mã này cho nhân viên rạp để xác nhận vé
             </p>
             <QRCodeSVG
               value={`${window.location.origin}/ticket/${bookingCode}`}

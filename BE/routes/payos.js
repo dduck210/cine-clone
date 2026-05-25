@@ -8,11 +8,18 @@ const { protect } = require('../middleware/auth');
 const { sendPaymentSuccessEmail, sendAdminPaymentNotificationEmail } = require('../services/email-service');
 const notificationService = require('../services/notification-service');
 
-const payos = new PayOS(
-    process.env.PAYOS_CLIENT_ID || '',
-    process.env.PAYOS_API_KEY || '',
-    process.env.PAYOS_CHECKSUM_KEY || ''
-);
+let payosClient = null;
+function getPayOS() {
+  if (payosClient) return payosClient;
+  const clientId = process.env.PAYOS_CLIENT_ID;
+  const apiKey = process.env.PAYOS_API_KEY;
+  const checksumKey = process.env.PAYOS_CHECKSUM_KEY;
+  if (!clientId || !apiKey || !checksumKey) {
+    throw new Error('PayOS chưa được cấu hình. Thiếu PAYOS_CLIENT_ID, PAYOS_API_KEY hoặc PAYOS_CHECKSUM_KEY trong .env');
+  }
+  payosClient = new PayOS(clientId, apiKey, checksumKey);
+  return payosClient;
+}
 
 // POST /api/payments/payos/create — tạo payment link
 router.post('/create', protect, async (req, res) => {
@@ -24,7 +31,8 @@ router.post('/create', protect, async (req, res) => {
         const orderCode = Date.now();
         const description = `5CINE ${booking.bookingCode}`.substring(0, 25);
 
-        const paymentLink = await payos.createPaymentLink({
+        const client = getPayOS();
+        const paymentLink = await client.createPaymentLink({
             orderCode,
             amount: booking.totalPrice,
             description,
@@ -40,7 +48,7 @@ router.post('/create', protect, async (req, res) => {
             orderCode,
         });
     } catch (err) {
-        console.error('[payos] Create error:', err);
+        console.error('[PayOS] Create error:', err);
         res.status(500).json({ message: err.message });
     }
 });
@@ -48,7 +56,8 @@ router.post('/create', protect, async (req, res) => {
 // POST /api/payments/payos/webhook — PayOS gọi khi thanh toán thành công
 router.post('/webhook', async (req, res) => {
     try {
-        const webhookData = payos.verifyPaymentWebhookData(req.body);
+        const client = getPayOS();
+        const webhookData = client.verifyPaymentWebhookData(req.body);
 
         if (webhookData.code === '00' || req.body?.data?.code === '00') {
             const orderCode = webhookData.orderCode || req.body?.data?.orderCode;
@@ -60,7 +69,7 @@ router.post('/webhook', async (req, res) => {
             }
         }
     } catch (err) {
-        console.error('[payos] Webhook error:', err.message);
+        console.error('[PayOS] Webhook error:', err.message);
     }
 
     res.json({ code: '00', desc: 'success' });
