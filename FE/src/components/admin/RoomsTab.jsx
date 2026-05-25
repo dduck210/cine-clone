@@ -107,71 +107,217 @@ const SEAT_TYPES = [
 const typeColor = (type) =>
   SEAT_TYPES.find((t) => t.value === type)?.color || "bg-slate-200";
 
-// Auto-generate matrix from total seats + room type:
-// cols = round(sqrt(totalSeats × 1.6)), clamped 6–16 (cinema aspect ratio)
-// rows = ceil(totalSeats / cols), max 26 (A-Z)
-// Seat distribution per room type:
-//   Standard: >=80% normal, 1-2 VIP rows at back (if rows>=8→2 VIP, rows>=4→1 VIP)
-//   Premium: 1 couple row (last), >=2 VIP rows above it, rest normal
-//   VIP: ~60% VIP, ~20% couple, rest normal
+// ---------------------------------------------------------------------------
+// Shared validation utilities (mirrors BE/utils/seat-validator.js rules)
+// ---------------------------------------------------------------------------
+const countActualSeats = (matrix) => {
+  if (!Array.isArray(matrix)) return 0;
+  let count = 0;
+  for (const row of matrix) {
+    if (!Array.isArray(row)) continue;
+    for (const cell of row) {
+      if (cell && cell.type !== "aisle") count++;
+    }
+  }
+  return count;
+};
+
+const validateRoomSeatRules = (matrix, roomType) => {
+  const errors = [];
+  if (!Array.isArray(matrix) || matrix.length === 0) return { valid: true, errors: [] };
+
+  let vipCount = 0;
+  const coupleRows = new Set();
+
+  for (let r = 0; r < matrix.length; r++) {
+    const row = matrix[r];
+    if (!Array.isArray(row)) continue;
+    let rowHasCouple = false;
+
+    for (const cell of row) {
+      if (!cell || !cell.type || cell.type === "aisle") continue;
+      if (cell.type === "vip") vipCount++;
+      if (cell.type === "couple") rowHasCouple = true;
+    }
+
+    if (rowHasCouple) coupleRows.add(r);
+  }
+
+  if (roomType === "Standard") {
+    if (vipCount > 0) {
+      errors.push("Phòng Standard không được chứa ghế VIP");
+    }
+    if (coupleRows.size > 2) {
+      errors.push("Phòng Standard chỉ được có tối đa 2 hàng ghế Couple");
+    }
+  }
+
+  if (roomType === "VIP") {
+    // VIP rooms should not have normal seats (per business rules)
+    // This is a soft rule — we warn but don't block
+  }
+
+  return { valid: errors.length === 0, errors };
+};
+
+// ---------------------------------------------------------------------------
+// Matrix generation — exact totalSeats, flexible last row
+// ---------------------------------------------------------------------------
+
+/**
+ * Determine seat type for a row based on room type and row position.
+ * Pure function, no side effects.
+ */
+function determineRowSeatType(rowIndex, totalRows, roomType) {
+  if (roomType === "Standard") {
+    const coupleRows = totalRows >= 8 ? 2 : totalRows >= 4 ? 1 : 0;
+    return coupleRows > 0 && rowIndex >= totalRows - coupleRows ? "couple" : "normal";
+  }
+
+  if (roomType === "Premium") {
+    if (totalRows >= 6) {
+      if (rowIndex === totalRows - 1) return "couple";
+      if (rowIndex >= totalRows - 3) return "vip";
+      return "normal";
+    }
+    if (totalRows >= 3) {
+      if (rowIndex === totalRows - 1) return "couple";
+      if (rowIndex === totalRows - 2) return "vip";
+      return "normal";
+    }
+    return totalRows >= 2 && rowIndex === totalRows - 1 ? "couple" : "normal";
+  }
+
+  if (roomType === "VIP") {
+    const coupleRows = Math.max(1, Math.round(totalRows * 0.2));
+    const vipRows = Math.max(1, Math.round(totalRows * 0.6));
+    const normalRows = totalRows - coupleRows - vipRows;
+    if (rowIndex >= totalRows - coupleRows) return "couple";
+    if (rowIndex >= Math.max(0, normalRows)) return "vip";
+    return "normal";
+  }
+
+  return "normal";
+}
+
+/**
+ * Generate a seat matrix with EXACTLY totalSeats non-aisle seats.
+ *
+ * Algorithm:
+ *   1. Calculate optimal column count from cinema aspect ratio sqrt(totalSeats × 1.6)
+ *   2. Calculate rows = ceil(totalSeats / cols)
+ *   3. If last row would be too sparse (< ceil(cols/3)), reduce cols and retry
+ *   4. Build matrix row by row, last row truncated to hit exact totalSeats
+ *   5. Post-validate: actual seat count MUST equal totalSeats
+ *
+ * Returns { matrix, rows, cols } where matrix is a 2D array of { label, type }.
+ */
 function generateMatrixFromTotalSeats(totalSeats, roomType = "Standard") {
   if (!totalSeats || totalSeats < 1) return { matrix: [], rows: 0, cols: 0 };
 
+  // Step 1: Calculate optimal column count
   let cols = Math.round(Math.sqrt(totalSeats * 1.6));
   cols = Math.min(16, Math.max(6, cols));
 
+  // Step 2: Find best row/col distribution
+  // Ensure last row has at least ceil(cols/3) seats (unless it's a single-row room)
   let rows = Math.ceil(totalSeats / cols);
+  let lastRowSeats = totalSeats - (rows - 1) * cols;
 
+  if (lastRowSeats === 0) {
+    // Perfect fit — all rows full
+    lastRowSeats = cols;
+  } else if (lastRowSeats < Math.ceil(cols / 3) && rows > 1) {
+    // Last row too sparse — try narrower columns for better distribution
+    for (let tryCols = cols - 1; tryCols >= 6; tryCols--) {
+      const tryRows = Math.ceil(totalSeats / tryCols);
+      const tryLast = totalSeats - (tryRows - 1) * tryCols;
+      const effectiveLast = tryLast === 0 ? tryCols : tryLast;
+      if (effectiveLast >= Math.ceil(tryCols / 3) || tryCols === 6) {
+        cols = tryCols;
+        rows = tryRows;
+        lastRowSeats = effectiveLast;
+        break;
+      }
+    }
+  }
+
+  // Cap rows at 26 (A-Z)
   if (rows > 26) {
     rows = 26;
     cols = Math.ceil(totalSeats / 26);
     cols = Math.min(16, Math.max(6, cols));
+    lastRowSeats = totalSeats - 25 * cols;
   }
 
+  // Step 3: Build matrix with exact totalSeats
   const matrix = [];
+  let placed = 0;
+  const fullRows = lastRowSeats === cols ? rows : rows - 1;
+
   for (let r = 0; r < rows; r++) {
     const rowLetter = String.fromCharCode(65 + r);
-    let seatType;
+    const seatsInThisRow = r < fullRows ? cols : Math.min(cols, totalSeats - placed);
+    if (seatsInThisRow <= 0) break; // Shouldn't happen, but safety
 
-    if (roomType === "Standard") {
-      const coupleRows = rows >= 8 ? 2 : rows >= 4 ? 1 : 0;
-      seatType = coupleRows > 0 && r >= rows - coupleRows ? "couple" : "normal";
-    } else if (roomType === "Premium") {
-      if (rows >= 6) {
-        if (r === rows - 1) seatType = "couple";
-        else if (r >= rows - 3) seatType = "vip";
-        else seatType = "normal";
-      } else if (rows >= 3) {
-        if (r === rows - 1) seatType = "couple";
-        else if (r === rows - 2) seatType = "vip";
-        else seatType = "normal";
-      } else {
-        seatType = rows >= 2 && r === rows - 1 ? "couple" : "normal";
-      }
-    } else if (roomType === "VIP") {
-      const coupleRows = Math.max(1, Math.round(rows * 0.2));
-      const vipRows = Math.max(1, Math.round(rows * 0.6));
-      const normalRows = rows - coupleRows - vipRows;
-      if (r >= rows - coupleRows) seatType = "couple";
-      else if (r >= Math.max(0, normalRows)) seatType = "vip";
-      else seatType = "normal";
-    }
-
+    const seatType = determineRowSeatType(r, rows, roomType);
     const rowArr = [];
-    for (let c = 1; c <= cols; c++) {
+    for (let c = 1; c <= seatsInThisRow; c++) {
       rowArr.push({ label: `${rowLetter}${c}`, type: seatType });
     }
     matrix.push(rowArr);
+    placed += seatsInThisRow;
   }
+
+  // Step 4: Post-validation — MUST match exactly
+  if (placed !== totalSeats) {
+    console.error(
+      `[generateMatrixFromTotalSeats] FATAL: placed ${placed} seats, expected ${totalSeats}. ` +
+      `cols=${cols} rows=${rows} lastRowSeats=${lastRowSeats}`,
+    );
+    // Emergency fallback: simple row-by-row fill with consistent cols
+    return generateMatrixFallback(totalSeats, roomType);
+  }
+
+  return { matrix, rows, cols };
+}
+
+/** Emergency fallback — simple distribution, guaranteed correct count. */
+function generateMatrixFallback(totalSeats, roomType) {
+  const cols = Math.min(16, Math.max(6, Math.round(Math.sqrt(totalSeats * 1.6))));
+  const rows = Math.ceil(totalSeats / cols);
+  const matrix = [];
+  let placed = 0;
+
+  for (let r = 0; r < rows; r++) {
+    const rowLetter = String.fromCharCode(65 + r);
+    const seatsInRow = Math.min(cols, totalSeats - placed);
+    if (seatsInRow <= 0) break;
+    const seatType = determineRowSeatType(r, rows, roomType);
+    const rowArr = [];
+    for (let c = 1; c <= seatsInRow; c++) {
+      rowArr.push({ label: `${rowLetter}${c}`, type: seatType });
+    }
+    matrix.push(rowArr);
+    placed += seatsInRow;
+  }
+
   return { matrix, rows, cols };
 }
 
 // Matrix editor: click a cell to cycle through types
-const MatrixEditor = ({ matrix, onChange }) => {
+// roomType controls which seat types are available for cycling
+const MatrixEditor = ({ matrix, onChange, roomType = "Standard" }) => {
   const cycleType = (ri, ci) => {
-    const order = ["normal", "vip", "couple", "aisle"];
+    // Build cycle order based on room type rules
+    const allTypes = ["normal", "vip", "couple", "aisle"];
+    const forbidden = roomType === "Standard" ? new Set(["vip"]) : new Set();
+    const order = allTypes.filter((t) => !forbidden.has(t));
+
     const current = matrix[ri][ci]?.type || "normal";
-    const next = order[(order.indexOf(current) + 1) % order.length];
+    const idx = order.indexOf(current);
+    const next = idx >= 0 ? order[(idx + 1) % order.length] : order[0];
+
     const updated = matrix.map((row, r) => {
       if (r !== ri) return row;
       const newRow = row.map((cell, c) =>
@@ -427,6 +573,15 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
     !!(room?.seatMatrix?.length > 0),
   );
   const [errors, setErrors] = useState({});
+  const [matrixErrors, setMatrixErrors] = useState([]);
+
+  // Validate existing matrix on mount (for edit mode)
+  useEffect(() => {
+    if (matrix && matrix.length > 0) {
+      runMatrixValidation(matrix);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const validate = () => {
     const e = {};
@@ -438,6 +593,36 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
     if (totalSeats > 416) e.totalSeats = "Tối đa 416 ghế (26 hàng × 16 cột)";
     setErrors(e);
     return Object.keys(e).length === 0;
+  };
+
+  // Real-time matrix validation — runs whenever matrix or roomType changes
+  const runMatrixValidation = (m) => {
+    if (!m || m.length === 0) {
+      setMatrixErrors([]);
+      return true;
+    }
+    const allErrors = [];
+
+    // Rule 1: Exact seat count must match totalSeats
+    const actual = countActualSeats(m);
+    if (actual !== totalSeats) {
+      allErrors.push(
+        `Số ghế thực tế (${actual}) không khớp với tổng số ghế (${totalSeats}). Chênh lệch: ${actual > totalSeats ? "+" : ""}${actual - totalSeats}`,
+      );
+    }
+
+    // Rule 2: Room type business rules
+    const ruleCheck = validateRoomSeatRules(m, roomType);
+    allErrors.push(...ruleCheck.errors);
+
+    setMatrixErrors(allErrors);
+    return allErrors.length === 0;
+  };
+
+  // Wrap setMatrix to always run validation
+  const updateMatrix = (newMatrix) => {
+    setMatrix(newMatrix);
+    runMatrixValidation(newMatrix);
   };
 
   const handleGenerateMatrix = () => {
@@ -455,6 +640,8 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
     setCols(result.cols);
     setMatrix(result.matrix);
     setShowMatrix(true);
+    // Validate the generated matrix
+    runMatrixValidation(result.matrix);
   };
 
   const handleSave = async () => {
@@ -463,7 +650,15 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
       toast.error("Vui lòng tạo ma trận ghế trước khi lưu");
       return;
     }
-    const actualTotal = rows * cols;
+
+    // Frontend gate: block save if matrix has validation errors
+    if (!runMatrixValidation(matrix)) {
+      toast.error("Vui lòng sửa các lỗi ma trận ghế trước khi lưu");
+      return;
+    }
+
+    // Use actual non-aisle seat count, not rows×cols
+    const actualTotal = countActualSeats(matrix);
     const payload = {
       cinema: cinemaId,
       name,
@@ -486,7 +681,14 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
       onSaved();
       onClose();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Lỗi khi lưu phòng");
+      const serverErrors = err.response?.data?.errors;
+      if (Array.isArray(serverErrors) && serverErrors.length > 0) {
+        // Display server-side validation errors
+        setMatrixErrors(serverErrors);
+        toast.error(err.response?.data?.message || "Lỗi khi lưu phòng");
+      } else {
+        toast.error(err.response?.data?.message || "Lỗi khi lưu phòng");
+      }
     } finally {
       setSaving(false);
     }
@@ -589,6 +791,7 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
                 onChange={(e) => {
                   setRoomType(e.target.value);
                   setShowMatrix(false);
+                  setMatrixErrors([]);
                   setErrors((p) => ({ ...p, totalSeats: "" }));
                 }}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] font-medium text-slate-700"
@@ -701,8 +904,24 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
                 Nhấn "Tạo ma trận mặc định" để cấu hình loại ghế
               </div>
             ) : (
-              <div className="border border-slate-200 rounded-xl p-4 bg-slate-50">
-                <MatrixEditor matrix={matrix} onChange={setMatrix} />
+              <div className="space-y-3">
+                <div className="border border-slate-200 rounded-xl p-4 bg-slate-50">
+                  <MatrixEditor matrix={matrix} onChange={updateMatrix} roomType={roomType} />
+                </div>
+                {/* Real-time matrix validation errors */}
+                {matrixErrors.length > 0 && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 p-4 space-y-1.5">
+                    <p className="text-xs font-bold text-red-600 uppercase tracking-wider">
+                      Lỗi ma trận ghế
+                    </p>
+                    {matrixErrors.map((err, i) => (
+                      <div key={i} className="flex items-start gap-2 text-sm text-red-700">
+                        <AlertTriangle size={14} className="shrink-0 mt-0.5 text-red-500" />
+                        <span>{err}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -717,8 +936,8 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
           </button>
           <button
             onClick={handleSave}
-            disabled={saving}
-            className={`px-6 py-2.5 text-white rounded-xl font-bold shadow-lg transition-all duration-150 active:scale-95 text-sm flex items-center gap-2 ${saving ? "bg-red-400 cursor-not-allowed" : "bg-[#dc2626] hover:bg-red-700 hover:-translate-y-0.5 shadow-red-200"}`}
+            disabled={saving || (matrix && matrixErrors.length > 0)}
+            className={`px-6 py-2.5 text-white rounded-xl font-bold shadow-lg transition-all duration-150 active:scale-95 text-sm flex items-center gap-2 ${saving || (matrix && matrixErrors.length > 0) ? "bg-red-400 cursor-not-allowed" : "bg-[#dc2626] hover:bg-red-700 hover:-translate-y-0.5 shadow-red-200"}`}
           >
             <Save size={16} /> {saving ? "Đang lưu..." : "Lưu phòng"}
           </button>

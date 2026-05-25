@@ -17,6 +17,7 @@ const {
 } = require('../services/email-service');
 const notificationService = require('../services/notification-service');
 const ticketEvents = require('../services/ticket-event-emitter');
+const { countActualSeats, validateSeatMatrixIntegrity } = require('../utils/seat-validator');
 
 // Utility to handle common Mongoose errors
 const handleErrors = (res, error, defaultMsg = 'Internal Server Error') => {
@@ -32,16 +33,6 @@ const handleErrors = (res, error, defaultMsg = 'Internal Server Error') => {
     }
     return res.status(500).json({ message: error.message || defaultMsg });
 };
-
-function countSeatsFromMatrix(seatMatrix = []) {
-    let totalSeats = 0;
-    for (const row of seatMatrix) {
-        for (const cell of row || []) {
-            if (cell && cell.type !== 'aisle') totalSeats++;
-        }
-    }
-    return totalSeats;
-}
 
 async function loadBookingContext(bookingId) {
     return Booking.findById(bookingId)
@@ -523,9 +514,26 @@ router.get('/cinemas/:cinemaId/rooms', protect, admin, async (req, res) => {
 router.post('/rooms', protect, admin, async (req, res) => {
     try {
         const payload = { ...req.body };
-        payload.totalSeats = Array.isArray(payload.seatMatrix) && payload.seatMatrix.length > 0
-            ? countSeatsFromMatrix(payload.seatMatrix)
-            : Number(payload.rows) * Number(payload.cols);
+        const hasMatrix = Array.isArray(payload.seatMatrix) && payload.seatMatrix.length > 0;
+
+        if (hasMatrix) {
+            // Validate seat matrix integrity and business rules
+            const actualCount = countActualSeats(payload.seatMatrix);
+            const integrity = validateSeatMatrixIntegrity(
+                payload.seatMatrix,
+                Number(payload.totalSeats),
+                payload.roomType || 'Standard',
+            );
+            if (!integrity.valid) {
+                return res.status(400).json({
+                    message: 'Dữ liệu ma trận ghế không hợp lệ',
+                    errors: integrity.errors,
+                });
+            }
+            payload.totalSeats = actualCount;
+        } else {
+            payload.totalSeats = Number(payload.rows) * Number(payload.cols);
+        }
 
         const room = new CinemaRoom(payload);
         await room.save();
@@ -544,18 +552,30 @@ router.put('/rooms/:id', protect, admin, async (req, res) => {
         if (name) room.name = name;
         if (rows) room.rows = rows;
         if (cols) room.cols = cols;
-        if (roomType) room.roomType = roomType;
         if (status) room.status = status;
+
+        const effectiveRoomType = roomType || room.roomType;
+
         if (seatMatrix !== undefined) {
-            let count = 0;
-            for (const row of seatMatrix) {
-                for (const cell of row) {
-                    if (cell && cell.type !== 'aisle') count++;
-                }
+            // Validate seat matrix integrity and business rules
+            const actualCount = countActualSeats(seatMatrix);
+            const expectedTotal = Number(req.body.totalSeats) || actualCount;
+            const integrity = validateSeatMatrixIntegrity(
+                seatMatrix,
+                expectedTotal,
+                effectiveRoomType,
+            );
+            if (!integrity.valid) {
+                return res.status(400).json({
+                    message: 'Dữ liệu ma trận ghế không hợp lệ',
+                    errors: integrity.errors,
+                });
             }
             room.seatMatrix = seatMatrix;
-            room.totalSeats = count || room.rows * room.cols;
+            room.totalSeats = actualCount || room.rows * room.cols;
         }
+
+        if (roomType) room.roomType = roomType;
 
         await room.save();
         res.json(room);

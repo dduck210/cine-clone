@@ -12,6 +12,7 @@ const { expireShowtimes } = require('../jobs/expire-showtimes');
 const { isShowtimeExpired } = require('../utils/showtime-status');
 const { sendRefundEmail, sendShowtimeCancelledEmail } = require('../services/email-service');
 const notificationService = require('../services/notification-service');
+const { countActualSeats } = require('../utils/seat-validator');
 
 // Get all showtimes with filters
 router.get('/', async (req, res) => {
@@ -120,11 +121,7 @@ router.post('/', protect, admin, async (req, res) => {
             // Count actual seats (non-aisle) from matrix
             let totalSeats = 0;
             if (room.seatMatrix && room.seatMatrix.length > 0) {
-                for (const row of room.seatMatrix) {
-                    for (const cell of row) {
-                        if (cell && cell.type !== 'aisle') totalSeats++;
-                    }
-                }
+                totalSeats = countActualSeats(room.seatMatrix);
             } else {
                 totalSeats = room.totalSeats;
             }
@@ -163,11 +160,38 @@ router.post('/', protect, admin, async (req, res) => {
                     }
                 }
             } else {
+                // Fallback: generate seats from rows×cols, respecting roomType
+                const rt = room.roomType || 'Standard';
                 for (let i = 0; i < room.rows; i++) {
                     const row = String.fromCharCode(65 + i);
-                    const isCouple = room.rows >= 6 && i === room.rows - 1;
-                    const isVip    = room.rows >= 6 && i >= room.rows - 2;
-                    const seatType = isCouple ? 'couple' : isVip ? 'vip' : 'normal';
+                    let seatType;
+
+                    if (rt === 'Standard') {
+                        const coupleRows = room.rows >= 8 ? 2 : room.rows >= 4 ? 1 : 0;
+                        seatType = coupleRows > 0 && i >= room.rows - coupleRows ? 'couple' : 'normal';
+                    } else if (rt === 'Premium') {
+                        if (room.rows >= 6) {
+                            if (i === room.rows - 1) seatType = 'couple';
+                            else if (i >= room.rows - 3) seatType = 'vip';
+                            else seatType = 'normal';
+                        } else if (room.rows >= 3) {
+                            if (i === room.rows - 1) seatType = 'couple';
+                            else if (i === room.rows - 2) seatType = 'vip';
+                            else seatType = 'normal';
+                        } else {
+                            seatType = room.rows >= 2 && i === room.rows - 1 ? 'couple' : 'normal';
+                        }
+                    } else if (rt === 'VIP') {
+                        const coupleRows = Math.max(1, Math.round(room.rows * 0.2));
+                        const vipRows = Math.max(1, Math.round(room.rows * 0.6));
+                        const normalRows = room.rows - coupleRows - vipRows;
+                        if (i >= room.rows - coupleRows) seatType = 'couple';
+                        else if (i >= Math.max(0, normalRows)) seatType = 'vip';
+                        else seatType = 'normal';
+                    } else {
+                        seatType = 'normal';
+                    }
+
                     for (let j = 1; j <= room.cols; j++) {
                         seats.push({
                             showtime: showtime._id,
