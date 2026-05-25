@@ -92,7 +92,9 @@ const MomoPaymentPage = () => {
       if (res.data.paid) {
         handlePaid(location.state);
       } else {
-        toast("Chưa nhận được thanh toán, vui lòng thử lại sau giây lát.", { id: "check-pay" });
+        toast("Chưa nhận được thanh toán, vui lòng thử lại sau giây lát.", {
+          id: "check-pay",
+        });
       }
     } catch {
       toast.error("Có lỗi xảy ra khi kiểm tra.", { id: "check-pay" });
@@ -381,7 +383,10 @@ const MomoPaymentPage = () => {
                     src={qrCodeUrl || momoQRFallback}
                     alt="MoMo QR"
                     className="w-[160px] h-[160px]"
-                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = momoQRFallback; }}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = momoQRFallback;
+                    }}
                   />
                 </div>
                 <p className="text-slate-400 text-[10px] mt-3 text-center">
@@ -623,19 +628,28 @@ const MomoPaymentPage = () => {
                       src={qrCodeUrl || momoQRFallback}
                       alt="MoMo QR"
                       className="w-[260px] h-[260px]"
-                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = momoQRFallback; }}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = momoQRFallback;
+                      }}
                     />
                   </div>
                 </div>
                 <div className="mt-8 text-center space-y-5">
                   <p className="text-slate-500 font-bold text-sm italic animate-pulse">
-                    Trang web sẽ tự động cập nhật sau khi bạn thanh toán thành
-                    công...
+                    Trang web sẽ tự động cập nhật sau khi bạn thanh toán thành công...
                   </p>
+
+                  {payUrl && (
+                    <a href={payUrl} target="_blank" rel="noreferrer"
+                      className="inline-flex items-center gap-2 bg-[#AE2070] hover:bg-[#8f1a5c] text-white px-8 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-pink-200">
+                      <Smartphone size={16} /> Mở trang thanh toán MoMo
+                    </a>
+                  )}
 
                   <div className="flex flex-col items-center gap-3 pt-2">
                     <p className="text-slate-400 text-[10px] uppercase tracking-widest">
-                      Bạn đã thanh toán nhưng chưa thấy chuyển trang?
+                      Đã thanh toán nhưng chưa thấy chuyển trang?
                     </p>
                     <button
                       onClick={checkPaymentStatus}
@@ -643,24 +657,9 @@ const MomoPaymentPage = () => {
                       className="bg-white hover:bg-slate-50 text-[#AE2070] border border-[#AE2070] px-8 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm disabled:opacity-60 flex items-center gap-2"
                     >
                       {isConfirming && (
-                        <svg
-                          className="animate-spin h-3 w-3"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                          />
+                        <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                         </svg>
                       )}
                       {isConfirming ? "Đang kiểm tra..." : "Kiểm tra thanh toán"}
@@ -668,8 +667,7 @@ const MomoPaymentPage = () => {
                   </div>
 
                   <p className="text-slate-400 text-[10px] max-w-[320px] mx-auto pt-4 border-t border-slate-100">
-                    Mã QR sẽ tự động hết hạn sau 10 phút. Vui lòng không tắt
-                    trình duyệt cho đến khi nhận được vé.
+                    Mã QR sẽ tự động hết hạn sau 10 phút. Vui lòng không tắt trình duyệt cho đến khi nhận được vé.
                   </p>
                 </div>
               </div>
