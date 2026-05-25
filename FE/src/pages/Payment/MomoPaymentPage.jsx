@@ -88,28 +88,14 @@ const MomoPaymentPage = () => {
     if (isConfirming) return;
     setIsConfirming(true);
     try {
-      const statusRes = await axiosInstance.get(
-        `/payments/momo/status/${bookingId}`,
-      );
-      if (statusRes.data.paid) {
-        handlePaid(location.state);
-        return;
-      }
-
-      const confirmRes = await axiosInstance.post(
-        `/payments/momo/confirm-demo/${bookingId}`,
-      );
-      if (confirmRes.data.paid) {
+      const res = await axiosInstance.get(`/payments/momo/status/${bookingId}`);
+      if (res.data.paid) {
         handlePaid(location.state);
       } else {
-        toast.error("Xác nhận thất bại, vui lòng thử lại.", {
-          id: "check-pay",
-        });
+        toast("Chưa nhận được thanh toán, vui lòng thử lại sau giây lát.", { id: "check-pay" });
       }
     } catch {
-      toast.error("Có lỗi xảy ra khi xác nhận thanh toán.", {
-        id: "check-pay",
-      });
+      toast.error("Có lỗi xảy ra khi kiểm tra.", { id: "check-pay" });
     } finally {
       setIsConfirming(false);
     }
@@ -582,7 +568,7 @@ const MomoPaymentPage = () => {
                       />
                     </svg>
                   )}
-                  {isConfirming ? "Đang xác nhận..." : "Tôi đã thanh toán"}
+                  {isConfirming ? "Đang kiểm tra..." : "Kiểm tra thanh toán"}
                 </button>
 
                 <div className="flex justify-between items-center w-full pt-2">
@@ -677,7 +663,7 @@ const MomoPaymentPage = () => {
                           />
                         </svg>
                       )}
-                      {isConfirming ? "Đang xác nhận..." : "Tôi đã thanh toán"}
+                      {isConfirming ? "Đang kiểm tra..." : "Kiểm tra thanh toán"}
                     </button>
                   </div>
 

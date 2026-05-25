@@ -1,19 +1,14 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../../components/common/Navbar";
 import Footer from "../../components/common/Footer";
 import axiosInstance from "../../api/axiosConfig";
 import {
   User, Mail, CheckCircle, MapPin, Calendar, Armchair, Popcorn,
-  X, Copy, Ticket, Clock, Tag,
+  Ticket, Clock, Tag,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
-const QR_BANK = {
-  bankId: import.meta.env.VITE_BANK_CODE || "MB",
-  accountNo: import.meta.env.VITE_BANK_ACCOUNT_NUMBER || "01234567890",
-  accountName: import.meta.env.VITE_BANK_ACCOUNT_NAME || "5CINE CINEMA",
-};
 
 const PAYMENT_METHODS = [
   {
@@ -25,16 +20,6 @@ const PAYMENT_METHODS = [
       </svg>
     ),
     color: "border-[#AE2070] bg-[#AE2070]/5", dot: "bg-[#AE2070]",
-  },
-  {
-    id: "qr", label: "QR Banking", desc: "Quét mã QR chuyển khoản ngân hàng",
-    icon: (
-      <svg viewBox="0 0 48 48" className="w-7 h-7" fill="none">
-        <circle cx="24" cy="24" r="24" fill="#0066CC" />
-        <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="11" fontWeight="bold" fontFamily="Arial">QR</text>
-      </svg>
-    ),
-    color: "border-blue-500 bg-blue-50", dot: "bg-blue-500",
   },
 ];
 
@@ -56,12 +41,7 @@ const PaymentPage = () => {
   const [customerInfo, setCustomerInfo] = useState({ name: "", email: "" });
   const [errors, setErrors] = useState({});
 
-  // QR Banking modal
-  const [qrModal, setQrModal] = useState(null);
-  const [qrPaid, setQrPaid] = useState(false);
-  const qrPollRef = useRef(null);
-
-  useEffect(() => { return () => { toast.dismiss(); if (qrPollRef.current) clearInterval(qrPollRef.current); }; }, []);
+  useEffect(() => { return () => { toast.dismiss(); }; }, []);
   useEffect(() => { window.scrollTo(0, 0); if (!location.state) navigate("/"); }, [location, navigate]);
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
@@ -115,34 +95,6 @@ const PaymentPage = () => {
             combos, originalPrice, mondayDiscount, voucherDiscount, voucherCode, voucherType, voucherValue,
           },
         });
-      } else if (paymentMethod === "qr") {
-        toast.dismiss(loadingToast);
-        const addInfo = encodeURIComponent(`5CINE ${bookingCode}`);
-        const qrUrl = `https://img.vietqr.io/image/${QR_BANK.bankId}-${QR_BANK.accountNo}-qr_only.png?amount=${finalTotalPrice}&addInfo=${addInfo}&accountName=${encodeURIComponent(QR_BANK.accountName)}`;
-        setQrModal({ bookingId, bookingCode, qrUrl, amount: finalTotalPrice });
-        setQrPaid(false);
-        setIsProcessing(false);
-        // Bắt đầu polling SePay status
-        if (qrPollRef.current) clearInterval(qrPollRef.current);
-        qrPollRef.current = setInterval(async () => {
-          try {
-            const r = await axiosInstance.get(`/payments/sepay/status/${bookingId}`);
-            if (r.data.paid) {
-              clearInterval(qrPollRef.current);
-              setQrPaid(true);
-              setTimeout(() => {
-                setQrModal(null);
-                setIsSuccess(true);
-                const timer = setInterval(() => {
-                  setCountdown((prev) => {
-                    if (prev === 1) { clearInterval(timer); navigate("/payment-success", { state: { ...location.state, orderId: r.data.bookingCode, bookingId: r.data.bookingId, paymentMethod: "qr" } }); }
-                    return prev - 1;
-                  });
-                }, 1000);
-              }, 1200);
-            }
-          } catch { /* silent */ }
-        }, 3000);
       }
     } catch (err) {
       toast.dismiss(loadingToast);
@@ -193,58 +145,6 @@ const PaymentPage = () => {
         </div>
       )}
 
-      {/* ── QR Banking Modal ── */}
-      {qrModal && (
-        <div className="fixed inset-0 bg-slate-900/85 z-[90] flex items-start sm:items-center justify-center p-4 pt-6 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white rounded-[32px] shadow-2xl max-w-sm w-full border border-slate-100 overflow-hidden my-auto">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 pt-6 pb-5 relative">
-              <button onClick={() => { setQrModal(null); if (qrPollRef.current) clearInterval(qrPollRef.current); }}
-                className="absolute top-4 right-4 p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"><X size={16} /></button>
-              <div className="text-center text-white">
-                <h2 className="text-lg font-black mb-0.5">Quét mã QR thanh toán</h2>
-                <p className="text-blue-100 text-xs">Dùng app ngân hàng quét mã bên dưới</p>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="bg-blue-50 rounded-2xl p-3 mb-4 border border-blue-100 flex justify-center">
-                <img src={qrModal.qrUrl} alt="VietQR" className="w-36 h-36 sm:w-44 sm:h-44 rounded-xl"
-                  onError={(e) => { e.target.src = `https://api.qrserver.com/v1/create-qr-code/?size=176x176&data=${encodeURIComponent(`${QR_BANK.bankId} ${QR_BANK.accountNo} ${qrModal.amount} ${qrModal.bookingCode}`)}`; }} />
-              </div>
-              <div className="space-y-2 mb-4 bg-slate-50 rounded-2xl p-4 border border-slate-100 text-sm">
-                {[
-                  { label: "Ngân hàng", value: `${QR_BANK.bankId} Bank`, copy: null },
-                  { label: "Số tài khoản", value: QR_BANK.accountNo, copy: QR_BANK.accountNo },
-                  { label: "Chủ tài khoản", value: QR_BANK.accountName, copy: null },
-                  { label: "Số tiền", value: `${qrModal.amount.toLocaleString()}đ`, copy: null, highlight: true },
-                  { label: "Nội dung CK", value: `5CINE ${qrModal.bookingCode}`, copy: `5CINE ${qrModal.bookingCode}` },
-                ].map(({ label, value, copy, highlight }) => (
-                  <div key={label} className="flex justify-between items-center">
-                    <span className="text-slate-400">{label}</span>
-                    <div className="flex items-center gap-1">
-                      <span className={`font-bold ${highlight ? "text-blue-600" : "text-slate-800"}`}>{value}</span>
-                      {copy && <button onClick={() => { navigator.clipboard.writeText(copy); toast.success("Đã sao chép!"); }} className="text-blue-400 hover:text-blue-600 ml-1"><Copy size={12} /></button>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 flex items-center justify-center gap-2">
-                <svg className="animate-spin h-4 w-4 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                </svg>
-                <p className="text-blue-700 text-xs font-medium">
-                  Đang chờ xác nhận tự động
-                  <span className="inline-flex gap-0.5 ml-0.5">
-                    <span className="animate-bounce" style={{ animationDelay: "0ms" }}>.</span>
-                    <span className="animate-bounce" style={{ animationDelay: "150ms" }}>.</span>
-                    <span className="animate-bounce" style={{ animationDelay: "300ms" }}>.</span>
-                  </span>
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Main content ── */}
       <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-28 pb-20">
@@ -392,12 +292,12 @@ const PaymentPage = () => {
                 )}
 
                 <button onClick={handlePayment} disabled={isProcessing}
-                  className={`w-full font-black py-4 rounded-2xl shadow-xl transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-3 ${isProcessing ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none" : paymentMethod === "momo" ? "bg-[#AE2070] hover:bg-[#8f1a5c] text-white shadow-pink-200 transform hover:-translate-y-1" : "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200 transform hover:-translate-y-1"}`}>
+                  className={`w-full font-black py-4 rounded-2xl shadow-xl transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-3 ${isProcessing ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none" : "bg-[#AE2070] hover:bg-[#8f1a5c] text-white shadow-pink-200 transform hover:-translate-y-1"}`}>
                   {isProcessing ? (<><svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>ĐANG XỬ LÝ...</>) : "THANH TOÁN NGAY"}
                 </button>
 
                 <p className="text-center text-slate-400 text-xs mt-3 font-medium">
-                  {paymentMethod === "momo" ? "Quét mã QR bằng app MoMo để thanh toán" : "Mã QR VietQR hỗ trợ tất cả ngân hàng Việt Nam"}
+                  Quét mã QR bằng app MoMo để thanh toán
                 </p>
               </div>
             </div>
