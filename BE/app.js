@@ -50,6 +50,7 @@ app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/payments/momo', require('./routes/momo'));
 app.use('/api/payments/payos', require('./routes/payos'));
 app.use('/api/payments/sepay', require('./routes/sepay'));
+app.use('/api/payments/casso', require('./routes/casso'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/tickets', require('./routes/tickets'));
 app.use('/api/reviews', require('./routes/reviews'));
