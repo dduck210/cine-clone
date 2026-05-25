@@ -79,7 +79,7 @@ const BankTransferPaymentPage = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
     if (!location.state) { navigate("/"); return; }
-    pollRef.current = setInterval(pollStatus, 3000);
+    pollRef.current = setInterval(pollStatus, 1500);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
 
