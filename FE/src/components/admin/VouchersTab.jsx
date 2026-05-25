@@ -324,10 +324,10 @@ export const VouchersManager = () => {
         {loading ? (
           <div className="divide-y divide-slate-50">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-4 px-5 py-4 animate-pulse">
-                <div className="w-9 h-9 bg-slate-100 rounded-xl shrink-0" />
+              <div key={i} className="flex items-center gap-4 px-5 py-5 animate-pulse">
+                <div className="w-11 h-11 bg-slate-100 rounded-xl shrink-0" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3.5 bg-slate-100 rounded w-1/4" />
+                  <div className="h-4 bg-slate-100 rounded w-1/4" />
                   <div className="h-3 bg-slate-100 rounded w-1/3" />
                 </div>
                 <div className="w-20 h-5 bg-slate-100 rounded-full" />
@@ -345,13 +345,13 @@ export const VouchersManager = () => {
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-slate-100">
-                  <th className="px-5 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Mã Voucher</th>
-                  <th className="px-5 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Chiết khấu</th>
-                  <th className="px-5 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Giới hạn</th>
-                  <th className="px-5 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Hiệu lực</th>
-                  <th className="px-5 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Sử dụng</th>
-                  <th className="px-5 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80 text-center">Trạng thái</th>
-                  <th className="px-5 py-3 bg-slate-50/80 w-12" />
+                  <th className="px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Mã Voucher</th>
+                  <th className="px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Chiết khấu</th>
+                  <th className="px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Giới hạn</th>
+                  <th className="px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Hiệu lực</th>
+                  <th className="px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Sử dụng</th>
+                  <th className="px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80 text-center">Trạng thái</th>
+                  <th className="px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80 text-center whitespace-nowrap">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -365,24 +365,24 @@ export const VouchersManager = () => {
                       style={{ animationDelay: `${i * 45}ms` }}
                     >
                       {/* Code */}
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2.5">
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${v.computedStatus === "active" ? "bg-violet-50 text-violet-600" : "bg-slate-100 text-slate-400"}`}>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0 ${v.computedStatus === "active" ? "bg-violet-50 text-violet-600" : "bg-slate-100 text-slate-400"}`}>
                             {v.discountType === "percent" ? "%" : "đ"}
                           </div>
                           <div>
                             <p className="font-black text-slate-800 tracking-widest text-sm leading-none mb-1">{v.code}</p>
-                            <p className="text-[11px] text-slate-400 truncate max-w-[140px]">{v.description || "Không có mô tả"}</p>
+                            <p className="text-xs text-slate-400 truncate max-w-[140px]">{v.description || "Không có mô tả"}</p>
                           </div>
                         </div>
                       </td>
 
                       {/* Discount */}
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-4">
                         <p className="font-black text-slate-900 text-base">
                           {v.discountType === "percent" ? `−${v.discountValue}%` : `−${v.discountValue.toLocaleString()}đ`}
                         </p>
-                        {v.maxDiscount && <p className="text-[11px] text-slate-400 mt-0.5">Tối đa {v.maxDiscount.toLocaleString()}đ</p>}
+                        {v.maxDiscount && <p className="text-xs text-slate-400 mt-0.5">Tối đa {v.maxDiscount.toLocaleString()}đ</p>}
                         {v.minOrderAmount > 0 && (
                           <span className="inline-block mt-1 px-1.5 py-0.5 bg-violet-50 text-violet-600 rounded text-[10px] font-bold">
                             Từ {v.minOrderAmount.toLocaleString()}đ
@@ -391,41 +391,41 @@ export const VouchersManager = () => {
                       </td>
 
                       {/* Limits */}
-                      <td className="px-5 py-3.5">
-                        <div className="space-y-1 text-xs text-slate-500">
+                      <td className="px-5 py-4">
+                        <div className="space-y-1.5 text-sm text-slate-500">
                           <div className="flex items-center gap-1.5">
-                            <Ticket size={11} className="text-slate-400 shrink-0" />
+                            <Ticket size={13} className="text-slate-400 shrink-0" />
                             {v.usageLimit !== -1 ? `${v.usageLimit} lượt` : "Không giới hạn"}
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <Users size={11} className="text-slate-400 shrink-0" />
+                            <Users size={13} className="text-slate-400 shrink-0" />
                             {v.maxUsers != null ? `${v.maxUsers} users` : "Không giới hạn"}
                           </div>
                         </div>
                       </td>
 
                       {/* Dates */}
-                      <td className="px-5 py-3.5">
-                        <div className="space-y-1 text-xs">
+                      <td className="px-5 py-4">
+                        <div className="space-y-1 text-sm">
                           <p className="text-slate-500">Từ: <span className="font-semibold text-slate-700">{formatDate(v.startDate)}</span></p>
                           <p className="text-slate-500">Đến: <span className="font-semibold text-slate-700">{formatDate(v.endDate)}</span></p>
                           {cd && cd.urgency !== "expired" && (
-                            <p className={`flex items-center gap-1 font-bold text-[11px] mt-1 ${
+                            <p className={`flex items-center gap-1 font-bold text-xs mt-1 ${
                               cd.urgency === "critical" ? "text-red-500" : cd.urgency === "warning" ? "text-amber-500" : "text-slate-400"
                             }`}>
-                              <Clock size={11} /> {cd.days > 0 ? `Còn ${cd.days} ngày` : `Còn ${cd.hours} giờ`}
+                              <Clock size={12} /> {cd.days > 0 ? `Còn ${cd.days} ngày` : `Còn ${cd.hours} giờ`}
                             </p>
                           )}
                         </div>
                       </td>
 
                       {/* Usage */}
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-4">
                         <div className="min-w-[120px]">
-                          <p className="text-xs font-bold text-slate-700">
+                          <p className="text-sm font-bold text-slate-700">
                             {v.usedCount ?? 0}{v.usageLimit !== -1 ? ` / ${v.usageLimit}` : ""} lượt
                           </p>
-                          <p className="text-[11px] text-slate-400">{v.usageLimit !== -1 ? `${v.usagePercent}%` : "Không giới hạn"}</p>
+                          <p className="text-xs text-slate-400">{v.usageLimit !== -1 ? `${v.usagePercent}%` : "Không giới hạn"}</p>
                           {v.usageLimit !== -1 && (
                             <div className="mt-1.5 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                               <div
@@ -440,30 +440,30 @@ export const VouchersManager = () => {
                       </td>
 
                       {/* Status */}
-                      <td className="px-5 py-3.5 text-center">
+                      <td className="px-5 py-4 text-center">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black border tracking-wide uppercase ${STATUS_COLORS[display.color] || STATUS_COLORS.slate}`}>
                           {display.label}
                         </span>
                       </td>
 
                       {/* Actions */}
-                      <td className="px-4 py-3.5 text-right">
-                        <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                      <td className="px-4 py-4 text-center">
+                        <div className="flex items-center gap-1 justify-center">
                           {v.status !== "archived" && (
                             <button
                               onClick={() => setConfirm({ type: "archive", voucher: v })}
-                              className="p-1.5 rounded-lg text-slate-300 hover:text-amber-600 hover:bg-amber-50 transition-all"
+                              className="p-2 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-all"
                               title="Lưu trữ"
                             >
-                              <Archive size={14} />
+                              <Archive size={15} />
                             </button>
                           )}
                           <button
                             onClick={() => setConfirm({ type: "delete", voucher: v })}
-                            className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                            className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
                             title="Xóa vĩnh viễn"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={15} />
                           </button>
                         </div>
                       </td>
