@@ -395,6 +395,7 @@ const MomoPaymentPage = () => {
                     src={qrCodeUrl || momoQRFallback}
                     alt="MoMo QR"
                     className="w-[160px] h-[160px]"
+                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = momoQRFallback; }}
                   />
                 </div>
                 <p className="text-slate-400 text-[10px] mt-3 text-center">
@@ -636,6 +637,7 @@ const MomoPaymentPage = () => {
                       src={qrCodeUrl || momoQRFallback}
                       alt="MoMo QR"
                       className="w-[260px] h-[260px]"
+                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = momoQRFallback; }}
                     />
                   </div>
                 </div>
