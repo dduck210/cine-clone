@@ -22,7 +22,6 @@ const tabs = [
   { id: "all",       label: "Tất cả" },
   { id: "pending",   label: "Chờ thanh toán" },
   { id: "paid",      label: "Đã thanh toán" },
-  { id: "cancelled", label: "Đã hủy" },
   { id: "expired",   label: "Hết hạn" },
   { id: "refunded",  label: "Đã hoàn" },
 ];

@@ -7,7 +7,6 @@ import toast from "react-hot-toast";
 import {
   User,
   Mail,
-  Phone,
   Camera,
   Star,
   Lock,
@@ -35,11 +34,8 @@ const ProfilePage = () => {
   const user = {
     name: storedUser?.name || "Người dùng",
     email: storedUser?.email || "",
-    phone: storedUser?.phone || "",
     avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(storedUser?.name || "U")}&background=dc2626&color=fff&bold=true`,
     rank: storedUser?.role === "admin" ? "ADMIN" : "Star",
-    points: 0,
-    nextRankPoints: 1000,
   };
 
   return (
@@ -79,32 +75,6 @@ const ProfilePage = () => {
                 <span className="bg-yellow-100 text-yellow-700 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 border border-yellow-200">
                   <Star size={12} fill="currentColor" /> {user.rank} Member
                 </span>
-              </div>
-
-              <div className="relative z-10 w-full mt-6 text-left bg-gray-50 p-3 rounded-xl border border-gray-100">
-                <div className="flex justify-between text-xs mb-2">
-                  <span className="text-gray-500 font-medium">
-                    Điểm tích lũy
-                  </span>
-                  <span className="font-bold text-red-600">
-                    {user.points} / {user.nextRankPoints}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                  <div
-                    className="bg-red-600 h-full rounded-full transition-all duration-1000"
-                    style={{
-                      width: `${(user.points / user.nextRankPoints) * 100}%`,
-                    }}
-                  ></div>
-                </div>
-                <p className="text-[10px] text-gray-400 mt-2 text-center">
-                  Cần thêm{" "}
-                  <span className="font-bold text-gray-600">
-                    {user.nextRankPoints - user.points} điểm
-                  </span>{" "}
-                  để thăng hạng Gold
-                </p>
               </div>
             </div>
 
@@ -164,12 +134,9 @@ const MenuButton = ({ active, onClick, icon, label }) => (
   </button>
 );
 
-const PHONE_RE = /^(0[3-9]\d{8})$/;
-
 const PersonalInfoTab = ({ storedUser }) => {
   const [form, setForm] = useState({
     name: storedUser?.name || "",
-    phone: storedUser?.phone || "",
   });
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
@@ -184,8 +151,6 @@ const PersonalInfoTab = ({ storedUser }) => {
     if (!form.name.trim()) errs.name = "Họ tên không được để trống";
     else if (form.name.trim().length < 2)
       errs.name = "Họ tên phải có ít nhất 2 ký tự";
-    if (form.phone && !PHONE_RE.test(form.phone.replace(/\s/g, "")))
-      errs.phone = "Số điện thoại không hợp lệ (VD: 0912345678)";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -197,7 +162,6 @@ const PersonalInfoTab = ({ storedUser }) => {
     try {
       const res = await axiosInstance.put("/auth/profile", {
         name: form.name,
-        phone: form.phone,
       });
       const fresh = JSON.parse(localStorage.getItem("currentUser") || "{}");
       localStorage.setItem(
@@ -205,10 +169,9 @@ const PersonalInfoTab = ({ storedUser }) => {
         JSON.stringify({
           ...fresh,
           name: res.data.name,
-          phone: res.data.phone,
         }),
       );
-      setForm({ name: res.data.name, phone: res.data.phone || "" });
+      setForm({ name: res.data.name });
       toast.success("Cập nhật thông tin thành công!");
     } catch (err) {
       toast.error(
@@ -265,29 +228,6 @@ const PersonalInfoTab = ({ storedUser }) => {
             />
           </div>
           <p className="text-xs text-gray-400">Email không thể thay đổi</p>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-gray-700">
-            Số điện thoại
-          </label>
-          <div className="relative">
-            <Phone
-              className={`absolute left-3 top-3 ${errors.phone ? "text-red-400" : "text-gray-400"}`}
-              size={18}
-            />
-            <input
-              type="tel"
-              value={form.phone}
-              onChange={setField("phone")}
-              placeholder="VD: 0912345678"
-              maxLength={10}
-              className={`w-full pl-10 pr-4 py-2.5 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 transition-all text-sm font-medium ${errors.phone ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-gray-200 focus:border-[#dc2626] focus:ring-red-100"}`}
-            />
-          </div>
-          {errors.phone && (
-            <p className="text-red-500 text-xs mt-1 ml-1">{errors.phone}</p>
-          )}
         </div>
 
         <div className="md:col-span-2 mt-4 flex justify-end">
@@ -415,15 +355,19 @@ const HistoryTab = ({ navigate }) => {
     });
   };
 
+  const paidBookings = bookings.filter(
+    (b) => b.status === "paid" || b.status === "success",
+  );
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-800 border-l-4 border-red-600 pl-3">
           Lịch sử giao dịch
         </h2>
-        {bookings.length > 0 && (
+        {paidBookings.length > 0 && (
           <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
-            {bookings.length} giao dịch
+            {paidBookings.length} giao dịch
           </span>
         )}
       </div>
@@ -437,7 +381,7 @@ const HistoryTab = ({ navigate }) => {
             />
           ))}
         </div>
-      ) : bookings.length === 0 ? (
+      ) : paidBookings.length === 0 ? (
         <div className="text-center py-16">
           <Ticket size={40} className="text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 font-medium">
@@ -446,7 +390,7 @@ const HistoryTab = ({ navigate }) => {
         </div>
       ) : (
         <div className="space-y-3">
-          {bookings.map((b) => {
+          {paidBookings.map((b) => {
             const showtime = b.showtime || {};
             const movie = showtime.movie || {};
             const cinema = showtime.cinema || {};

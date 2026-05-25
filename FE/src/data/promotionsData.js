@@ -7,6 +7,7 @@ export const PROMOTIONS_LIST = [
     image: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1200&q=80",
     color: "bg-orange-500",
     tag: "HOT",
+    category: "Vé",
     content: [
       {
         type: "paragraph",
@@ -53,6 +54,7 @@ export const PROMOTIONS_LIST = [
     image: "https://images.unsplash.com/photo-1585647347483-22b66260dfff?w=1200&q=80",
     color: "bg-blue-500",
     tag: "HOT",
+    category: "Combo",
     content: [
       {
         type: "paragraph",
@@ -102,6 +104,7 @@ export const PROMOTIONS_LIST = [
     image: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1200&q=80",
     color: "bg-green-500",
     tag: "HSSV",
+    category: "Vé",
     content: [
       {
         type: "paragraph",
@@ -148,6 +151,7 @@ export const PROMOTIONS_LIST = [
     image: "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=1200&q=80",
     color: "bg-purple-500",
     tag: "VIP",
+    category: "Thành viên",
     content: [
       {
         type: "paragraph",

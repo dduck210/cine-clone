@@ -18,7 +18,7 @@ const PromotionDetailPage = () => {
 
   if (!promo) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white font-bromega font-bold">
         <Navbar />
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
           <p className="text-2xl font-bold text-gray-400">Không tìm thấy khuyến mãi</p>
@@ -30,7 +30,7 @@ const PromotionDetailPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-white font-bromega font-bold">
       <Navbar />
 
       <main className="pt-20">

@@ -96,7 +96,7 @@ const CinemaDetailPage = () => {
 
   const dateOptions = [];
   const WEEKDAY = ["CN","Hai","Ba","Tư","Năm","Sáu","Bảy"];
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 7; i++) {
     const d = new Date(+new Date() + i * 24 * 60 * 60 * 1000);
     const val = toVNDateStr(d);
     const day = vnDay(d);
