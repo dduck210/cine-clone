@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import {
   Plus, X, Save, ChevronDown, Calendar, Clock, Film, MapPin, Ban, Layers, Eye, Search, Square, CheckSquare, AlertTriangle, Grid,
@@ -618,6 +618,20 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
   const [filterMovie, setFilterMovie] = useState("");
   const [filterCinema, setFilterCinema] = useState("");
   const [filterRoom, setFilterRoom] = useState("");
+  const [filterDate, setFilterDate] = useState("");
+  const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
+  const dateDropdownRef = useRef(null);
+
+  // Click outside to close date dropdown
+  useEffect(() => {
+    const handler = (e) => {
+      if (dateDropdownRef.current && !dateDropdownRef.current.contains(e.target)) {
+        setDateDropdownOpen(false);
+      }
+    };
+    if (dateDropdownOpen) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [dateDropdownOpen]);
   const [filterStatus, setFilterStatus] = useState("active");
   const [detailShowtime, setDetailShowtime] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
@@ -670,13 +684,21 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
   }
   const rooms = [...roomMap.values()].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
+  // Extract unique dates from showtimes for date filter
+  const dateSet = new Set();
+  normalizedShowtimes.forEach(st => {
+    if (st.date) dateSet.add(new Date(st.date).toISOString().split('T')[0]);
+  });
+  const dates = [...dateSet].sort();
+
   const filtered = normalizedShowtimes.filter((st) => {
     const movieOk = !filterMovie || st.movie?._id === filterMovie;
     const cinemaOk = !filterCinema || st.cinema?._id === filterCinema;
     const roomOk = !filterRoom || st.room?._id === filterRoom;
+    const dateOk = !filterDate || (st.date && new Date(st.date).toISOString().split('T')[0] === filterDate);
     const statusOk = !filterStatus || st.effectiveStatus === filterStatus;
     const searchOk = !search.trim() || st.movie?.title?.toLowerCase().includes(search.trim().toLowerCase());
-    return movieOk && cinemaOk && roomOk && statusOk && searchOk;
+    return movieOk && cinemaOk && roomOk && dateOk && statusOk && searchOk;
   });
 
   const totalPages = Math.ceil(filtered.length / SHOWTIMES_PAGE_SIZE);
@@ -854,7 +876,7 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
             </button>
           ))}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-3 text-slate-400" size={16} />
             <input
@@ -888,6 +910,40 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
               {rooms.map((r) => <option key={r._id} value={r._id}>{r.name}</option>)}
             </select>
             <ChevronDown className="absolute right-3 top-3 text-slate-400 pointer-events-none" size={16} />
+          </div>
+          <div className="relative" ref={dateDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setDateDropdownOpen(v => !v)}
+              className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm font-medium text-slate-700 outline-none focus:border-[#dc2626] cursor-pointer text-left flex items-center justify-between"
+            >
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <span className={filterDate ? '' : 'text-slate-400'}>
+                {filterDate ? new Date(filterDate).toLocaleDateString('vi-VN') : 'Tất cả ngày'}
+              </span>
+              <ChevronDown size={14} className={`text-slate-400 transition-transform ${dateDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {dateDropdownOpen && (
+              <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
+                <button
+                  type="button"
+                  onClick={() => { setFilterDate(''); setDateDropdownOpen(false); setCurrentPage(1); }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors ${!filterDate ? 'bg-red-50 text-red-600 font-bold' : 'text-slate-600'}`}
+                >
+                  Tất cả ngày
+                </button>
+                {dates.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => { setFilterDate(d); setDateDropdownOpen(false); setCurrentPage(1); }}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors ${filterDate === d ? 'bg-red-50 text-red-600 font-bold' : 'text-slate-600'}`}
+                  >
+                    {new Date(d).toLocaleDateString('vi-VN')}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
