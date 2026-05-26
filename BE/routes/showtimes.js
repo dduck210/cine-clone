@@ -116,12 +116,19 @@ router.post('/', protect, admin, async (req, res) => {
                 room: roomId,
                 date: { $gte: dayStart, $lt: dayEnd },
                 status: 'active',
-            }).select('startTime endTime').lean();
-            const roomConflict = candidates.find(st =>
+            }).populate('movie', 'title').select('startTime endTime movie').lean();
+            const roomConflicts = candidates.filter(st =>
                 overlaps(newStartMin, newEndMin, toMin(st.startTime), toMin(st.endTime))
             );
-            if (roomConflict) {
-                errors.push({ date, startTime, conflictStart: roomConflict.startTime, conflictEnd: roomConflict.endTime, error: 'Room conflict' });
+            if (roomConflicts.length > 0) {
+                errors.push({
+                    date, startTime, error: 'Room conflict',
+                    conflicts: roomConflicts.map(st => ({
+                        conflictStart: st.startTime,
+                        conflictEnd: st.endTime,
+                        conflictMovie: st.movie?.title || null,
+                    })),
+                });
                 continue;
             }
 
