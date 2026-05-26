@@ -14,6 +14,8 @@ import {
   PlayCircle,
   Search,
   Info,
+  Square,
+  CheckSquare,
 } from "lucide-react";
 
 export const ErrorMsg = ({ msg }) => (
@@ -496,11 +498,27 @@ export const MoviesManager = ({
   handleAddNew,
   handleEdit,
   handleDeleteClick,
+  onBulkDelete,
 }) => {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterGenre, setFilterGenre] = useState("");
   const [detailMovie, setDetailMovie] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredMovies.length && filteredMovies.length > 0) setSelectedIds(new Set());
+    else setSelectedIds(new Set(filteredMovies.map((m) => m._id)));
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    await onBulkDelete([...selectedIds]);
+    clearSelection();
+  };
   const [currentPage, setCurrentPage] = useState(1);
 
   const genreOptions = Array.from(new Set(
@@ -597,13 +615,28 @@ export const MoviesManager = ({
       </div>
     </div>
 
+    {/* Bulk action bar */}
+    {selectedIds.size > 0 && (
+      <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl px-4 py-3 animate-[fadeIn_0.2s_ease_forwards]">
+        <span className="text-sm font-bold text-red-700">Đã chọn {selectedIds.size} phim</span>
+        <div className="flex items-center gap-2">
+          <button onClick={clearSelection} className="px-3 py-1.5 text-xs font-bold text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">Bỏ chọn</button>
+          <button onClick={handleBulkDelete} className="flex items-center gap-1.5 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"><Trash2 size={14} /> Xóa {selectedIds.size} phim</button>
+        </div>
+      </div>
+    )}
+
     {/* Table */}
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50/80 border-b border-slate-200 text-[13px] uppercase tracking-wider text-slate-500 font-bold">
-              <th className="p-5 pl-6 w-12">STT</th>
+              <th className="p-5 pl-6 w-12">
+                <button onClick={toggleSelectAll} className="hover:text-slate-700 transition-colors">
+                  {selectedIds.size === filteredMovies.length && filteredMovies.length > 0 ? <CheckSquare size={16} className="text-red-600" /> : <Square size={16} />}
+                </button>
+              </th>
               <th className="p-5">Tên phim</th>
               <th className="p-5">Thể loại</th>
               <th className="p-5">Thời lượng</th>
@@ -630,8 +663,10 @@ export const MoviesManager = ({
                   className="hover:bg-slate-50/80 transition-all duration-150 cursor-pointer"
                   style={{ animation: "rowIn 0.25s cubic-bezier(0.22,1,0.36,1) both", animationDelay: `${idx * 40}ms` }}
                 >
-                  <td className="p-5 pl-6 text-[15px] font-bold text-slate-400">
-                    {(currentPage - 1) * MOVIES_PAGE_SIZE + idx + 1}
+                  <td className="p-5 pl-6">
+                    <button onClick={(e) => { e.stopPropagation(); toggleSelect(movie._id); }} className="hover:text-red-600 transition-colors">
+                      {selectedIds.has(movie._id) ? <CheckSquare size={16} className="text-red-600" /> : <Square size={16} className="text-slate-300 group-hover:text-slate-500" />}
+                    </button>
                   </td>
                   <td className="p-5">
                     <div className="flex items-center gap-4">

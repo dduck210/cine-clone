@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Trash2, Tag, Users, Clock, Ticket } from "lucide-react";
+import { Plus, Trash2, Tag, Users, Clock, Ticket, Square, CheckSquare } from "lucide-react";
 import toast from "react-hot-toast";
 import axiosInstance from "../../api/axiosConfig";
 
@@ -79,7 +79,7 @@ const VoucherModal = ({ onClose, onSaved }) => {
     }
   };
 
-  const inp = "w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all";
+  const inp = "w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all";
   const lbl = "block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5";
 
   return createPortal(
@@ -87,7 +87,7 @@ const VoucherModal = ({ onClose, onSaved }) => {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto animate-[scaleIn_0.2s_ease_forwards]" onClick={(e) => e.stopPropagation()}>
         <div className="p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
           <h2 className="font-black text-lg text-slate-800 flex items-center gap-2">
-            <Tag size={18} className="text-violet-600" /> Tạo Voucher mới
+            <Tag size={18} className="text-red-600" /> Tạo Voucher mới
           </h2>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors text-lg font-bold">&times;</button>
         </div>
@@ -160,7 +160,7 @@ const VoucherModal = ({ onClose, onSaved }) => {
 
           <div className="flex gap-3 pt-3 border-t border-slate-100">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors">Huỷ</button>
-            <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm transition-colors disabled:opacity-50 shadow-sm shadow-violet-200">
+            <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl bg-[#dc2626] hover:bg-red-700 text-white font-bold text-sm transition-colors disabled:opacity-50 shadow-sm shadow-red-200">
               {saving ? "Đang lưu..." : "Tạo voucher"}
             </button>
           </div>
@@ -210,6 +210,41 @@ export const VouchersManager = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [confirm, setConfirm]     = useState(null);
   const [acting, setActing]       = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === pagedVouchers.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(pagedVouchers.map((v) => v._id)));
+    }
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setActing(true);
+    try {
+      const ids = [...selectedIds];
+      await axiosInstance.post("/vouchers/admin/bulk-delete", { ids });
+      setVouchers((p) => p.filter((v) => !ids.includes(v._id)));
+      toast.success(`Đã xóa ${ids.length} voucher`);
+      clearSelection();
+    } catch {
+      toast.error("Xóa thất bại");
+    } finally {
+      setActing(false);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -273,12 +308,22 @@ export const VouchersManager = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {showModal && <VoucherModal onClose={() => setShowModal(false)} onSaved={() => { setShowModal(false); load(); }} />}
-      {confirm && (
+      {confirm && confirm.type === "bulk" ? (
+        <ConfirmModal
+          title={`Xóa ${selectedIds.size} voucher?`}
+          message={`Bạn sắp xóa vĩnh viễn ${selectedIds.size} voucher đã chọn. Hành động này không thể hoàn tác.`}
+          confirmLabel={`Xóa ${selectedIds.size} voucher`}
+          confirmClass="bg-red-600 hover:bg-red-700"
+          onConfirm={handleBulkDelete}
+          onClose={() => setConfirm(null)}
+          loading={acting}
+        />
+      ) : confirm && (
         <ConfirmModal
           title="Xóa voucher?"
-          message={`Xóa vĩnh viễn voucher "${confirm.voucher.code}"? Hành động này không thể hoàn tác.`}
+          message={`Xóa vĩnh viễn voucher "${confirm.voucher?.code}"? Hành động này không thể hoàn tác.`}
           confirmLabel="Xóa"
           confirmClass="bg-red-600 hover:bg-red-700"
           onConfirm={handleConfirmAction}
@@ -287,35 +332,33 @@ export const VouchersManager = () => {
         />
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center shrink-0">
-            <Tag size={18} className="text-violet-600" />
-          </div>
-          <div>
-            <h2 className="text-xl font-black text-slate-800 leading-tight">Quản lý Voucher</h2>
-            <p className="text-xs text-slate-400 mt-0.5">{vouchers.length} voucher trong hệ thống</p>
-          </div>
+      {/* Header — matches ShowtimesTab */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+        <div>
+          <h2 className="text-xl font-bold text-slate-800">Quản Lý Voucher</h2>
+          <p className="text-sm text-slate-500">{vouchers.length} voucher trong hệ thống</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-bold text-sm transition-all shadow-sm shadow-violet-200 shrink-0"
+          className="flex items-center gap-2 px-5 py-2.5 bg-[#dc2626] text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-md shadow-red-200 shrink-0"
         >
-          <Plus size={16} /> Tạo voucher
+          <Plus size={20} /> Tạo voucher
         </button>
       </div>
 
-      {/* Filter chips */}
-      <div className="flex flex-wrap gap-2">
+      {/* Filter chips — matches ShowtimesTab status toggles */}
+      <div className="flex items-center gap-2">
         {FILTER_CHIPS.map((f) => (
           <button
             key={f.value}
             onClick={() => handleTabChange(f.value)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all duration-150 active:scale-95 ${
               activeTab === f.value
-                ? "bg-slate-800 text-white border-slate-800 shadow-sm"
-                : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-700"
+                ? f.value === "active" ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                : f.value === "upcoming" ? "bg-amber-50 text-amber-600 border-amber-200"
+                : f.value === "ended" ? "bg-slate-100 text-slate-600 border-slate-200"
+                : "bg-slate-100 text-slate-600 border-slate-200"
+                : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
             }`}
           >
             {f.label}
@@ -323,21 +366,31 @@ export const VouchersManager = () => {
         ))}
       </div>
 
-      {/* Table card */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl px-4 py-3 animate-[fadeIn_0.2s_ease_forwards]">
+          <span className="text-sm font-bold text-red-700">
+            Đã chọn {selectedIds.size} voucher
+          </span>
+          <div className="flex items-center gap-2">
+            <button onClick={clearSelection} className="px-3 py-1.5 text-xs font-bold text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+              Bỏ chọn
+            </button>
+            <button
+              onClick={() => setConfirm({ type: "bulk" })}
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
+            >
+              <Trash2 size={14} /> Xóa {selectedIds.size} voucher
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Table card — matches ShowtimesTab */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         {loading ? (
-          <div className="divide-y divide-slate-50">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-4 px-5 py-5 animate-pulse">
-                <div className="w-11 h-11 bg-slate-100 rounded-xl shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-slate-100 rounded w-1/4" />
-                  <div className="h-3 bg-slate-100 rounded w-1/3" />
-                </div>
-                <div className="w-20 h-5 bg-slate-100 rounded-full" />
-                <div className="w-16 h-5 bg-slate-100 rounded-full" />
-              </div>
-            ))}
+          <div className="flex justify-center py-16">
+            <div className="animate-spin rounded-full h-8 w-8 border-4 border-red-600 border-t-transparent" />
           </div>
         ) : filteredVouchers.length === 0 ? (
           <div className="text-center py-16">
@@ -346,56 +399,67 @@ export const VouchersManager = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-100">
-                  <th className="px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Mã Voucher</th>
-                  <th className="px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Chiết khấu</th>
-                  <th className="px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Giới hạn</th>
-                  <th className="px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Hiệu lực</th>
-                  <th className="px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Sử dụng</th>
-                  <th className="px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80 text-center">Trạng thái</th>
-                  <th className="px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80 text-center whitespace-nowrap">Thao tác</th>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-[13px] uppercase tracking-wider text-slate-500 font-bold">
+                  <th className="p-5 pl-6 w-12">
+                    <button onClick={toggleSelectAll} className="hover:text-slate-700 transition-colors">
+                      {selectedIds.size === pagedVouchers.length && pagedVouchers.length > 0 ? <CheckSquare size={16} className="text-red-600" /> : <Square size={16} />}
+                    </button>
+                  </th>
+                  <th className="p-5">Mã Voucher</th>
+                  <th className="p-5">Chiết khấu</th>
+                  <th className="p-5">Giới hạn</th>
+                  <th className="p-5">Hiệu lực</th>
+                  <th className="p-5">Sử dụng</th>
+                  <th className="p-5 text-center">Trạng thái</th>
+                  <th className="p-5 pr-6 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody key={currentPage} className="divide-y divide-slate-100">
                 {pagedVouchers.map((v, i) => {
                   const display = v.displayStatus;
                   const cd = v.expiryCountdown;
                   return (
                     <tr
                       key={v.id}
-                      className="group opacity-0 animate-[fadeSlideIn_0.3s_ease_forwards] border-l-2 border-transparent hover:border-violet-400 hover:bg-slate-50/50 transition-[border-color,background-color] duration-200"
-                      style={{ animationDelay: `${i * 45}ms` }}
+                      className="hover:bg-slate-50/80 transition-all duration-150 group"
+                      style={{ animation: "rowIn 0.25s cubic-bezier(0.22,1,0.36,1) both", animationDelay: `${i * 40}ms` }}
                     >
+                      {/* Checkbox */}
+                      <td className="p-5 pl-6">
+                        <button onClick={(e) => { e.stopPropagation(); toggleSelect(v._id); }} className="hover:text-red-600 transition-colors">
+                          {selectedIds.has(v._id) ? <CheckSquare size={16} className="text-red-600" /> : <Square size={16} className="text-slate-300 group-hover:text-slate-500" />}
+                        </button>
+                      </td>
                       {/* Code */}
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0 ${v.computedStatus === "active" ? "bg-violet-50 text-violet-600" : "bg-slate-100 text-slate-400"}`}>
+                      <td className="p-5">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0 ${v.computedStatus === "active" ? "bg-red-50 text-red-600" : "bg-slate-100 text-slate-400"}`}>
                             {v.discountType === "percent" ? "%" : "đ"}
                           </div>
                           <div>
-                            <p className="font-black text-slate-800 tracking-widest text-sm leading-none mb-1">{v.code}</p>
-                            <p className="text-xs text-slate-400 truncate max-w-[140px]">{v.description || "Không có mô tả"}</p>
+                            <p className="font-bold text-slate-800 tracking-widest text-[16px] leading-none mb-1">{v.code}</p>
+                            <p className="text-[13px] text-slate-400 truncate max-w-[160px]">{v.description || "Không có mô tả"}</p>
                           </div>
                         </div>
                       </td>
 
                       {/* Discount */}
-                      <td className="px-5 py-4">
-                        <p className="font-black text-slate-900 text-base">
+                      <td className="p-5">
+                        <p className="font-bold text-slate-800 text-[16px]">
                           {v.discountType === "percent" ? `−${v.discountValue}%` : `−${v.discountValue.toLocaleString()}đ`}
                         </p>
-                        {v.maxDiscount && <p className="text-xs text-slate-400 mt-0.5">Tối đa {v.maxDiscount.toLocaleString()}đ</p>}
+                        {v.maxDiscount && <p className="text-[13px] text-slate-400 mt-0.5">Tối đa {v.maxDiscount.toLocaleString()}đ</p>}
                         {v.minOrderAmount > 0 && (
-                          <span className="inline-block mt-1 px-1.5 py-0.5 bg-violet-50 text-violet-600 rounded text-[10px] font-bold">
+                          <span className="inline-block mt-1 px-1.5 py-0.5 bg-red-50 text-red-600 rounded text-[10px] font-bold">
                             Từ {v.minOrderAmount.toLocaleString()}đ
                           </span>
                         )}
                       </td>
 
                       {/* Limits */}
-                      <td className="px-5 py-4">
+                      <td className="p-5">
                         <div className="space-y-1.5 text-sm text-slate-500">
                           <div className="flex items-center gap-1.5">
                             <Ticket size={13} className="text-slate-400 shrink-0" />
@@ -415,12 +479,12 @@ export const VouchersManager = () => {
                       </td>
 
                       {/* Dates */}
-                      <td className="px-5 py-4">
-                        <div className="space-y-1 text-sm">
-                          <p className="text-slate-500">Từ: <span className="font-semibold text-slate-700">{formatDate(v.startDate)}</span></p>
-                          <p className="text-slate-500">Đến: <span className="font-semibold text-slate-700">{formatDate(v.endDate)}</span></p>
+                      <td className="p-5">
+                        <div className="space-y-1 text-[15px]">
+                          <p className="text-slate-600">Từ: <span className="font-medium text-slate-700">{formatDate(v.startDate)}</span></p>
+                          <p className="text-slate-600">Đến: <span className="font-medium text-slate-700">{formatDate(v.endDate)}</span></p>
                           {cd && cd.urgency !== "expired" && (
-                            <p className={`flex items-center gap-1 font-bold text-xs mt-1 ${
+                            <p className={`flex items-center gap-1 font-bold text-[13px] mt-1 ${
                               cd.urgency === "critical" ? "text-red-500" : cd.urgency === "warning" ? "text-amber-500" : "text-slate-400"
                             }`}>
                               <Clock size={12} /> {cd.days > 0 ? `Còn ${cd.days} ngày` : `Còn ${cd.hours} giờ`}
@@ -430,23 +494,23 @@ export const VouchersManager = () => {
                       </td>
 
                       {/* Usage */}
-                      <td className="px-5 py-4">
+                      <td className="p-5">
                         <div className="min-w-[140px]">
-                          <p className="text-sm font-bold text-slate-700">
+                          <p className="text-[15px] font-medium text-slate-600">
                             {v.usedCount ?? 0}{v.usageLimit !== -1 ? ` / ${v.usageLimit}` : ""} lượt
                           </p>
                           {v.maxUsers != null && (
-                            <p className="text-xs text-slate-500 mt-0.5">
+                            <p className="text-[13px] text-slate-500 mt-0.5">
                               <Users size={11} className="inline text-slate-400 mr-1" />
                               {v.uniqueUserCount ?? 0} / {v.maxUsers} users
                             </p>
                           )}
                           {v.usageLimit === -1 && v.maxUsers == null && (
-                            <p className="text-xs text-slate-400">Không giới hạn</p>
+                            <p className="text-[13px] text-slate-400">Không giới hạn</p>
                           )}
                           {v.usageLimit !== -1 && (
                             <>
-                              <p className="text-xs text-slate-400">{v.usagePercent}%</p>
+                              <p className="text-[13px] text-slate-400">{v.usagePercent}%</p>
                               <div className="mt-1.5 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                                 <div
                                   className={`h-full rounded-full transition-all duration-700 ${
@@ -460,16 +524,17 @@ export const VouchersManager = () => {
                         </div>
                       </td>
 
-                      {/* Status */}
-                      <td className="px-5 py-4 text-center">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black border tracking-wide uppercase ${STATUS_COLORS[display.color] || STATUS_COLORS.slate}`}>
+                      {/* Status — matches ShowtimesTab badge */}
+                      <td className="p-5 text-center">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${STATUS_COLORS[display.color] || STATUS_COLORS.slate}`}>
+                          <span className={`w-2 h-2 rounded-full ${display.color === 'emerald' ? 'bg-emerald-500' : display.color === 'amber' ? 'bg-amber-500' : display.color === 'red' ? 'bg-red-500' : 'bg-slate-400'}`}></span>
                           {display.label}
                         </span>
                       </td>
 
-                      {/* Actions */}
-                      <td className="px-4 py-4 text-center">
-                        <div className="flex items-center gap-1 justify-center">
+                      {/* Actions — matches ShowtimesTab right-align */}
+                      <td className="p-5 pr-6 text-right">
+                        <div className="flex items-center gap-1 justify-end">
                           <button
                             onClick={() => setConfirm({ voucher: v })}
                             className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
@@ -501,7 +566,7 @@ export const VouchersManager = () => {
                   <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-slate-400 text-xs">…</span>
                 ) : (
                   <button key={p} onClick={() => setCurrentPage(p)}
-                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${currentPage === p ? "bg-violet-600 text-white shadow-sm shadow-violet-200" : "border border-slate-200 text-slate-600 hover:bg-white"}`}>
+                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${currentPage === p ? "bg-[#dc2626] text-white shadow-sm shadow-red-200" : "border border-slate-200 text-slate-600 hover:bg-white"}`}>
                     {p}
                   </button>
                 )

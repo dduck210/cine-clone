@@ -214,6 +214,24 @@ async function cancelShowtimesDbUpdates(showtimes, reason) {
     return { cancelledShowtimes, cancelledBookings, refundedBookings, paidBookingIds };
 }
 
+// POST /api/admin/users/bulk-delete — xóa nhiều user
+router.post('/users/bulk-delete', protect, admin, async (req, res) => {
+    try {
+        const { ids } = req.body;
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ message: 'Danh sách ID không hợp lệ' });
+        }
+        const result = await User.deleteMany({ 
+            _id: { $in: ids }, 
+            role: { $ne: 'admin' },
+            _id: { $ne: req.user._id }
+        });
+        res.json({ message: `Đã xóa ${result.deletedCount} người dùng`, deletedCount: result.deletedCount });
+    } catch (error) {
+        handleErrors(res, error, 'Lỗi khi xóa người dùng');
+    }
+});
+
 router.get('/cinemas', async (req, res) => {
     try {
         const cinemas = await Cinema.find({});

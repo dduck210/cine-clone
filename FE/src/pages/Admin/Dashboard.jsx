@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import Sidebar from "../../components/admin/Sidebar";
@@ -15,14 +15,6 @@ import { RoomsManager } from "../../components/admin/RoomsTab";
 import { CinemasManager } from "../../components/admin/CinemasTab";
 import { ReviewsManager } from "../../components/admin/ReviewsTab";
 import { VouchersManager } from "../../components/admin/VouchersTab";
-
-const toastConfig = {
-  position: "top-right",
-  toastOptions: {
-    duration: 2000,
-    className: "!bg-white !text-slate-800 !shadow-2xl !rounded-xl !border !border-slate-100 !font-medium",
-  },
-};
 
 const StatCard = ({ icon, label, value, sub, color }) => {
   const Icon = icon;
@@ -629,6 +621,49 @@ const Dashboard = () => {
     setMovieToDelete(null);
   };
 
+  // Bulk delete handlers
+  const handleBulkDeleteMovies = async (ids) => {
+    try {
+      await axiosInstance.post("/movies/bulk-delete", { ids });
+      setMovies((prev) => prev.filter((m) => !ids.includes(m._id)));
+      toast.success(`Đã xóa ${ids.length} phim`);
+    } catch { toast.error("Xóa phim thất bại"); }
+  };
+
+  const handleBulkCancelShowtimes = async (ids) => {
+    try {
+      const res = await axiosInstance.post("/showtimes/bulk-cancel", { ids });
+      setShowtimes((prev) => prev.map((s) => ids.includes(s._id) ? { ...s, status: "cancelled" } : s));
+      toast.success(res.data?.message || `Đã hủy ${ids.length} suất chiếu`);
+    } catch { toast.error("Hủy suất chiếu thất bại"); }
+  };
+
+  const handleDeleteShowtime = async (id) => {
+    try {
+      await axiosInstance.delete(`/showtimes/${id}`);
+      setShowtimes((prev) => prev.filter((s) => s._id !== id));
+      toast.success("Đã xóa suất chiếu thành công!");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Xóa suất chiếu thất bại");
+    }
+  };
+
+  const handleBulkDeleteShowtimes = async (ids) => {
+    try {
+      const res = await axiosInstance.post("/showtimes/bulk-delete", { ids });
+      setShowtimes((prev) => prev.filter((s) => !ids.includes(s._id)));
+      toast.success(res.data?.message || `Đã xóa ${ids.length} suất chiếu`);
+    } catch { toast.error("Xóa suất chiếu thất bại"); }
+  };
+
+  const handleBulkDeleteUsers = async (ids) => {
+    try {
+      await axiosInstance.post("/admin/users/bulk-delete", { ids });
+      setUsers((prev) => prev.filter((u) => !ids.includes(u._id)));
+      toast.success(`Đã xóa ${ids.length} người dùng`);
+    } catch { toast.error("Xóa người dùng thất bại"); }
+  };
+
   const handleAddNew = () => {
     setCurrentMovie(null);
     setIsModalOpen(true);
@@ -862,10 +897,10 @@ const Dashboard = () => {
               moviesLoading ? (
                 <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-4 border-red-600 border-t-transparent" /></div>
               ) : (
-                <MoviesManager movies={movies} handleAddNew={handleAddNew} handleEdit={handleEdit} handleDeleteClick={handleDeleteClick} />
+                <MoviesManager movies={movies} handleAddNew={handleAddNew} handleEdit={handleEdit} handleDeleteClick={handleDeleteClick} onBulkDelete={handleBulkDeleteMovies} />
               )
             )}
-            {activeTab === "users" && <UsersManager users={users} loading={usersLoading} onUpdate={handleUpdateUser} onDelete={handleDeleteUser} />}
+            {activeTab === "users" && <UsersManager users={users} loading={usersLoading} onUpdate={handleUpdateUser} onDelete={handleDeleteUser} onBulkDelete={handleBulkDeleteUsers} />}
             {activeTab === "showtimes" && (
               <ShowtimesManager
                 showtimes={showtimes}
@@ -879,6 +914,9 @@ const Dashboard = () => {
                   setIsShowtimeModalOpen(true);
                 }}
                 onCancel={handleCancelShowtime}
+                onBulkCancel={handleBulkCancelShowtimes}
+                onDelete={handleDeleteShowtime}
+                onBulkDelete={handleBulkDeleteShowtimes}
               />
             )}
             {activeTab === "cinemas" && <CinemasManager />}

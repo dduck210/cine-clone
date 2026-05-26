@@ -42,6 +42,12 @@ initNotificationService(io);
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// Request logger for debugging 404s
+app.use((req, res, next) => {
+    console.log(`[Request] ${req.method} ${req.url}`);
+    next();
+});
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/movies', require('./routes/movies'));
@@ -57,6 +63,8 @@ app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/vouchers', require('./routes/vouchers'));
 app.use('/api/push', require('./routes/push'));
 app.use('/api/admin', require('./routes/admin'));
+
+app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date() }));
 
 app.get('/', (req, res) => res.send('Cinema Clone Backend API'));
 

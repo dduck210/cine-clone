@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import {
-  Plus, X, Save, ChevronDown, Calendar, Clock, Film, MapPin, Ban, Layers, Eye, Search,
+  Plus, X, Save, ChevronDown, Calendar, Clock, Film, MapPin, Ban, Layers, Eye, Search, Square, CheckSquare, Trash2, AlertTriangle,
 } from "lucide-react";
 import axiosInstance from "../../api/axiosConfig";
 import toast from "react-hot-toast";
@@ -523,16 +523,44 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
 
 const SHOWTIMES_PAGE_SIZE = 6;
 
-export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew, onCancel }) => {
+export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew, onCancel, onBulkCancel, onDelete, onBulkDelete }) => {
   const [search, setSearch] = useState("");
   const [filterMovie, setFilterMovie] = useState("");
   const [filterCinema, setFilterCinema] = useState("");
   const [filterStatus, setFilterStatus] = useState("active");
   const [detailShowtime, setDetailShowtime] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [cancelling, setCancelling] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [nowTick, setNowTick] = useState(() => Date.now());
+  const [selectedIds, setSelectedIds] = useState(new Set());
+
+  const toggleSelect = (id) => { setSelectedIds((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; }); };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === pagedShowtimes.length && pagedShowtimes.length > 0) setSelectedIds(new Set());
+    else setSelectedIds(new Set(pagedShowtimes.map((s) => s._id)));
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+  
+  const handleBulkCancel = async () => {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn HỦY ${selectedIds.size} suất chiếu này? Các đơn hàng liên quan sẽ được hoàn tiền.`)) return;
+    setCancelling(true);
+    await onBulkCancel([...selectedIds]);
+    setCancelling(false);
+    clearSelection();
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn XÓA VĨNH VIỄN ${selectedIds.size} suất chiếu này? Chỉ những suất chưa có đơn hàng mới có thể xóa.`)) return;
+    setDeleting(true);
+    await onBulkDelete([...selectedIds]);
+    setDeleting(false);
+    clearSelection();
+  };
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -575,6 +603,14 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
     await onCancel(cancelTarget);
     setCancelling(false);
     setCancelTarget(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    await onDelete(deleteTarget._id);
+    setDeleting(false);
+    setDeleteTarget(null);
   };
 
   return (
@@ -650,6 +686,48 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
         </div>
       )}
 
+      {/* Delete confirm modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur-sm">
+          <div className="bg-white rounded-[28px] shadow-2xl max-w-sm w-full overflow-hidden border border-slate-100" style={{ animation: "cancelIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+            <div className="bg-gradient-to-br from-slate-700 to-slate-800 px-6 pt-7 pb-6 text-center">
+              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 ring-4 ring-white/30">
+                <Trash2 className="w-7 h-7 text-white" strokeWidth={2.5} />
+              </div>
+              <h2 className="text-lg font-black text-white mb-1">Xóa vĩnh viễn suất chiếu</h2>
+              <p className="text-slate-300 text-sm">Chỉ có thể xóa khi chưa có đơn hàng</p>
+            </div>
+            <div className="p-5">
+               <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-400 font-medium">Phim</span>
+                  <span className="font-bold text-slate-800 text-right max-w-[60%] line-clamp-1">{deleteTarget.movie?.title || "—"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400 font-medium">Suất chiếu</span>
+                  <span className="font-bold text-slate-800">{deleteTarget.startTime}</span>
+                </div>
+              </div>
+            </div>
+            <div className="px-5 pb-5 flex gap-3">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 py-3 rounded-2xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+                className="flex-1 py-3 rounded-2xl bg-slate-900 hover:bg-slate-950 text-white font-black text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deleting ? "Đang xóa..." : "Xác nhận xóa"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
         <div>
           <h2 className="text-xl font-bold text-slate-800">Quản Lý Suất Chiếu</h2>
@@ -712,6 +790,18 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
         </div>
       </div>
 
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl px-4 py-3 animate-[fadeIn_0.2s_ease_forwards]">
+          <span className="text-sm font-bold text-red-700">Đã chọn {selectedIds.size} suất chiếu</span>
+          <div className="flex items-center gap-2">
+            <button onClick={clearSelection} className="px-3 py-1.5 text-xs font-bold text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">Bỏ chọn</button>
+            <button onClick={handleBulkCancel} disabled={cancelling} className="flex items-center gap-1.5 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50"><Ban size={14} /> Hủy {selectedIds.size} suất chiếu</button>
+            <button onClick={handleBulkDelete} disabled={deleting} className="flex items-center gap-1.5 px-4 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50"><Trash2 size={14} /> Xóa vĩnh viễn</button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-16">
@@ -722,7 +812,12 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-[13px] uppercase tracking-wider text-slate-500 font-bold">
-                  <th className="p-5 pl-6">Phim</th>
+                  <th className="p-5 pl-6 w-12">
+                    <button onClick={toggleSelectAll} className="hover:text-slate-700 transition-colors">
+                      {selectedIds.size === pagedShowtimes.length && pagedShowtimes.length > 0 ? <CheckSquare size={16} className="text-red-600" /> : <Square size={16} />}
+                    </button>
+                  </th>
+                  <th className="p-5">Phim</th>
                   <th className="p-5">Rạp · Phòng</th>
                   <th className="p-5">Ngày chiếu</th>
                   <th className="p-5">Giờ</th>
@@ -734,7 +829,7 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
               </thead>
               <tbody key={currentPage} className="divide-y divide-slate-100">
                 {filtered.length === 0 ? (
-                  <tr><td colSpan="8" className="p-12 text-center text-slate-400 italic">Chưa có suất chiếu nào.</td></tr>
+                  <tr><td colSpan="9" className="p-12 text-center text-slate-400 italic">Chưa có suất chiếu nào.</td></tr>
                 ) : (
                   pagedShowtimes.map((st, idx) => {
                     const statusMeta = SHOWTIME_STATUS_META[st.effectiveStatus] || SHOWTIME_STATUS_META.cancelled;
@@ -742,6 +837,11 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
                     return (
                       <tr key={st._id} onClick={() => setDetailShowtime(st)} className="hover:bg-slate-50/80 transition-all duration-150 group cursor-pointer" style={{ animation: "rowIn 0.25s cubic-bezier(0.22,1,0.36,1) both", animationDelay: `${idx * 40}ms` }}>
                       <td className="p-5 pl-6">
+                        <button onClick={(e) => { e.stopPropagation(); toggleSelect(st._id); }} className="hover:text-red-600 transition-colors">
+                          {selectedIds.has(st._id) ? <CheckSquare size={16} className="text-red-600" /> : <Square size={16} className="text-slate-300 group-hover:text-slate-500" />}
+                        </button>
+                      </td>
+                      <td className="p-5">
                         <div className="flex items-center gap-4">
                           {st.movie?.poster && (
                             <img src={st.movie.poster} alt="" className="w-14 h-[76px] object-cover rounded-xl border border-slate-100 shrink-0"
@@ -793,6 +893,11 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
                               <Ban size={18} />
                             </button>
                           )}
+                          <button onClick={(e) => { e.stopPropagation(); setDeleteTarget(st); }}
+                            className="p-2.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all"
+                            title="Xóa vĩnh viễn">
+                            <Trash2 size={18} />
+                          </button>
                         </div>
                       </td>
                       </tr>

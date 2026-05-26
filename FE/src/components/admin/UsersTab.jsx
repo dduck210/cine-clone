@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import { Edit, Trash2, X, Search, Shield, User, Save } from "lucide-react";
+import { Edit, Trash2, X, Search, Shield, User, Save, Square, CheckSquare } from "lucide-react";
 
 export const UserEditModal = ({ user, onClose, onSave }) => {
   const [name, setName] = useState(user.name);
@@ -79,12 +79,13 @@ export const UserEditModal = ({ user, onClose, onSave }) => {
 
 const USERS_PAGE_SIZE = 6;
 
-export const UsersManager = ({ users, loading, onUpdate, onDelete }) => {
+export const UsersManager = ({ users, loading, onUpdate, onDelete, onBulkDelete }) => {
   const [search, setSearch] = useState("");
   const [editUser, setEditUser] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState(new Set());
 
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
 
@@ -93,6 +94,21 @@ export const UsersManager = ({ users, loading, onUpdate, onDelete }) => {
       u.name?.toLowerCase().includes(search.toLowerCase()) ||
       u.email?.toLowerCase().includes(search.toLowerCase())
   );
+
+  const toggleSelect = (id) => { setSelectedIds((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; }); };
+  const toggleSelectAll = () => {
+    const selectable = pagedUsers.filter((u) => u.role !== "admin" && u.email !== currentUser?.email);
+    if (selectedIds.size === selectable.length && selectable.length > 0) setSelectedIds(new Set());
+    else setSelectedIds(new Set(selectable.map((u) => u._id)));
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setDeleting(true);
+    await onBulkDelete([...selectedIds]);
+    setDeleting(false);
+    clearSelection();
+  };
 
   const totalPages = Math.ceil(filtered.length / USERS_PAGE_SIZE);
   const pagedUsers = filtered.slice((currentPage - 1) * USERS_PAGE_SIZE, currentPage * USERS_PAGE_SIZE);
@@ -142,6 +158,17 @@ export const UsersManager = ({ users, loading, onUpdate, onDelete }) => {
         </div>
       </div>
 
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl px-4 py-3 animate-[fadeIn_0.2s_ease_forwards]">
+          <span className="text-sm font-bold text-red-700">Đã chọn {selectedIds.size} người dùng</span>
+          <div className="flex items-center gap-2">
+            <button onClick={clearSelection} className="px-3 py-1.5 text-xs font-bold text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">Bỏ chọn</button>
+            <button onClick={handleBulkDelete} disabled={deleting} className="flex items-center gap-1.5 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50"><Trash2 size={14} /> Xóa {selectedIds.size} người dùng</button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-16">
@@ -153,6 +180,11 @@ export const UsersManager = ({ users, loading, onUpdate, onDelete }) => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/80 text-xs uppercase tracking-wider text-slate-500 font-bold">
+                    <th className="text-left px-6 py-3.5 w-12">
+                      <button onClick={toggleSelectAll} className="hover:text-slate-700 transition-colors">
+                        {(() => { const sel = pagedUsers.filter((u) => u.role !== "admin" && u.email !== currentUser?.email); return sel.length > 0 && selectedIds.size === sel.length; })() ? <CheckSquare size={16} className="text-red-600" /> : <Square size={16} />}
+                      </button>
+                    </th>
                     <th className="text-left px-6 py-3.5">Thành viên</th>
                     <th className="text-left px-6 py-3.5">Vai trò</th>
                     <th className="text-left px-6 py-3.5 hidden lg:table-cell">Tham gia</th>
@@ -166,6 +198,11 @@ export const UsersManager = ({ users, loading, onUpdate, onDelete }) => {
                       className="hover:bg-slate-50/80 transition-all duration-150"
                       style={{ animation: "rowIn 0.25s cubic-bezier(0.22,1,0.36,1) both", animationDelay: `${idx * 40}ms` }}
                     >
+                      <td className="px-6 py-4">
+                        <button onClick={(e) => { e.stopPropagation(); if (user.role !== "admin" && user.email !== currentUser?.email) toggleSelect(user._id); }} className="hover:text-red-600 transition-colors disabled:opacity-30" disabled={user.role === "admin" || user.email === currentUser?.email}>
+                          {selectedIds.has(user._id) ? <CheckSquare size={16} className="text-red-600" /> : <Square size={16} className="text-slate-300 group-hover:text-slate-500" />}
+                        </button>
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-red-100 to-red-50 flex items-center justify-center font-bold text-[#dc2626] text-sm flex-shrink-0 border border-red-100">

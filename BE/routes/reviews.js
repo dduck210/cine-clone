@@ -26,6 +26,29 @@ async function recalcMovieRating(movieId) {
     await Movie.findByIdAndUpdate(movieId, { rating: avg });
 }
 
+// POST /api/reviews/admin/bulk-delete — xóa nhiều review
+router.post('/admin/bulk-delete', protect, admin, async (req, res) => {
+    try {
+        const { ids } = req.body;
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ message: 'Danh sách ID không hợp lệ' });
+        }
+
+        const reviews = await Review.find({ _id: { $in: ids } });
+        const movieIds = [...new Set(reviews.map(r => r.movie.toString()))];
+
+        const result = await Review.deleteMany({ _id: { $in: ids } });
+
+        for (const movieId of movieIds) {
+            await recalcMovieRating(movieId);
+        }
+
+        res.json({ message: `Đã xóa ${result.deletedCount} đánh giá`, deletedCount: result.deletedCount });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // GET /api/reviews/movie/:movieId — public
 router.get('/movie/:movieId', async (req, res) => {
     try {
@@ -152,7 +175,7 @@ router.get('/admin/all', protect, admin, async (req, res) => {
         const limitNum = Number(limit);
         const paginated = reviews.slice((pageNum - 1) * limitNum, pageNum * limitNum);
 
-        res.json({ reviews: paginated, total, page: pageNum, totalPages: Math.ceil(total / limitNum) });
+        res.json({ items: paginated, total, page: pageNum, pages: Math.ceil(total / limitNum) });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

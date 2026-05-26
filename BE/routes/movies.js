@@ -35,6 +35,20 @@ router.get('/genres', async (req, res) => {
     }
 });
 
+// POST /api/movies/bulk-delete — xóa nhiều phim
+router.post('/bulk-delete', protect, admin, async (req, res) => {
+    try {
+        const { ids } = req.body;
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ message: 'Danh sách ID không hợp lệ' });
+        }
+        const result = await Movie.deleteMany({ _id: { $in: ids } });
+        res.json({ message: `Đã xóa ${result.deletedCount} phim`, deletedCount: result.deletedCount });
+    } catch (error) {
+        handleErrors(res, error, 'Lỗi khi xóa phim');
+    }
+});
+
 router.get('/', async (req, res) => {
     try {
         const movies = await Movie.find({}).populate('genre');

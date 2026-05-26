@@ -252,12 +252,6 @@ export const OrderDetailModal = ({ order, onClose, onPrint }) => {
                   <CheckCircle size={16} /> Đánh dấu đã in
                 </button>
               )}
-              <button
-                onClick={() => window.print()}
-                className="px-6 py-2.5 bg-[#dc2626] hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-200 transition-all duration-150 active:scale-95 text-sm flex items-center gap-2"
-              >
-                <Printer size={18} /> In vé cứng
-              </button>
             </>
           ) : (
             <button disabled className="px-6 py-2.5 bg-gray-200 text-gray-500 rounded-xl font-bold cursor-not-allowed text-sm flex items-center gap-2">
