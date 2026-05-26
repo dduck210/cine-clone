@@ -86,10 +86,10 @@ const ScanPage = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = "";
-    setLoading(true);
     const tempScanner = new Html5Qrcode("qr-file-reader");
     try {
       const text = await tempScanner.scanFile(file, false);
+      setLoading(true);
       await processCode(text.trim());
     } catch {
       toast.error("Không tìm thấy mã QR trong ảnh. Vui lòng thử ảnh khác.");
@@ -127,10 +127,13 @@ const ScanPage = () => {
 
   if (loading) {
     return (
+      <>
+      <div id="qr-file-reader" style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }} />
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 gap-4">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#dc2626] border-t-transparent" />
         <p className="text-white font-medium">Đang kiểm tra vé...</p>
       </div>
+      </>
     );
   }
 

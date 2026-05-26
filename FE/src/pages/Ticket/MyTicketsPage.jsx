@@ -6,24 +6,23 @@ import axiosInstance from "../../api/axiosConfig";
 import { Calendar, MapPin, Clock, Ticket, ChevronRight, CreditCard, Printer } from "lucide-react";
 
 const BOOKING_STATUS = {
-  pending:   { label: "Chờ thanh toán", bg: "bg-amber-100", text: "text-amber-700", border: "border-amber-300", dot: "bg-amber-500" },
-  paid:      { label: "Đã thanh toán",  bg: "bg-green-100", text: "text-green-700", border: "border-green-300", dot: "bg-green-500" },
-  cancelled: { label: "Đã hủy",         bg: "bg-red-100",   text: "text-red-600",   border: "border-red-300",   dot: "bg-red-500" },
-  expired:   { label: "Hết hạn",        bg: "bg-slate-100", text: "text-slate-500", border: "border-slate-300", dot: "bg-slate-400" },
-  refunded:  { label: "Đã hoàn tiền",   bg: "bg-blue-100",  text: "text-blue-600",  border: "border-blue-300",  dot: "bg-blue-500" },
+  pending: { label: "Chờ thanh toán", bg: "bg-amber-100", text: "text-amber-700", border: "border-amber-300", dot: "bg-amber-500" },
+  paid: { label: "Đã thanh toán", bg: "bg-green-100", text: "text-green-700", border: "border-green-300", dot: "bg-green-500" },
+  expired: { label: "Hết hạn", bg: "bg-slate-100", text: "text-slate-500", border: "border-slate-300", dot: "bg-slate-400" },
+  refunded: { label: "Đã hoàn tiền", bg: "bg-blue-100", text: "text-blue-600", border: "border-blue-300", dot: "bg-blue-500" },
 };
 
 const TICKET_STATUS = {
   not_printed: { label: "Chưa in vé", bg: "bg-orange-100", text: "text-orange-600", border: "border-orange-300", dot: "bg-orange-400" },
-  printed:     { label: "Đã in vé",   bg: "bg-teal-100",   text: "text-teal-600",   border: "border-teal-300",   dot: "bg-teal-500" },
+  printed: { label: "Đã in vé", bg: "bg-teal-100", text: "text-teal-600", border: "border-teal-300", dot: "bg-teal-500" },
 };
 
 const tabs = [
-  { id: "all",       label: "Tất cả" },
-  { id: "pending",   label: "Chờ thanh toán" },
-  { id: "paid",      label: "Đã thanh toán" },
-  { id: "expired",   label: "Hết hạn" },
-  { id: "refunded",  label: "Đã hoàn" },
+  { id: "all", label: "Tất cả" },
+  { id: "pending", label: "Chờ thanh toán" },
+  { id: "paid", label: "Đã thanh toán" },
+  { id: "expired", label: "Hết hạn" },
+  { id: "refunded", label: "Đã hoàn" },
 ];
 
 const StatusBadge = ({ config, label, icon: Icon }) => (
@@ -62,7 +61,7 @@ const MyTicketsPage = () => {
       try {
         const res = await axiosInstance.get(`/showtimes/${showtime._id}`);
         roomName = res.data?.data?.room?.name || "";
-      } catch {}
+      } catch { }
     }
 
     const sharedState = {
@@ -116,11 +115,10 @@ const MyTicketsPage = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                activeTab === tab.id
-                  ? "bg-red-600 text-white shadow-md shadow-red-200"
-                  : "bg-white border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-300"
-              }`}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === tab.id
+                ? "bg-red-600 text-white shadow-md shadow-red-200"
+                : "bg-white border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-300"
+                }`}
             >
               {tab.label}
             </button>
