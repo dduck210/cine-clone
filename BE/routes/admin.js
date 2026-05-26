@@ -177,10 +177,11 @@ router.patch('/cinemas/:id/status', protect, admin, async (req, res) => {
         );
         if (!cinema) return res.status(404).json({ message: 'Không tìm thấy rạp' });
 
+        const STATUS_VI = { active: 'Hoạt động', incident: 'Bảo trì / Sự cố', inactive: 'Tạm đóng' };
         notificationService.createNotification({
             type: 'cinema_status',
             title: 'Cập nhật trạng thái rạp',
-            message: `${cinema.name} chuyển sang trạng thái ${status}`,
+            message: `${cinema.name} chuyển sang trạng thái ${STATUS_VI[status] || status}`,
             data: { cinemaId: cinema._id.toString(), status },
         });
 
