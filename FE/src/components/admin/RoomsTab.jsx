@@ -50,7 +50,7 @@ const ROOM_TYPE_INFO = {
     sound: "Âm thanh Dolby Atmos hoặc DTS:X.",
     amenities: "Có ít nhất 1 tiện ích: bắp nước phục vụ tận ghế, cổng sạc USB.",
     desc: "Phòng chiếu cao cấp — trải nghiệm nâng cao với ghế ngồi rộng hơn, màn hình lớn hơn.",
-    seatReq: "Tối thiểu 2 hàng ghế VIP, 1 hàng Couple, ghế bọc da, khoảng cách hàng rộng.",
+    seatReq: "Tối đa 2 hàng ghế VIP, >80 ghế: tối đa 3 hàng Couple. ≤80 ghế: tối đa 2 hàng Couple. Còn lại là ghế thường.",
     icon: "✨",
     border: "border-purple-200",
     bg: "bg-purple-50/60",
@@ -67,7 +67,7 @@ const ROOM_TYPE_INFO = {
     sound: "Âm thanh Dolby Atmos toàn diện.",
     amenities: "Phòng chờ VIP riêng, phục vụ đồ ăn tại ghế, menu premium, chăn/gối miễn phí.",
     desc: "Phòng chiếu hạng sang — không gian riêng tư, dịch vụ đẳng cấp nhất.",
-    seatReq: "Tối thiểu 60% ghế VIP, 20% ghế Couple. Ghế da cao cấp, ngả điện, tích hợp massage.",
+    seatReq: ">80 ghế: tối đa 3 hàng Couple. ≤80 ghế: tối đa 2 hàng Couple. Còn lại là ghế VIP.",
     icon: "👑",
     border: "border-amber-200",
     bg: "bg-amber-50/60",
@@ -127,20 +127,26 @@ const validateRoomSeatRules = (matrix, roomType) => {
   if (!Array.isArray(matrix) || matrix.length === 0) return { valid: true, errors: [] };
 
   let vipCount = 0;
+  let coupleCount = 0;
+  let totalSeats = 0;
   const coupleRows = new Set();
+  const vipRows = new Set();
 
   for (let r = 0; r < matrix.length; r++) {
     const row = matrix[r];
     if (!Array.isArray(row)) continue;
     let rowHasCouple = false;
+    let rowHasVip = false;
 
     for (const cell of row) {
       if (!cell || !cell.type || cell.type === "aisle") continue;
-      if (cell.type === "vip") vipCount++;
-      if (cell.type === "couple") rowHasCouple = true;
+      totalSeats++;
+      if (cell.type === "vip") { vipCount++; rowHasVip = true; }
+      if (cell.type === "couple") { coupleCount++; rowHasCouple = true; }
     }
 
     if (rowHasCouple) coupleRows.add(r);
+    if (rowHasVip) vipRows.add(r);
   }
 
   if (roomType === "Standard") {
@@ -153,8 +159,36 @@ const validateRoomSeatRules = (matrix, roomType) => {
   }
 
   if (roomType === "VIP") {
-    // VIP rooms should not have normal seats (per business rules)
-    // This is a soft rule — we warn but don't block
+    // VIP rooms MUST NOT contain normal seats
+    for (let r = 0; r < matrix.length; r++) {
+      const row = matrix[r];
+      if (!Array.isArray(row)) continue;
+      for (const cell of row) {
+        if (!cell || !cell.type || cell.type === "aisle") continue;
+        if (cell.type === "normal") {
+          errors.push("Phòng VIP không được chứa ghế Thường — chỉ được dùng ghế VIP và Đôi");
+          break;
+        }
+      }
+    }
+    // Dynamic max couple rows: >80 seats → 3, ≤80 → 2
+    const maxCouple = totalSeats > 80 ? 3 : 2;
+    if (coupleRows.size > maxCouple) {
+      errors.push(`Phòng VIP (${totalSeats} ghế) chỉ được tối đa ${maxCouple} hàng Couple. Hiện có ${coupleRows.size} hàng.`);
+    }
+  }
+
+  if (roomType === "Premium") {
+    const maxCouple = totalSeats > 80 ? 3 : 2;
+    if (coupleRows.size < 2) {
+      errors.push("Phòng Premium cần có ít nhất 2 hàng ghế Đôi (Couple)");
+    }
+    if (coupleRows.size > maxCouple) {
+      errors.push(`Phòng Premium (${totalSeats} ghế) chỉ được tối đa ${maxCouple} hàng Couple. Hiện có ${coupleRows.size} hàng.`);
+    }
+    if (vipRows.size > 2) {
+      errors.push("Phòng Premium chỉ được có tối đa 2 hàng ghế VIP");
+    }
   }
 
   return { valid: errors.length === 0, errors };
@@ -168,33 +202,27 @@ const validateRoomSeatRules = (matrix, roomType) => {
  * Determine seat type for a row based on room type and row position.
  * Pure function, no side effects.
  */
-function determineRowSeatType(rowIndex, totalRows, roomType) {
+function determineRowSeatType(rowIndex, totalRows, roomType, totalSeats = 0) {
   if (roomType === "Standard") {
     const coupleRows = totalRows >= 8 ? 2 : totalRows >= 4 ? 1 : 0;
     return coupleRows > 0 && rowIndex >= totalRows - coupleRows ? "couple" : "normal";
   }
 
   if (roomType === "Premium") {
-    if (totalRows >= 6) {
-      if (rowIndex === totalRows - 1) return "couple";
-      if (rowIndex >= totalRows - 3) return "vip";
-      return "normal";
-    }
-    if (totalRows >= 3) {
-      if (rowIndex === totalRows - 1) return "couple";
-      if (rowIndex === totalRows - 2) return "vip";
-      return "normal";
-    }
-    return totalRows >= 2 && rowIndex === totalRows - 1 ? "couple" : "normal";
+    // Dynamic: >80 seats → 3 couple rows, ≤80 → 2 couple rows. Max 2 VIP rows.
+    const coupleRows = totalSeats > 80 ? 3 : 2;
+    const vipRows = Math.min(2, totalRows - coupleRows);
+    if (rowIndex >= totalRows - coupleRows) return "couple";
+    if (rowIndex >= totalRows - coupleRows - vipRows) return "vip";
+    return "normal";
   }
 
   if (roomType === "VIP") {
-    const coupleRows = Math.max(1, Math.round(totalRows * 0.2));
-    const vipRows = Math.max(1, Math.round(totalRows * 0.6));
-    const normalRows = totalRows - coupleRows - vipRows;
+    // VIP rooms: NO normal seats — only VIP + Couple
+    // Bottom ~30% rows are couple, rest are VIP
+    const coupleRows = Math.max(1, Math.min(Math.round(totalRows * 0.4), 3));
     if (rowIndex >= totalRows - coupleRows) return "couple";
-    if (rowIndex >= Math.max(0, normalRows)) return "vip";
-    return "normal";
+    return "vip";
   }
 
   return "normal";
@@ -260,7 +288,7 @@ function generateMatrixFromTotalSeats(totalSeats, roomType = "Standard") {
     const seatsInThisRow = r < fullRows ? cols : Math.min(cols, totalSeats - placed);
     if (seatsInThisRow <= 0) break; // Shouldn't happen, but safety
 
-    const seatType = determineRowSeatType(r, rows, roomType);
+    const seatType = determineRowSeatType(r, rows, roomType, totalSeats);
     const rowArr = [];
     for (let c = 1; c <= seatsInThisRow; c++) {
       rowArr.push({ label: `${rowLetter}${c}`, type: seatType });
@@ -293,7 +321,7 @@ function generateMatrixFallback(totalSeats, roomType) {
     const rowLetter = String.fromCharCode(65 + r);
     const seatsInRow = Math.min(cols, totalSeats - placed);
     if (seatsInRow <= 0) break;
-    const seatType = determineRowSeatType(r, rows, roomType);
+    const seatType = determineRowSeatType(r, rows, roomType, totalSeats);
     const rowArr = [];
     for (let c = 1; c <= seatsInRow; c++) {
       rowArr.push({ label: `${rowLetter}${c}`, type: seatType });
