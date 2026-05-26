@@ -36,7 +36,7 @@ function getDayTypeFromDate(date) {
     return 'weekday';
 }
 
-function calcEndTime(startTime, durationMinutes, bufferMinutes = 15) {
+function calcEndTime(startTime, durationMinutes, bufferMinutes = 20) {
     const [hour, min] = startTime.split(':').map(Number);
     const totalMinutes = hour * 60 + min + durationMinutes + bufferMinutes;
     const endHour = Math.floor(totalMinutes / 60) % 24;
