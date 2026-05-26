@@ -984,6 +984,7 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
                   <th className="p-5">Rạp · Phòng</th>
                   <th className="p-5">Ngày chiếu</th>
                   <th className="p-5">Giờ</th>
+                  <th className="p-5">Thời lượng</th>
                   <th className="p-5">Giá (Thường/VIP/Đôi)</th>
                   <th className="p-5">Ghế còn</th>
                   <th className="p-5 text-center">Trạng thái</th>
@@ -992,7 +993,7 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
               </thead>
               <tbody key={currentPage} className="divide-y divide-slate-100">
                 {filtered.length === 0 ? (
-                  <tr><td colSpan="9" className="p-12 text-center text-slate-400 italic">Chưa có suất chiếu nào.</td></tr>
+                  <tr><td colSpan="10" className="p-12 text-center text-slate-400 italic">Chưa có suất chiếu nào.</td></tr>
                 ) : (
                   pagedShowtimes.map((st, idx) => {
                     const statusMeta = SHOWTIME_STATUS_META[st.effectiveStatus] || SHOWTIME_STATUS_META.cancelled;
@@ -1027,6 +1028,9 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
                           <span className="flex items-center gap-1.5 font-bold text-slate-800 text-[16px]">
                             <Clock size={15} className="text-[#dc2626]" /> {st.startTime}
                           </span>
+                        </td>
+                        <td className="p-5 text-[15px] text-slate-500">
+                          {st.movie?.duration ? `${st.movie.duration} phút` : "—"}
                         </td>
                         <td className="p-5 text-[13px] text-slate-600 space-y-1">
                           <p><span className="font-medium text-slate-400">T:</span> <span className="font-bold text-slate-700">{st.priceConfig?.normal?.toLocaleString() || st.basePrice?.toLocaleString() || "—"}đ</span></p>

@@ -10,7 +10,6 @@ import {
   Eye,
   CheckCircle,
   Search,
-  Filter,
   Mail,
   ScanLine,
   Camera,
@@ -269,21 +268,10 @@ const PAGE_SIZE = 6;
 export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onConfirm, onPrint }) => {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
-  const [showFilter, setShowFilter] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const filterRef = useRef(null);
   const searchRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (filterRef.current && !filterRef.current.contains(e.target))
-        setShowFilter(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const autoPrintByCode = (code) => {
     const trimmed = code.trim();
@@ -324,8 +312,10 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
 
   const filterOptions = [
     { value: "", label: "Tất cả" },
-    { value: "Đã thanh toán", label: "Đã thanh toán" },
-    { value: "Chờ thanh toán", label: "Chờ thanh toán" },
+    { value: "Đã thanh toán", label: "Đã thanh toán", cls: "bg-emerald-50 text-emerald-600 border-emerald-200" },
+    { value: "Chờ thanh toán", label: "Chờ thanh toán", cls: "bg-amber-50 text-amber-600 border-amber-200" },
+    { value: "Đã hoàn tiền", label: "Đã hoàn tiền", cls: "bg-blue-50 text-blue-600 border-blue-200" },
+    { value: "Hết hạn", label: "Hết hạn", cls: "bg-slate-100 text-slate-500 border-slate-200" },
   ];
 
   const filteredOrders = orders.filter((o) => {
@@ -396,36 +386,23 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
                 }`}
             />
           </div>
-          <div className="relative" ref={filterRef}>
-            <button
-              onClick={() => setShowFilter((v) => !v)}
-              className={`px-3.5 py-2.5 border rounded-xl font-medium text-sm transition-all duration-150 active:scale-95 flex items-center gap-2 shadow-sm ${filterStatus ? "bg-red-50 border-red-200 text-red-600" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                }`}
-            >
-              <Filter size={16} />
-              <span className="hidden sm:inline">{filterStatus || "Lọc"}</span>
-              {filterStatus && (
-                <span onClick={(e) => { e.stopPropagation(); handleFilterStatus(""); }} className="hover:text-red-800">
-                  <X size={13} />
-                </span>
-              )}
-            </button>
-            {showFilter && (
-              <div className="absolute right-0 mt-2 w-44 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden" style={{ animation: "dropIn 0.18s ease-out both", transformOrigin: "top right" }}>
-                {filterOptions.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => { handleFilterStatus(opt.value); setShowFilter(false); }}
-                    className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${filterStatus === opt.value ? "bg-red-50 text-red-600" : "text-slate-600 hover:bg-slate-50"
-                      }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
+      </div>
+
+      {/* Status filter chips */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {filterOptions.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => handleFilterStatus(opt.value)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all duration-150 active:scale-95 ${filterStatus === opt.value
+              ? opt.cls || "bg-slate-100 text-slate-600 border-slate-200"
+              : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+              }`}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         {loading ? (
@@ -483,9 +460,8 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
                   <td className="p-4 text-center">
                     <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold border ${order.status === "Đã thanh toán" ? "bg-emerald-50 text-emerald-600 border-emerald-200" :
                       order.status === "Đã hoàn tiền" ? "bg-blue-50 text-blue-600 border-blue-200" :
-                        order.status === "Đã hủy" ? "bg-red-50 text-red-500 border-red-200" :
-                          order.status === "Hết hạn" ? "bg-slate-100 text-slate-500 border-slate-200" :
-                            "bg-amber-50 text-amber-600 border-amber-200"
+                        order.status === "Hết hạn" ? "bg-slate-100 text-slate-500 border-slate-200" :
+                          "bg-amber-50 text-amber-600 border-amber-200"
                       }`}>
                       {order.status}
                     </span>
