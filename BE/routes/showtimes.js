@@ -121,7 +121,7 @@ router.post('/', protect, admin, async (req, res) => {
                 overlaps(newStartMin, newEndMin, toMin(st.startTime), toMin(st.endTime))
             );
             if (roomConflict) {
-                errors.push({ date, startTime, error: `Room conflict with showtime at ${roomConflict.startTime}` });
+                errors.push({ date, startTime, conflictStart: roomConflict.startTime, conflictEnd: roomConflict.endTime, error: 'Room conflict' });
                 continue;
             }
 
