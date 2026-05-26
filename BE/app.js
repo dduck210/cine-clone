@@ -57,12 +57,16 @@ const corsOptions = {
 };
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: corsOptions });
+
+io.on('connection', (socket) => {
+    socket.on('admin:join', () => socket.join('admins'));
+});
+initNotificationService(io);
 
 // 2. MIDDLEWARE ORDER (CRITICAL)
 app.use(cors(corsOptions));
-// Handle manual preflight if needed (though app.use(cors()) handles it)
-app.options('*', cors(corsOptions));
-
 app.use(express.json());
 
 // Request logger for debugging
