@@ -103,16 +103,23 @@ router.post('/', protect, admin, async (req, res) => {
             const dayEnd   = new Date(new Date(date).setHours(23, 59, 59, 999));
 
             // Room-level: no overlapping showtimes in same room
-            const roomConflict = await Showtime.findOne({
+            // Use minute-based comparison to handle midnight wrap (e.g. endTime "00:10" < startTime "21:45")
+            const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+            const overlaps = (as, ae, bs, be) => {
+                if (ae <= as) ae += 1440; // new show crosses midnight
+                if (be <= bs) be += 1440; // existing show crosses midnight
+                return as < be && bs < ae;
+            };
+            const newStartMin = toMin(startTime);
+            const newEndMin   = toMin(endTime);
+            const candidates = await Showtime.find({
                 room: roomId,
                 date: { $gte: dayStart, $lt: dayEnd },
                 status: 'active',
-                $or: [
-                    { startTime: { $gte: startTime, $lt: endTime } },
-                    { endTime: { $gt: startTime, $lte: endTime } },
-                    { startTime: { $lte: startTime }, endTime: { $gte: endTime } },
-                ],
-            });
+            }).select('startTime endTime').lean();
+            const roomConflict = candidates.find(st =>
+                overlaps(newStartMin, newEndMin, toMin(st.startTime), toMin(st.endTime))
+            );
             if (roomConflict) {
                 errors.push({ date, startTime, error: `Room conflict with showtime at ${roomConflict.startTime}` });
                 continue;
