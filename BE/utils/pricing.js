@@ -1,9 +1,10 @@
 const { isVietnameseHoliday } = require('./vietnamese-holidays');
 
 const TIME_SLOT_MULTIPLIERS = {
-    morning: 1.0,  // before 12:00
-    evening: 1.1,  // 12:00 - 18:00
-    night: 1.2,    // after 18:00
+    morning:   1.0,  // before 12:00
+    afternoon: 1.0,  // 12:00 - 17:59
+    evening:   1.1,  // 18:00 - 21:59
+    night:     1.2,  // 22:00+
 };
 
 const DAY_TYPE_MULTIPLIERS = {
@@ -21,7 +22,8 @@ const SEAT_TYPE_MULTIPLIERS = {
 function getTimeSlot(startTime) {
     const [hour] = startTime.split(':').map(Number);
     if (hour < 12) return 'morning';
-    if (hour < 18) return 'evening';
+    if (hour < 18) return 'afternoon';
+    if (hour < 22) return 'evening';
     return 'night';
 }
 

@@ -14,7 +14,7 @@ const showtimeSchema = new mongoose.Schema({
         vip: { type: Number, required: true },
         couple: { type: Number, required: true },
     },
-    timeSlot: { type: String, enum: ['morning', 'evening', 'night'], required: true },
+    timeSlot: { type: String, enum: ['morning', 'afternoon', 'evening', 'night'], required: true },
     dayType: { type: String, enum: ['weekday', 'weekend', 'holiday'], required: true },
     totalSeats: { type: Number, required: true },
     availableSeats: { type: Number, required: true },
