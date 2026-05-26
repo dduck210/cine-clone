@@ -93,8 +93,8 @@ const MovieDetailPage = () => {
 
   // Poll showtimes every 60s (catches admin cancellations) + tick every 30s (updates lock state)
   useEffect(() => {
-    const pollId = setInterval(fetchShowtimes, 60_000);
-    const tickId = setInterval(() => setNowTick(Date.now()), 30_000);
+    const pollId = setInterval(fetchShowtimes, 5_000);
+    const tickId = setInterval(() => setNowTick(Date.now()), 1_000);
     return () => { clearInterval(pollId); clearInterval(tickId); };
   }, [fetchShowtimes]);
 
