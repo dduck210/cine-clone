@@ -38,9 +38,73 @@ const handleErrors = (res, error, defaultMsg = 'Internal Server Error') => {
     return res.status(500).json({ success: false, message: error.message || defaultMsg });
 };
 
-// ... (existing helper functions) ...
-
 const { handleApiError } = require('../utils/error-handler');
+
+async function loadBookingContext(bookingId) {
+    return Booking.findById(bookingId)
+        .populate('user', 'name email phone')
+        .populate({
+            path: 'showtime',
+            populate: [
+                { path: 'movie', select: 'title poster' },
+                { path: 'cinema', select: 'name address' },
+                { path: 'room', select: 'name' },
+            ],
+        })
+        .populate('paymentId', 'method status');
+}
+
+function getTodayFloor() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+}
+
+async function cancelShowtimesDbUpdates(showtimes, reason) {
+    let cancelledShowtimes = 0;
+    let cancelledBookings = 0;
+    let refundedBookings = 0;
+    const paidBookingIds = [];
+
+    for (const showtime of showtimes) {
+        showtime.status = 'cancelled';
+        await showtime.save();
+        cancelledShowtimes++;
+
+        const bookings = await Booking.find({
+            showtime: showtime._id,
+            status: { $in: ['pending', 'paid'] },
+        });
+        const bookingIds = bookings.map((b) => b._id);
+        const seatIds = bookings.flatMap((b) => b.seats);
+
+        await Seat.updateMany({ _id: { $in: seatIds } }, { status: 'available', bookedBy: null });
+        await Booking.updateMany({ _id: { $in: bookingIds } }, { status: 'cancelled' });
+        cancelledBookings += bookings.length;
+
+        const paidIds = bookings.filter((b) => b.status === 'paid').map((b) => b._id);
+        if (paidIds.length > 0) {
+            await Payment.updateMany(
+                { booking: { $in: paidIds }, status: 'success' },
+                { $set: { status: 'refunded', refundDate: new Date(), refundAmount: 0 } }
+            );
+            await Booking.updateMany({ _id: { $in: paidIds } }, { status: 'refunded' });
+            refundedBookings += paidIds.length;
+            paidBookingIds.push(...paidIds.map((id) => id.toString()));
+        }
+    }
+
+    if (cancelledShowtimes > 0) {
+        notificationService.createNotification({
+            type: 'showtime_cancelled',
+            title: 'Đóng khẩn cấp / hủy suất chiếu',
+            message: `Đã hủy ${cancelledShowtimes} suất chiếu, hoàn ${refundedBookings} đơn`,
+            data: { cancelledShowtimes, refundedBookings },
+        });
+    }
+
+    return { cancelledShowtimes, cancelledBookings, refundedBookings, paidBookingIds };
+}
 
 // POST /api/admin/users/bulk-delete — xóa nhiều user
 router.post('/users/bulk-delete', protect, admin, bulkController.bulkDeleteUsers);
