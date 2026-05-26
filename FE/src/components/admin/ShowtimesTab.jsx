@@ -224,6 +224,7 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
   const [rooms, setRooms] = useState([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [createErrors, setCreateErrors] = useState([]);
   const [bulkMode, setBulkMode] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -260,8 +261,17 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
     });
   };
 
+  const formatConflictMsg = (e) => {
+    if (e.conflictStart) {
+      const dateStr = e.date ? new Date(e.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : '';
+      return `${dateStr ? `[${dateStr}] ` : ''}Suất ${e.startTime}: phòng đang chiếu từ ${e.conflictStart} → ${e.conflictEnd}, chưa trống giờ này.`;
+    }
+    return `Suất ${e.startTime}: ${e.error}`;
+  };
+
   const onSubmit = async (data) => {
     setSaving(true);
+    setCreateErrors([]);
     try {
       let payload;
       if (bulkMode) {
@@ -288,13 +298,25 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
           bookingLockMinutes: Number(data.bookingLockMinutes) || 5,
         };
       }
-      await axiosInstance.post("/showtimes", payload);
-      const count = Array.isArray(payload) ? payload.length : 1;
-      toast.success(`Đã tạo ${count} suất chiếu thành công!`);
-      onSaved();
-      onClose();
+      const res = await axiosInstance.post("/showtimes", payload);
+      const created = res.data?.created?.length ?? (Array.isArray(payload) ? payload.length : 1);
+      const partialErrors = res.data?.errors || [];
+      if (partialErrors.length > 0) {
+        toast.success(`Đã tạo được ${created} suất chiếu.`);
+        setCreateErrors(partialErrors);
+        onSaved();
+      } else {
+        toast.success(`Đã tạo ${created} suất chiếu thành công!`);
+        onSaved();
+        onClose();
+      }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Thêm suất chiếu thất bại");
+      const data = err.response?.data;
+      if (data?.errors?.length > 0) {
+        setCreateErrors(data.errors);
+      } else {
+        toast.error(data?.message || "Thêm suất chiếu thất bại");
+      }
     } finally {
       setSaving(false);
     }
@@ -529,6 +551,27 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
             />
             <p className="text-xs text-slate-400 mt-1">Hệ thống tự khóa đặt vé trước giờ chiếu N phút (mặc định: 5 phút)</p>
           </div>
+
+          {createErrors.length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3.5">
+              <div className="flex gap-2 items-start">
+                <AlertTriangle size={15} className="text-red-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-bold text-red-700 mb-1.5">
+                    {createErrors.length === 1
+                      ? "Không thể tạo suất chiếu — phòng chưa trống"
+                      : `${createErrors.length} suất chiếu bị trùng giờ, không tạo được`}
+                  </p>
+                  <ul className="space-y-1">
+                    {createErrors.map((e, i) => (
+                      <li key={i} className="text-xs text-red-600 leading-relaxed">{formatConflictMsg(e)}</li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-red-400 mt-2">Vui lòng điều chỉnh giờ chiếu và thử lại.</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
             <button type="button" onClick={onClose} className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-semibold transition-all text-sm">
