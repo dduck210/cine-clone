@@ -564,6 +564,7 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
   const [detailShowtime, setDetailShowtime] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelling, setCancelling] = useState(false);
+  const [bulkCancelOpen, setBulkCancelOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [nowTick, setNowTick] = useState(() => Date.now());
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -575,10 +576,14 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
   };
   const clearSelection = () => setSelectedIds(new Set());
 
-  const handleBulkCancel = async () => {
+  const handleBulkCancel = () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`Bạn có chắc chắn muốn HỦY ${selectedIds.size} suất chiếu này? Các đơn hàng liên quan sẽ được hoàn tiền.`)) return;
+    setBulkCancelOpen(true);
+  };
+
+  const handleConfirmBulkCancel = async () => {
     await onBulkCancel([...selectedIds]);
+    setBulkCancelOpen(false);
     clearSelection();
   };
 
@@ -692,6 +697,54 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
                 {cancelling ? (
                   <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Đang hủy...</>
                 ) : "Xác nhận hủy"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk cancel confirm modal */}
+      {bulkCancelOpen && (
+        <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur-sm">
+          <div className="bg-white rounded-[28px] shadow-2xl max-w-sm w-full overflow-hidden border border-slate-100" style={{ animation: "cancelIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+            <div className="bg-gradient-to-br from-orange-500 to-red-600 px-6 pt-7 pb-6 text-center">
+              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 ring-4 ring-white/30">
+                <Ban className="w-7 h-7 text-white" strokeWidth={2.5} />
+              </div>
+              <h2 className="text-lg font-black text-white mb-1">Hủy hàng loạt suất chiếu</h2>
+              <p className="text-orange-100 text-sm">Hành động này không thể hoàn tác</p>
+            </div>
+            <div className="p-5 space-y-3">
+              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center">
+                <p className="text-slate-500 text-sm mb-1">Số suất chiếu bị hủy</p>
+                <p className="text-4xl font-black text-red-600">{selectedIds.size}</p>
+                <p className="text-slate-400 text-xs mt-1">suất chiếu được chọn</p>
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 space-y-1.5">
+                <p className="text-xs text-amber-800 font-bold">Lưu ý quan trọng:</p>
+                <ul className="text-xs text-amber-700 space-y-1 list-disc list-inside">
+                  <li>Tất cả vé đã đặt sẽ được hoàn tiền tự động</li>
+                  <li>Khách hàng sẽ nhận được thông báo hủy</li>
+                  <li>Dữ liệu suất chiếu sẽ bị xóa vĩnh viễn</li>
+                </ul>
+              </div>
+            </div>
+            <div className="px-5 pb-5 flex gap-3">
+              <button
+                onClick={() => setBulkCancelOpen(false)}
+                disabled={isBulkActing}
+                className="flex-1 py-3 rounded-2xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all disabled:opacity-50"
+              >
+                Không hủy
+              </button>
+              <button
+                onClick={handleConfirmBulkCancel}
+                disabled={isBulkActing}
+                className="flex-1 py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isBulkActing ? (
+                  <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Đang hủy...</>
+                ) : `Hủy ${selectedIds.size} suất chiếu`}
               </button>
             </div>
           </div>
