@@ -6,6 +6,7 @@ const Showtime = require('../models/Showtime');
 const Booking = require('../models/Booking');
 const Seat = require('../models/Seat');
 const Payment = require('../models/Payment');
+const Review = require('../models/Review');
 const { protect, admin } = require('../middleware/auth');
 const { calcEndTime } = require('../utils/pricing');
 const { sendRefundEmail, sendShowtimeCancelledEmail } = require('../services/email-service');
@@ -221,8 +222,71 @@ router.delete('/:id', protect, admin, async (req, res) => {
     try {
         const movie = await Movie.findById(req.params.id);
         if (!movie) return res.status(404).json({ message: 'Phim không tồn tại' });
+
+        // Cascade: find and cancel all showtimes for this movie
+        const showtimes = await Showtime.find({ movie: movie._id });
+        let cancelledCount = 0;
+        let refundedCount = 0;
+
+        for (const st of showtimes) {
+            if (st.status === 'cancelled') continue;
+
+            st.status = 'cancelled';
+            await st.save();
+            cancelledCount++;
+
+            // Cancel related bookings and free seats
+            const bookings = await Booking.find({ showtime: st._id, status: { $in: ['pending', 'paid'] } });
+            if (bookings.length > 0) {
+                const bookingIds = bookings.map(b => b._id);
+                const seatIds = bookings.flatMap(b => b.seats);
+
+                await Seat.updateMany({ _id: { $in: seatIds } }, { status: 'available', bookedBy: null });
+                await Booking.updateMany({ _id: { $in: bookingIds } }, { status: 'cancelled' });
+
+                const paidBookings = bookings.filter(b => b.status === 'paid');
+                for (const booking of paidBookings) {
+                    await Payment.updateMany({ booking: booking._id, status: 'success' }, {
+                        $set: { status: 'refunded', refundDate: new Date(), refundAmount: booking.totalPrice }
+                    });
+                    await Booking.findByIdAndUpdate(booking._id, { status: 'refunded' });
+                }
+                refundedCount += paidBookings.length;
+            }
+        }
+
+        // Send refund emails BEFORE deleting movie (so populate still resolves)
+        if (refundedCount > 0) {
+            const movieTitle = movie.title;
+            for (const st of showtimes) {
+                const refundedBookings = await Booking.find({ showtime: st._id, status: 'refunded' });
+                for (const booking of refundedBookings) {
+                    try {
+                        const ctx = await Booking.findById(booking._id)
+                            .populate('user')
+                            .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }, { path: 'room' }] });
+                        if (ctx) {
+                            await sendShowtimeCancelledEmail(ctx, `Phim "${movieTitle}" đã bị xóa khỏi hệ thống`);
+                            await sendRefundEmail(ctx, `Phim "${movieTitle}" đã bị xóa khỏi hệ thống`);
+                        }
+                    } catch (e) {
+                        console.error(`[DELETE MOVIE] Email failed for booking ${booking._id}:`, e.message);
+                    }
+                }
+            }
+        }
+
+        console.log(`[DELETE MOVIE] Admin ${req.user._id} (${req.user.name}) deleted movie "${movie.title}" (${movie._id}). Cancelled ${cancelledCount} showtimes, refunded ${refundedCount} bookings.`);
+
+        // Cascade: nullify movie reference in reviews so they display with fallback
+        await Review.updateMany({ movie: movie._id }, { $set: { movie: null } });
+
         await movie.deleteOne();
-        res.json({ message: 'Đã xóa phim' });
+        res.json({
+            message: `Đã xóa phim "${movie.title}". ${cancelledCount > 0 ? `Hủy ${cancelledCount} suất chiếu, hoàn tiền ${refundedCount} đơn hàng.` : ''}`,
+            cancelledShowtimes: cancelledCount,
+            refundedBookings: refundedCount,
+        });
     } catch (error) {
         handleApiError(res, error, 'Lỗi khi xóa phim');
     }

@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Movie = require('../models/Movie');
 const Showtime = require('../models/Showtime');
 const User = require('../models/User');
@@ -20,12 +21,72 @@ const bulkDeleteMovies = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Danh sách ID không hợp lệ' });
         }
 
+        // Cascade: cancel all showtimes for these movies before deletion
+        const showtimes = await Showtime.find({ movie: { $in: ids }, status: { $ne: 'cancelled' } });
+        let cancelledCount = 0;
+        let refundedCount = 0;
+
+        for (const st of showtimes) {
+            st.status = 'cancelled';
+            await st.save();
+            cancelledCount++;
+
+            const bookings = await Booking.find({ showtime: st._id, status: { $in: ['pending', 'paid'] } });
+            if (bookings.length > 0) {
+                const bookingIds = bookings.map(b => b._id);
+                const seatIds = bookings.flatMap(b => b.seats);
+
+                await Seat.updateMany({ _id: { $in: seatIds } }, { status: 'available', bookedBy: null });
+                await Booking.updateMany({ _id: { $in: bookingIds } }, { status: 'cancelled' });
+
+                const paidBookings = bookings.filter(b => b.status === 'paid');
+                for (const booking of paidBookings) {
+                    await Payment.updateMany({ booking: booking._id, status: 'success' }, {
+                        $set: { status: 'refunded', refundDate: new Date(), refundAmount: booking.totalPrice }
+                    });
+                    await Booking.findByIdAndUpdate(booking._id, { status: 'refunded' });
+                }
+                refundedCount += paidBookings.length;
+            }
+        }
+
+        // Send refund emails (fire-and-forget, non-blocking)
+        if (refundedCount > 0) {
+            const movies = await Movie.find({ _id: { $in: ids } }).select('title').lean();
+            const movieTitles = movies.map(m => m.title).join(', ');
+            (async () => {
+                for (const st of showtimes) {
+                    const refundedBookings = await Booking.find({ showtime: st._id, status: 'refunded' });
+                    for (const booking of refundedBookings) {
+                        try {
+                            const ctx = await Booking.findById(booking._id)
+                                .populate('user')
+                                .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }, { path: 'room' }] });
+                            if (ctx) {
+                                await sendShowtimeCancelledEmail(ctx, `Phim đã bị xóa khỏi hệ thống`);
+                                await sendRefundEmail(ctx, `Phim đã bị xóa khỏi hệ thống`);
+                            }
+                        } catch (e) {
+                            console.error(`[BULK DELETE MOVIES] Email failed for booking ${booking._id}:`, e.message);
+                        }
+                    }
+                }
+            })();
+        }
+
+        // Cascade: nullify movie reference in reviews so they display with fallback
+        await Review.updateMany({ movie: { $in: ids } }, { $set: { movie: null } });
+
         const result = await Movie.deleteMany({ _id: { $in: ids } });
-        
+
+        console.log(`[BULK DELETE MOVIES] Admin ${req.user._id} (${req.user.name}) deleted ${result.deletedCount} movies. Cancelled ${cancelledCount} showtimes, refunded ${refundedCount} bookings.`);
+
         res.json({
             success: true,
-            message: `Đã xóa ${result.deletedCount} phim thành công`,
-            affectedCount: result.deletedCount
+            message: `Đã xóa ${result.deletedCount} phim thành công. Hủy ${cancelledCount} suất chiếu, hoàn tiền ${refundedCount} đơn hàng.`,
+            affectedCount: result.deletedCount,
+            cancelledShowtimes: cancelledCount,
+            refundedBookings: refundedCount,
         });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message || 'Lỗi khi xóa phim' });
@@ -149,15 +210,30 @@ const bulkDeleteShowtimes = async (req, res) => {
 const bulkDeleteUsers = async (req, res) => {
     try {
         const { ids } = req.body;
-        if (!Array.isArray(ids) || ids.length === 0) {
-            return res.status(400).json({ success: false, message: 'Danh sách ID không hợp lệ' });
+        
+        // Critical: Validate all IDs are valid ObjectIds before deletion
+        const validIds = ids.filter(id => mongoose.Types.ObjectId.isValid(id));
+        if (validIds.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Không có ID hợp lệ để xóa'
+            });
         }
 
+        // CRITICAL FIX: Single _id key with combined conditions — was $in and $ne on separate _id keys,
+        // which caused the second _id to overwrite the first, deleting ALL non-admin users.
         const result = await User.deleteMany({
-            _id: { $in: ids },
-            role: { $ne: 'admin' },
-            _id: { $ne: req.user._id } // Don't delete self
+            _id: { $in: validIds, $ne: req.user._id },
+            role: { $ne: 'admin' }
         });
+
+        console.log(`[BULK DELETE USERS] Admin ${req.user._id} (${req.user.name}) deleted ${result.deletedCount} users. IDs: [${validIds.join(', ')}]`);
+
+        // Cascade: nullify user references in reviews so they still display with fallback
+        await Review.updateMany(
+            { user: { $in: validIds } },
+            { $set: { user: null } }
+        );
 
         res.json({
             success: true,

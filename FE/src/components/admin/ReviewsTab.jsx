@@ -62,10 +62,17 @@ export const ReviewsManager = () => {
       if (search) params.append("search", search);
       if (filterRating) params.append("rating", filterRating);
       const res = await axiosInstance.get(`/reviews/admin/all?${params}`);
+      console.log("[ReviewsTab] LAYER 6 — API Response:", {
+        total: res.data.total,
+        totalPages: res.data.totalPages,
+        reviewsCount: res.data.reviews?.length,
+        firstReview: res.data.reviews?.[0],
+      });
       setReviews(res.data.reviews);
       setTotal(res.data.total);
       setTotalPages(res.data.totalPages || 1);
-    } catch {
+    } catch (err) {
+      console.error("[ReviewsTab] LAYER 6 — Fetch error:", err);
       toast.error("Không thể tải đánh giá");
     } finally {
       setLoading(false);
@@ -90,6 +97,7 @@ export const ReviewsManager = () => {
     setSelectedIds((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
   };
   const toggleSelectAll = () => {
+    if (!Array.isArray(reviews)) return;
     if (selectedIds.size === reviews.length && reviews.length > 0) setSelectedIds(new Set());
     else setSelectedIds(new Set(reviews.map((r) => r._id)));
   };
@@ -189,7 +197,7 @@ export const ReviewsManager = () => {
                   <tr className="border-b border-slate-100">
                     <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80 w-12">
                       <button onClick={toggleSelectAll} className="hover:text-slate-700 transition-colors">
-                        {selectedIds.size === reviews.length && reviews.length > 0 ? <CheckSquare size={16} className="text-red-600" /> : <Square size={16} />}
+                        {selectedIds.size === (reviews?.length || 0) && (reviews?.length || 0) > 0 ? <CheckSquare size={16} className="text-red-600" /> : <Square size={16} />}
                       </button>
                     </th>
                     <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Phim</th>
@@ -201,14 +209,15 @@ export const ReviewsManager = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {reviews.length === 0 ? (
+                  {reviews?.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="text-center py-16">
+                      <td colSpan={7} className="text-center py-16">
                         <MessageSquare size={32} className="text-slate-200 mx-auto mb-2" />
                         <p className="text-slate-400 text-sm font-medium">Không tìm thấy đánh giá nào.</p>
                       </td>
                     </tr>
-                  ) : reviews.map((r, i) => (
+                  ) : reviews?.map((r, i) => (
+
                     <tr
                       key={r._id}
                       className="group opacity-0 animate-[fadeSlideIn_0.3s_ease_forwards] border-l-2 border-transparent hover:border-red-400 hover:bg-slate-50/60 transition-[border-color,background-color] duration-200"
@@ -228,7 +237,7 @@ export const ReviewsManager = () => {
                             : <div className="w-10 h-14 bg-slate-100 rounded-lg shrink-0" />
                           }
                           <span className="font-semibold text-slate-800 text-sm leading-snug line-clamp-2 max-w-[140px]">
-                            {r.movie?.title || "—"}
+                            {r.movie?.title || "Phim đã xóa"}
                           </span>
                         </div>
                       </td>
@@ -238,7 +247,7 @@ export const ReviewsManager = () => {
                         <div className="flex items-center gap-2.5">
                           <UserAvatar name={r.user?.name} />
                           <div className="min-w-0">
-                            <p className="font-semibold text-slate-800 text-sm truncate max-w-[130px]">{r.user?.name || "Ẩn danh"}</p>
+                            <p className="font-semibold text-slate-800 text-sm truncate max-w-[130px]">{r.user?.name || "Người dùng đã xóa"}</p>
                             <p className="text-xs text-slate-400 truncate max-w-[170px]">{r.user?.email || ""}</p>
                           </div>
                         </div>
@@ -335,7 +344,7 @@ export const ReviewsManager = () => {
             ) : (
               <>
                 <h3 className="text-lg font-black text-slate-800 mb-1">Xóa đánh giá?</h3>
-                <p className="text-slate-500 text-sm mb-1">Đánh giá của <span className="font-bold text-slate-800">{deleteTarget.user?.name}</span></p>
+                <p className="text-slate-500 text-sm mb-1">Đánh giá của <span className="font-bold text-slate-800">{deleteTarget.user?.name || "Người dùng đã xóa"}</span></p>
                 {deleteTarget.comment && (
                   <p className="text-slate-400 text-xs mb-5 line-clamp-2 italic border-l-2 border-slate-200 pl-2 text-left">"{deleteTarget.comment}"</p>
                 )}

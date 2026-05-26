@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Cinema = require('../models/Cinema');
 const CinemaRoom = require('../models/CinemaRoom');
 const Booking = require('../models/Booking');
 const Showtime = require('../models/Showtime');
 const User = require('../models/User');
+const Review = require('../models/Review');
 const Payment = require('../models/Payment');
 const Seat = require('../models/Seat');
 const { protect, admin } = require('../middleware/auth');
@@ -535,11 +537,32 @@ router.put('/users/:id', protect, admin, async (req, res) => {
 
 router.delete('/users/:id', protect, admin, async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);
-        if (!user) return res.status(404).json({ message: 'User not found' });
-        if (user.role === 'admin') return res.status(400).json({ message: 'Khong the xoa tai khoan admin' });
+        const { id } = req.params;
+
+        // Validate ObjectId before any DB operation
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ message: 'ID người dùng không hợp lệ' });
+        }
+
+        // Prevent admin from deleting themselves
+        if (id === req.user._id.toString()) {
+            return res.status(400).json({ message: 'Không thể tự xóa tài khoản của bạn' });
+        }
+
+        const user = await User.findById(id);
+        if (!user) return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+        if (user.role === 'admin') return res.status(400).json({ message: 'Không thể xóa tài khoản admin' });
+
+        console.log(`[DELETE USER] Admin ${req.user._id} (${req.user.name}) is deleting user ${user._id} (${user.name}, ${user.email})`);
+
+        // Cascade: nullify user reference in reviews so they survive deletion
+        await Review.updateMany({ user: user._id }, { $set: { user: null } });
+
         await user.deleteOne();
-        res.json({ message: 'User deleted' });
+
+        console.log(`[DELETE USER] Successfully deleted user ${user._id}`);
+
+        res.json({ message: 'Đã xóa người dùng thành công', deletedUserId: user._id });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

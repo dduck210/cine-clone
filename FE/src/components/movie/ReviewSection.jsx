@@ -175,7 +175,7 @@ const ReviewSection = ({ movieId }) => {
             <div key={r._id} className="bg-gray-50 rounded-xl border border-gray-100 p-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-gray-800 font-semibold text-sm mb-1">{r.user?.name || "Ẩn danh"}</p>
+                  <p className="text-gray-800 font-semibold text-sm mb-1">{r.user?.name || "Người dùng đã xóa"}</p>
                   <StarRating value={r.rating} readonly />
                 </div>
                 <div className="flex items-center gap-3">

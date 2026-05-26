@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const { protect, admin } = require('../middleware/auth');
 const Review = require('../models/Review');
+const User = require('../models/User'); // Import User model
 const Booking = require('../models/Booking');
 const Showtime = require('../models/Showtime');
 const Movie = require('../models/Movie');
@@ -33,9 +34,17 @@ router.post('/admin/bulk-delete', protect, admin, bulkController.bulkDeleteRevie
 // GET /api/reviews/movie/:movieId — public
 router.get('/movie/:movieId', async (req, res) => {
     try {
-        const reviews = await Review.find({ movie: req.params.movieId })
+        let reviews = await Review.find({ movie: req.params.movieId })
             .populate('user', 'name')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean();
+
+        // Transform null users to fallback so FE never crashes
+        reviews = reviews.map(r => ({
+            ...r,
+            user: r.user || { _id: null, name: 'Người dùng đã xóa' },
+        }));
+
         res.json(reviews);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -118,7 +127,7 @@ router.delete('/:id', protect, async (req, res) => {
     try {
         const review = await Review.findById(req.params.id);
         if (!review) return res.status(404).json({ message: 'Review không tồn tại' });
-        if (review.user.toString() !== req.user._id.toString())
+        if (!review.user || review.user.toString() !== req.user._id.toString())
             return res.status(403).json({ message: 'Không có quyền xóa review này' });
 
         const movieId = review.movie;
@@ -134,30 +143,68 @@ router.delete('/:id', protect, async (req, res) => {
 router.get('/admin/all', protect, admin, async (req, res) => {
     try {
         const { search = '', rating = '', page = 1, limit = 10 } = req.query;
+        console.log(`[Admin Reviews] Request — Page: ${page}, Limit: ${limit}, Search: "${search}", Rating: "${rating}"`);
+
         const query = {};
         if (rating) query.rating = Number(rating);
 
-        let reviews = await Review.find(query)
+        // LAYER 1: Raw DB query
+        const rawReviews = await Review.find(query)
             .populate('user', 'name email')
             .populate('movie', 'title poster')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean();
 
+        console.log(`[Admin Reviews] LAYER 1 — Raw from DB: ${rawReviews.length} reviews`);
+        if (rawReviews.length > 0) {
+            const sample = rawReviews[0];
+            console.log(`[Admin Reviews] LAYER 1 — Sample: user=${JSON.stringify(sample.user)}, movie=${JSON.stringify(sample.movie)}, rating=${sample.rating}`);
+        }
+
+        // LAYER 2: Transform null user/movie to fallback objects
+        const orphanedCount = rawReviews.filter(r => !r.user).length;
+        const noMovieCount = rawReviews.filter(r => !r.movie).length;
+        if (orphanedCount > 0) console.log(`[Admin Reviews] LAYER 2 — Found ${orphanedCount} orphaned reviews (user=null)`);
+        if (noMovieCount > 0) console.log(`[Admin Reviews] LAYER 2 — Found ${noMovieCount} reviews with null movie`);
+
+        let reviews = rawReviews.map(r => ({
+            ...r,
+            user: r.user || { _id: null, name: 'Người dùng đã xóa', email: '' },
+            movie: r.movie || { _id: null, title: 'Phim đã xóa', poster: '' },
+        }));
+
+        // LAYER 3: Search filter
         if (search) {
+            const beforeFilter = reviews.length;
             const q = search.toLowerCase();
             reviews = reviews.filter(r =>
                 r.movie?.title?.toLowerCase().includes(q) ||
                 r.user?.name?.toLowerCase().includes(q) ||
                 r.comment?.toLowerCase().includes(q)
             );
+            console.log(`[Admin Reviews] LAYER 3 — Search filter: ${beforeFilter} → ${reviews.length} reviews`);
         }
 
+        // LAYER 4: Pagination
         const total = reviews.length;
         const pageNum = Number(page);
         const limitNum = Number(limit);
         const paginated = reviews.slice((pageNum - 1) * limitNum, pageNum * limitNum);
 
-        res.json({ items: paginated, total, page: pageNum, pages: Math.ceil(total / limitNum) });
+        console.log(`[Admin Reviews] LAYER 4 — Pagination: total=${total}, page=${pageNum}, limit=${limitNum}, returned=${paginated.length}`);
+
+        // LAYER 5: Final response
+        const responsePayload = {
+            reviews: paginated,
+            total,
+            page: pageNum,
+            totalPages: Math.ceil(total / limitNum)
+        };
+        console.log(`[Admin Reviews] LAYER 5 — Response: reviews[${paginated.length}], total=${total}, page=${pageNum}, totalPages=${responsePayload.totalPages}`);
+
+        res.json(responsePayload);
     } catch (error) {
+        console.error(`[Admin Reviews] ERROR: ${error.message}`, error.stack);
         res.status(500).json({ message: error.message });
     }
 });
