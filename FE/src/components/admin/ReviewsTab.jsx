@@ -209,19 +209,17 @@ export const ReviewsManager = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {reviews?.length === 0 ? (
+                  {(!reviews || reviews.length === 0) ? (
                     <tr>
                       <td colSpan={7} className="text-center py-16">
                         <MessageSquare size={32} className="text-slate-200 mx-auto mb-2" />
                         <p className="text-slate-400 text-sm font-medium">Không tìm thấy đánh giá nào.</p>
                       </td>
                     </tr>
-                  ) : reviews?.map((r, i) => (
-
+                  ) : reviews.map((r, i) => (
                     <tr
                       key={r._id}
-                      className="group opacity-0 animate-[fadeSlideIn_0.3s_ease_forwards] border-l-2 border-transparent hover:border-red-400 hover:bg-slate-50/60 transition-[border-color,background-color] duration-200"
-                      style={{ animationDelay: `${i * 45}ms` }}
+                      className="group border-l-2 border-transparent hover:border-red-400 hover:bg-slate-50/60 transition-[border-color,background-color] duration-200"
                     >
                       {/* Checkbox */}
                       <td className="px-5 py-4">
