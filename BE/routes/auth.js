@@ -58,7 +58,7 @@ function otpHtml(title, name, otp, email, expireMin = 15, contextText = '') {
 
 // Generate JWT
 const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+    return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30m' });
 };
 
 // Register user

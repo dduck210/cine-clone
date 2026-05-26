@@ -113,6 +113,7 @@ async function sendPaymentSuccessEmail(booking, paymentMethod = '') {
     return sendEmail({
         to: booking?.user?.email,
         subject: `5Cine - Thanh toán thành công cho đơn ${booking.bookingCode}`,
+        html: styledWrapper('Thanh toán thành công!', body),
         attachments: [{ filename: 'qr.png', content: qrBuffer, cid: 'ticket-qr' }],
     });
 }
