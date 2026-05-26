@@ -118,18 +118,6 @@ router.post('/', protect, admin, async (req, res) => {
                 continue;
             }
 
-            // Cinema-level: no duplicate startTime in same cinema on same day
-            const cinemaConflict = await Showtime.findOne({
-                cinema: cinemaId,
-                date: { $gte: dayStart, $lt: dayEnd },
-                startTime,
-                status: 'active',
-            });
-            if (cinemaConflict) {
-                errors.push({ date, startTime, error: `Cinema already has a showtime at ${startTime}` });
-                continue;
-            }
-
             // Count actual seats (non-aisle) from matrix
             let totalSeats = 0;
             if (room.seatMatrix && room.seatMatrix.length > 0) {
