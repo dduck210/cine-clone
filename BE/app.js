@@ -16,12 +16,14 @@ const { initNotificationService } = require('./services/notification-service');
 dotenv.config();
 connectDB();
 
+// 1. DYNAMIC ORIGIN WHITELIST
 const allowedOrigins = [
     process.env.CLIENT_URL,
     'http://localhost:5173',
     'http://localhost:5174',
     'http://127.0.0.1:5173',
     'http://127.0.0.1:5174',
+    'https://antitrust-sprawl-gliding.ngrok-free.dev', // Explicit ngrok for safety
 ].filter(Boolean);
 
 const corsOptions = {
@@ -29,28 +31,38 @@ const corsOptions = {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
         
-        if (allowedOrigins.includes(origin) || origin.includes('ngrok-free.dev')) {
+        const isWhitelisted = allowedOrigins.includes(origin);
+        const isNgrok = origin.includes('ngrok-free.dev');
+        
+        if (isWhitelisted || isNgrok) {
             callback(null, true);
         } else {
-            console.warn(`[CORS] Blocked request from origin: ${origin}`);
+            console.warn(`[CORS] Request blocked from origin: ${origin}`);
             callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,
-    optionsSuccessStatus: 200,
-    allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: [
+        'Content-Type', 
+        'Authorization', 
+        'X-Requested-With', 
+        'Accept', 
+        'Origin',
+        'ngrok-skip-browser-warning'
+    ],
+    exposedHeaders: ['set-cookie'],
+    optionsSuccessStatus: 200, // Important for preflight legacy support
+    maxAge: 86400, // Cache preflight for 24 hours
 };
 
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server, { cors: corsOptions });
 
-io.on('connection', (socket) => {
-    socket.on('admin:join', () => socket.join('admins'));
-});
-initNotificationService(io);
-
+// 2. MIDDLEWARE ORDER (CRITICAL)
 app.use(cors(corsOptions));
+// Handle manual preflight if needed (though app.use(cors()) handles it)
+app.options('*', cors(corsOptions));
+
 app.use(express.json());
 
 // Request logger for debugging
