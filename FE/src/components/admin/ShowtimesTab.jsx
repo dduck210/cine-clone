@@ -12,7 +12,7 @@ const DAYS_VI = [
   { label: "T5", value: 4 }, { label: "T6", value: 5 }, { label: "T7", value: 6 }, { label: "CN", value: 0 },
 ];
 
-const TIME_SLOT_MULTS = { morning: 1.0, evening: 1.1, night: 1.2 };
+const TIME_SLOT_MULTS = { morning: 1.0, afternoon: 1.0, evening: 1.1, night: 1.2 };
 const DAY_TYPE_MULTS = { weekday: 1.0, weekend: 1.2, holiday: 1.5 };
 const SEAT_MULTS = { normal: 1.0, vip: 1.5, couple: 2.0 };
 
@@ -20,7 +20,8 @@ function getTimeSlotFE(startTime) {
   if (!startTime) return null;
   const hour = parseInt(startTime.split(":")[0], 10);
   if (hour < 12) return "morning";
-  if (hour < 18) return "evening";
+  if (hour < 18) return "afternoon";
+  if (hour < 22) return "evening";
   return "night";
 }
 
@@ -103,7 +104,7 @@ const ErrorMsg = ({ msg }) => (
 );
 
 const DAY_TYPE_LABEL = { weekday: "Ngày thường", weekend: "Cuối tuần", holiday: "Ngày lễ" };
-const TIME_SLOT_LABEL = { morning: "Buổi sáng", evening: "Buổi chiều/tối", night: "Buổi đêm" };
+const TIME_SLOT_LABEL = { morning: "Buổi sáng", afternoon: "Buổi chiều", evening: "Buổi tối", night: "Buổi đêm" };
 const SHOWTIME_STATUS_META = {
   active: {
     label: "Đang chiếu",
@@ -465,7 +466,7 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
             {(() => {
               const preview = computePreview(watchedBasePrice, watchedStartTime, watchedDayType, watchedDate);
               if (!preview) return null;
-              const timeLabel = { morning: "Sáng ×1.0", evening: "Chiều/Tối ×1.1", night: "Đêm ×1.2" }[preview.timeSlot];
+              const timeLabel = { morning: "Sáng ×1.0", afternoon: "Chiều ×1.0", evening: "Tối ×1.1", night: "Đêm ×1.2" }[preview.timeSlot];
               const dayLabel = { weekday: "Ngày thường ×1.0", weekend: "Cuối tuần ×1.2", holiday: "Ngày lễ ×1.5" }[preview.dayType];
               return (
                 <div className="mt-2 p-3 bg-blue-50 border border-blue-100 rounded-xl">

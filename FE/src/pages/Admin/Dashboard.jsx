@@ -63,9 +63,9 @@ const DashboardView = ({ stats, extStats, loading }) => {
         ) : (() => {
           const max = extStats.timeslots[0]?.bookings || 1;
           const BAR_MAX_PX = 110;
-          const SHORT = { morning: "Sáng", evening: "Chiều", night: "Tối" };
-          const SUB = { morning: "trước 12h", evening: "12–18h", night: "sau 18h" };
-          const COLORS = { morning: "#f97316", evening: "#dc2626", night: "#991b1b" };
+          const SHORT = { morning: "Sáng", afternoon: "Chiều", evening: "Tối", night: "Đêm" };
+          const SUB = { morning: "trước 12h", afternoon: "12–17h", evening: "18–21h", night: "từ 22h" };
+          const COLORS = { morning: "#f97316", afternoon: "#eab308", evening: "#dc2626", night: "#991b1b" };
           return (
             <div>
               {/* Chart */}
