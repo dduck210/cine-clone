@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import {
-  Plus, X, Save, ChevronDown, Calendar, Clock, Film, MapPin, Ban, Layers, Eye, Search, Square, CheckSquare, AlertTriangle,
+  Plus, X, Save, ChevronDown, Calendar, Clock, Film, MapPin, Ban, Layers, Eye, Search, Square, CheckSquare, AlertTriangle, Grid,
 } from "lucide-react";
 import axiosInstance from "../../api/axiosConfig";
 import toast from "react-hot-toast";
@@ -608,6 +608,7 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
   const [search, setSearch] = useState("");
   const [filterMovie, setFilterMovie] = useState("");
   const [filterCinema, setFilterCinema] = useState("");
+  const [filterRoom, setFilterRoom] = useState("");
   const [filterStatus, setFilterStatus] = useState("active");
   const [detailShowtime, setDetailShowtime] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
@@ -649,12 +650,24 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
     effectiveStatus: getEffectiveShowtimeStatus(st, currentTime),
   }));
 
+  // Extract unique rooms from showtimes, filtered by selected cinema
+  const roomMap = new Map();
+  if (filterCinema) {
+    normalizedShowtimes.forEach(st => {
+      if (!st.room?._id || roomMap.has(st.room._id)) return;
+      if (st.cinema?._id !== filterCinema) return;
+      roomMap.set(st.room._id, { _id: st.room._id, name: st.room.name, cinemaId: st.cinema?._id });
+    });
+  }
+  const rooms = [...roomMap.values()].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
   const filtered = normalizedShowtimes.filter((st) => {
     const movieOk = !filterMovie || st.movie?._id === filterMovie;
     const cinemaOk = !filterCinema || st.cinema?._id === filterCinema;
+    const roomOk = !filterRoom || st.room?._id === filterRoom;
     const statusOk = !filterStatus || st.effectiveStatus === filterStatus;
     const searchOk = !search.trim() || st.movie?.title?.toLowerCase().includes(search.trim().toLowerCase());
-    return movieOk && cinemaOk && statusOk && searchOk;
+    return movieOk && cinemaOk && roomOk && statusOk && searchOk;
   });
 
   const totalPages = Math.ceil(filtered.length / SHOWTIMES_PAGE_SIZE);
@@ -662,7 +675,8 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
 
   const handleSearch = (v) => { setSearch(v); setCurrentPage(1); };
   const handleFilterMovie = (v) => { setFilterMovie(v); setCurrentPage(1); };
-  const handleFilterCinema = (v) => { setFilterCinema(v); setCurrentPage(1); };
+  const handleFilterCinema = (v) => { setFilterCinema(v); setFilterRoom(''); setCurrentPage(1); };
+  const handleFilterRoom = (v) => { setFilterRoom(v); setCurrentPage(1); };
   const handleFilterStatus = (v) => { setFilterStatus(v); setCurrentPage(1); };
 
   const statusCounts = normalizedShowtimes.reduce((acc, st) => {
@@ -831,7 +845,7 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
             </button>
           ))}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-3 text-slate-400" size={16} />
             <input
@@ -855,6 +869,14 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
             <select value={filterCinema} onChange={(e) => handleFilterCinema(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm font-medium text-slate-700 appearance-none outline-none focus:border-[#dc2626] cursor-pointer">
               <option value="">Tất cả rạp</option>
               {cinemas.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+            </select>
+            <ChevronDown className="absolute right-3 top-3 text-slate-400 pointer-events-none" size={16} />
+          </div>
+          <div className="relative">
+            <Grid className="absolute left-3 top-3 text-slate-400" size={16} />
+            <select value={filterRoom} onChange={(e) => handleFilterRoom(e.target.value)} disabled={!filterCinema} className={`w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm font-medium text-slate-700 appearance-none outline-none focus:border-[#dc2626] ${!filterCinema ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+              <option value="">{filterCinema ? 'Tất cả phòng' : 'Chọn rạp trước'}</option>
+              {rooms.map((r) => <option key={r._id} value={r._id}>{r.name}</option>)}
             </select>
             <ChevronDown className="absolute right-3 top-3 text-slate-400 pointer-events-none" size={16} />
           </div>
