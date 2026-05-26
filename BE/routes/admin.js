@@ -487,19 +487,7 @@ router.put('/rooms/:id', protect, admin, async (req, res) => {
                 });
             }
             room.seatMatrix = seatMatrix;
-            const newTotal = actualCount || room.rows * room.cols;
-            room.totalSeats = newTotal;
-
-            // Sync totalSeats to all future showtimes for this room
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const updated = await Showtime.updateMany(
-                { room: room._id, date: { $gte: today } },
-                { $set: { totalSeats: newTotal } },
-            );
-            if (updated.modifiedCount > 0) {
-                console.log(`[ROOM UPDATE] Synced totalSeats=${newTotal} to ${updated.modifiedCount} showtimes for room ${room._id}`);
-            }
+            room.totalSeats = actualCount || room.rows * room.cols;
         }
 
         if (roomType) room.roomType = roomType;
@@ -676,7 +664,7 @@ router.get('/showtimes', protect, admin, async (req, res) => {
         const showtimes = await Showtime.find({})
             .populate('movie', 'title poster duration')
             .populate('cinema', 'name')
-            .populate('room', 'name totalSeats')
+            .populate('room', 'name')
             .sort({ date: -1, startTime: -1 });
 
         await Promise.all(showtimes.map(async (showtime) => {
@@ -686,20 +674,21 @@ router.get('/showtimes', protect, admin, async (req, res) => {
             }
         }));
 
-        // Compute actual availableSeats from Seat collection
+        // Compute actual availableSeats from Seat collection (ignores stale cached value)
         const showtimeIds = showtimes.map(s => s._id);
         const seatCounts = await Seat.aggregate([
             { $match: { showtime: { $in: showtimeIds } } },
-            { $group: { _id: '$showtime', available: { $sum: { $cond: [{ $eq: ['$status', 'available'] }, 1, 0] } } } },
+            { $group: { _id: '$showtime', available: { $sum: { $cond: [{ $eq: ['$status', 'available'] }, 1, 0] } }, total: { $sum: 1 } } },
         ]);
         const seatMap = Object.fromEntries(seatCounts.map(s => [s._id.toString(), s]));
 
         const result = showtimes.map(st => {
             const obj = st.toObject();
             const counts = seatMap[st._id.toString()];
-            // Use room's current totalSeats as source of truth (reflects room edits)
-            obj.totalSeats = st.room?.totalSeats ?? obj.totalSeats;
-            obj.availableSeats = counts ? counts.available : (obj.availableSeats ?? 0);
+            if (counts) {
+                obj.availableSeats = counts.available;
+                obj.totalSeats = counts.total;
+            }
             return obj;
         });
 
