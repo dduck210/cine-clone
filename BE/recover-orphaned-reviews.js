@@ -9,9 +9,19 @@
 
 const mongoose = require('mongoose');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+const dns = require('dns');
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/cine-clone';
+// Force DNS to Google's to solve potential ECONNREFUSED/querySrv errors
+dns.setServers(['8.8.8.8']);
+
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+const MONGO_URI = process.env.MONGO_URI;
+
+if (!MONGO_URI) {
+    console.error('[Recovery] MONGO_URI not found in .env');
+    process.exit(1);
+}
 
 async function recover() {
     try {

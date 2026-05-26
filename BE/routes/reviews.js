@@ -143,8 +143,6 @@ router.delete('/:id', protect, async (req, res) => {
 router.get('/admin/all', protect, admin, async (req, res) => {
     try {
         const { search = '', rating = '', page = 1, limit = 10 } = req.query;
-        console.log(`[Admin Reviews] Request — Page: ${page}, Limit: ${limit}, Search: "${search}", Rating: "${rating}"`);
-
         const query = {};
         if (rating) query.rating = Number(rating);
 
@@ -155,18 +153,12 @@ router.get('/admin/all', protect, admin, async (req, res) => {
             .sort({ createdAt: -1 })
             .lean();
 
-        console.log(`[Admin Reviews] LAYER 1 — Raw from DB: ${rawReviews.length} reviews`);
+        console.log(`[Admin Reviews DEBUG] Total from DB: ${rawReviews.length}`);
         if (rawReviews.length > 0) {
-            const sample = rawReviews[0];
-            console.log(`[Admin Reviews] LAYER 1 — Sample: user=${JSON.stringify(sample.user)}, movie=${JSON.stringify(sample.movie)}, rating=${sample.rating}`);
+            console.log(`[Admin Reviews DEBUG] Sample 0: ID=${rawReviews[0]._id}, User=${rawReviews[0].user?.name}, Movie=${rawReviews[0].movie?.title}`);
         }
 
-        // LAYER 2: Transform null user/movie to fallback objects
-        const orphanedCount = rawReviews.filter(r => !r.user).length;
-        const noMovieCount = rawReviews.filter(r => !r.movie).length;
-        if (orphanedCount > 0) console.log(`[Admin Reviews] LAYER 2 — Found ${orphanedCount} orphaned reviews (user=null)`);
-        if (noMovieCount > 0) console.log(`[Admin Reviews] LAYER 2 — Found ${noMovieCount} reviews with null movie`);
-
+        // LAYER 2: Transform
         let reviews = rawReviews.map(r => ({
             ...r,
             user: r.user || { _id: null, name: 'Người dùng đã xóa', email: '' },
@@ -175,36 +167,35 @@ router.get('/admin/all', protect, admin, async (req, res) => {
 
         // LAYER 3: Search filter
         if (search) {
-            const beforeFilter = reviews.length;
             const q = search.toLowerCase();
             reviews = reviews.filter(r =>
-                r.movie?.title?.toLowerCase().includes(q) ||
-                r.user?.name?.toLowerCase().includes(q) ||
-                r.comment?.toLowerCase().includes(q)
+                (r.movie?.title && r.movie.title.toLowerCase().includes(q)) ||
+                (r.user?.name && r.user.name.toLowerCase().includes(q)) ||
+                (r.comment && r.comment.toLowerCase().includes(q))
             );
-            console.log(`[Admin Reviews] LAYER 3 — Search filter: ${beforeFilter} → ${reviews.length} reviews`);
         }
 
-        // LAYER 4: Pagination
         const total = reviews.length;
-        const pageNum = Number(page);
-        const limitNum = Number(limit);
+        const pageNum = Math.max(1, Number(page));
+        const limitNum = Math.max(1, Number(limit));
+        
+        // Check if page is out of bounds
+        if ((pageNum - 1) * limitNum >= total && total > 0) {
+            console.log(`[Admin Reviews DEBUG] Page ${pageNum} out of bounds (total: ${total})`);
+        }
+
         const paginated = reviews.slice((pageNum - 1) * limitNum, pageNum * limitNum);
 
-        console.log(`[Admin Reviews] LAYER 4 — Pagination: total=${total}, page=${pageNum}, limit=${limitNum}, returned=${paginated.length}`);
+        console.log(`[Admin Reviews DEBUG] Returning ${paginated.length} reviews for page ${pageNum}`);
 
-        // LAYER 5: Final response
-        const responsePayload = {
+        res.json({
             reviews: paginated,
             total,
             page: pageNum,
             totalPages: Math.ceil(total / limitNum)
-        };
-        console.log(`[Admin Reviews] LAYER 5 — Response: reviews[${paginated.length}], total=${total}, page=${pageNum}, totalPages=${responsePayload.totalPages}`);
-
-        res.json(responsePayload);
+        });
     } catch (error) {
-        console.error(`[Admin Reviews] ERROR: ${error.message}`, error.stack);
+        console.error('[Admin Reviews DEBUG] ERROR:', error);
         res.status(500).json({ message: error.message });
     }
 });
