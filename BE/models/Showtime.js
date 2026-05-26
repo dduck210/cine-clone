@@ -19,6 +19,7 @@ const showtimeSchema = new mongoose.Schema({
     totalSeats: { type: Number, required: true },
     availableSeats: { type: Number, required: true },
     status: { type: String, enum: ['active', 'expired', 'cancelled'], default: 'active' },
+    bookingLockMinutes: { type: Number, default: 5 }, // lock ticket booking N minutes before start
 }, { timestamps: true });
 
 module.exports = mongoose.model('Showtime', showtimeSchema);

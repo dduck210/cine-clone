@@ -70,6 +70,15 @@ router.post('/', protect, async (req, res) => {
             return res.status(400).json({ message: 'Rạp đang bảo trì, không thể đặt vé' });
         }
 
+        // Block booking if within lock window before showtime starts
+        const lockMins = showtime.bookingLockMinutes ?? 5;
+        const vnDateStr = new Date(showtime.date)
+            .toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
+        const startVN = new Date(`${vnDateStr}T${showtime.startTime}:00+07:00`);
+        if (Date.now() >= startVN.getTime() - lockMins * 60 * 1000) {
+            return res.status(400).json({ message: `Suất chiếu đã khóa đặt vé (khóa trước ${lockMins} phút)` });
+        }
+
         // Validate seat gap rule
         const gapError = await validateNoGap(showtimeId, seatNumbers);
         if (gapError) return res.status(400).json({ message: gapError });

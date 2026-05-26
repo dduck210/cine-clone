@@ -54,7 +54,7 @@ const getShowtimeById = async (req, res) => {
 
 // Create showtime (admin only)
 const createShowtime = async (req, res) => {
-    const { movieId, cinemaId, roomId, date, startTime, price } = req.body;
+    const { movieId, cinemaId, roomId, date, startTime, price, bookingLockMinutes } = req.body;
 
     try {
         const [room, cinema] = await Promise.all([
@@ -85,6 +85,7 @@ const createShowtime = async (req, res) => {
             startTime,
             endTime,
             price,
+            bookingLockMinutes: bookingLockMinutes ?? 5,
             totalSeats: room.totalSeats,
             availableSeats: room.totalSeats,
         });
