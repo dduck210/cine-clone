@@ -40,7 +40,12 @@ router.get('/', async (req, res) => {
             .populate('cinema')
             .populate('room')
             .sort({ date: 1, startTime: 1 });
-        res.json(showtimes.filter((showtime) => !isShowtimeExpired(showtime)));
+        res.json(showtimes.filter((st) =>
+            !isShowtimeExpired(st) &&
+            st.room?.status !== 'maintenance' &&
+            st.cinema?.status !== 'incident' &&
+            st.cinema?.status !== 'inactive'
+        ));
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

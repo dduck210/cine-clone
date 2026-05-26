@@ -4,6 +4,8 @@ const Booking = require('../models/Booking');
 const Showtime = require('../models/Showtime');
 const Seat = require('../models/Seat');
 const Payment = require('../models/Payment');
+const CinemaRoom = require('../models/CinemaRoom');
+const Cinema = require('../models/Cinema');
 const voucherService = require('../services/voucher-service');
 const { protect } = require('../middleware/auth');
 const { sendRefundEmail } = require('../services/email-service');
@@ -55,6 +57,18 @@ router.post('/', protect, async (req, res) => {
         const showtime = await Showtime.findById(showtimeId);
         if (!showtime) return res.status(404).json({ message: 'Showtime not found' });
         if (showtime.status === 'cancelled') return res.status(400).json({ message: 'Showtime is cancelled' });
+
+        // Block booking if room or cinema is under maintenance
+        const [room, cinema] = await Promise.all([
+            CinemaRoom.findById(showtime.room).select('status'),
+            Cinema.findById(showtime.cinema).select('status'),
+        ]);
+        if (room?.status === 'maintenance') {
+            return res.status(400).json({ message: 'Phòng chiếu đang bảo trì, không thể đặt vé' });
+        }
+        if (cinema?.status === 'incident' || cinema?.status === 'inactive') {
+            return res.status(400).json({ message: 'Rạp đang bảo trì, không thể đặt vé' });
+        }
 
         // Validate seat gap rule
         const gapError = await validateNoGap(showtimeId, seatNumbers);
