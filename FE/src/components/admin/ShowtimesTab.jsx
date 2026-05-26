@@ -448,7 +448,10 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
               </div>
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Giờ bắt đầu <span className="text-red-500">*</span></label>
-                <input type="time" {...register("startTime", { required: "Chọn giờ chiếu" })} className={inputClass} />
+                <div className="relative">
+                  <Clock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  <input type="time" {...register("startTime", { required: "Chọn giờ chiếu" })} className={`${inputClass} pl-9`} />
+                </div>
                 {errors.startTime && <ErrorMsg msg={errors.startTime.message} />}
               </div>
             </div>
@@ -456,23 +459,29 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
             <div className={`grid grid-cols-1 sm:grid-cols-2 gap-5 ${!selectedRoom ? "pointer-events-none" : ""}`}>
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Ngày chiếu <span className="text-red-500">*</span></label>
-                <input
-                  type="date"
-                  {...register("date", { required: "Chọn ngày chiếu" })}
-                  min={new Date().toISOString().split("T")[0]}
-                  className={inputClass}
-                  disabled={!selectedRoom}
-                />
+                <div className="relative">
+                  <Calendar size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  <input
+                    type="date"
+                    {...register("date", { required: "Chọn ngày chiếu" })}
+                    min={new Date().toISOString().split("T")[0]}
+                    className={`${inputClass} pl-9`}
+                    disabled={!selectedRoom}
+                  />
+                </div>
                 {errors.date && <ErrorMsg msg={errors.date.message} />}
               </div>
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Giờ bắt đầu <span className="text-red-500">*</span></label>
-                <input
-                  type="time"
-                  {...register("startTime", { required: "Chọn giờ chiếu" })}
-                  className={inputClass}
-                  disabled={!selectedRoom}
-                />
+                <div className="relative">
+                  <Clock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  <input
+                    type="time"
+                    {...register("startTime", { required: "Chọn giờ chiếu" })}
+                    className={`${inputClass} pl-9`}
+                    disabled={!selectedRoom}
+                  />
+                </div>
                 {errors.startTime && <ErrorMsg msg={errors.startTime.message} />}
               </div>
             </div>
