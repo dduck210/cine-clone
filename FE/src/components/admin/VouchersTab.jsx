@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Trash2, Tag, Users, Clock, Ticket, Square, CheckSquare } from "lucide-react";
+import { Plus, Tag, Users, Clock, Ticket } from "lucide-react";
 import toast from "react-hot-toast";
 import axiosInstance from "../../api/axiosConfig";
 
@@ -171,26 +171,6 @@ const VoucherModal = ({ onClose, onSaved }) => {
   );
 };
 
-// ---- Confirm Modal ----
-
-const ConfirmModal = ({ title, message, confirmLabel, confirmClass, onConfirm, onClose, loading }) =>
-  createPortal(
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center animate-[scaleIn_0.2s_ease_forwards]">
-        <h3 className="text-lg font-black text-slate-800 mb-2">{title}</h3>
-        <p className="text-slate-500 text-sm mb-5">{message}</p>
-        <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors">Huỷ</button>
-          <button onClick={onConfirm} disabled={loading} className={`flex-1 py-2.5 rounded-xl text-white font-bold text-sm transition-colors disabled:opacity-50 ${confirmClass}`}>
-            {loading ? "Đang xử lý..." : confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-
 // ---- Main ----
 
 const PAGE_SIZE = 8;
@@ -208,43 +188,6 @@ export const VouchersManager = () => {
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [confirm, setConfirm]     = useState(null);
-  const [acting, setActing]       = useState(false);
-  const [selectedIds, setSelectedIds] = useState(new Set());
-
-  const toggleSelect = (id) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIds.size === pagedVouchers.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(pagedVouchers.map((v) => v._id)));
-    }
-  };
-
-  const clearSelection = () => setSelectedIds(new Set());
-
-  const handleBulkDelete = async () => {
-    if (selectedIds.size === 0) return;
-    setActing(true);
-    try {
-      const ids = [...selectedIds];
-      await axiosInstance.post("/vouchers/admin/bulk-delete", { ids });
-      setVouchers((p) => p.filter((v) => !ids.includes(v._id)));
-      toast.success(`Đã xóa ${ids.length} voucher`);
-      clearSelection();
-    } catch {
-      toast.error("Xóa thất bại");
-    } finally {
-      setActing(false);
-    }
-  };
 
   const load = async () => {
     setLoading(true);
@@ -266,7 +209,7 @@ export const VouchersManager = () => {
       try {
         const res = await axiosInstance.get("/vouchers/admin");
         setVouchers((res.data || []).map(normalizeVoucher));
-      } catch { /* silent — keep stale data on error */ }
+      } catch { /* silent */ }
     }, 20000);
     return () => clearInterval(id);
   }, []);
@@ -292,47 +235,11 @@ export const VouchersManager = () => {
       return acc;
     }, []);
 
-  const handleConfirmAction = async () => {
-    if (!confirm) return;
-    setActing(true);
-    try {
-      await axiosInstance.delete(`/vouchers/admin/${confirm.voucher._id}`);
-      setVouchers((p) => p.filter((v) => v._id !== confirm.voucher._id));
-      toast.success("Đã xóa voucher");
-      setConfirm(null);
-    } catch {
-      toast.error("Thao tác thất bại");
-    } finally {
-      setActing(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       {showModal && <VoucherModal onClose={() => setShowModal(false)} onSaved={() => { setShowModal(false); load(); }} />}
-      {confirm && confirm.type === "bulk" ? (
-        <ConfirmModal
-          title={`Xóa ${selectedIds.size} voucher?`}
-          message={`Bạn sắp xóa vĩnh viễn ${selectedIds.size} voucher đã chọn. Hành động này không thể hoàn tác.`}
-          confirmLabel={`Xóa ${selectedIds.size} voucher`}
-          confirmClass="bg-red-600 hover:bg-red-700"
-          onConfirm={handleBulkDelete}
-          onClose={() => setConfirm(null)}
-          loading={acting}
-        />
-      ) : confirm && (
-        <ConfirmModal
-          title="Xóa voucher?"
-          message={`Xóa vĩnh viễn voucher "${confirm.voucher?.code}"? Hành động này không thể hoàn tác.`}
-          confirmLabel="Xóa"
-          confirmClass="bg-red-600 hover:bg-red-700"
-          onConfirm={handleConfirmAction}
-          onClose={() => setConfirm(null)}
-          loading={acting}
-        />
-      )}
 
-      {/* Header — matches ShowtimesTab */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
         <div>
           <h2 className="text-xl font-bold text-slate-800">Quản Lý Voucher</h2>
@@ -346,7 +253,7 @@ export const VouchersManager = () => {
         </button>
       </div>
 
-      {/* Filter chips — matches ShowtimesTab status toggles */}
+      {/* Filter chips */}
       <div className="flex items-center gap-2">
         {FILTER_CHIPS.map((f) => (
           <button
@@ -366,27 +273,7 @@ export const VouchersManager = () => {
         ))}
       </div>
 
-      {/* Bulk action bar */}
-      {selectedIds.size > 0 && (
-        <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl px-4 py-3 animate-[fadeIn_0.2s_ease_forwards]">
-          <span className="text-sm font-bold text-red-700">
-            Đã chọn {selectedIds.size} voucher
-          </span>
-          <div className="flex items-center gap-2">
-            <button onClick={clearSelection} className="px-3 py-1.5 text-xs font-bold text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-              Bỏ chọn
-            </button>
-            <button
-              onClick={() => setConfirm({ type: "bulk" })}
-              className="flex items-center gap-1.5 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
-            >
-              <Trash2 size={14} /> Xóa {selectedIds.size} voucher
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Table card — matches ShowtimesTab */}
+      {/* Table card */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-16">
@@ -402,18 +289,12 @@ export const VouchersManager = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-[13px] uppercase tracking-wider text-slate-500 font-bold">
-                  <th className="p-5 pl-6 w-12">
-                    <button onClick={toggleSelectAll} className="hover:text-slate-700 transition-colors">
-                      {selectedIds.size === pagedVouchers.length && pagedVouchers.length > 0 ? <CheckSquare size={16} className="text-red-600" /> : <Square size={16} />}
-                    </button>
-                  </th>
-                  <th className="p-5">Mã Voucher</th>
+                  <th className="p-5 pl-6">Mã Voucher</th>
                   <th className="p-5">Chiết khấu</th>
                   <th className="p-5">Giới hạn</th>
                   <th className="p-5">Hiệu lực</th>
                   <th className="p-5">Sử dụng</th>
                   <th className="p-5 text-center">Trạng thái</th>
-                  <th className="p-5 pr-6 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody key={currentPage} className="divide-y divide-slate-100">
@@ -426,14 +307,8 @@ export const VouchersManager = () => {
                       className="hover:bg-slate-50/80 transition-all duration-150 group"
                       style={{ animation: "rowIn 0.25s cubic-bezier(0.22,1,0.36,1) both", animationDelay: `${i * 40}ms` }}
                     >
-                      {/* Checkbox */}
-                      <td className="p-5 pl-6">
-                        <button onClick={(e) => { e.stopPropagation(); toggleSelect(v._id); }} className="hover:text-red-600 transition-colors">
-                          {selectedIds.has(v._id) ? <CheckSquare size={16} className="text-red-600" /> : <Square size={16} className="text-slate-300 group-hover:text-slate-500" />}
-                        </button>
-                      </td>
                       {/* Code */}
-                      <td className="p-5">
+                      <td className="p-5 pl-6">
                         <div className="flex items-center gap-4">
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0 ${v.computedStatus === "active" ? "bg-red-50 text-red-600" : "bg-slate-100 text-slate-400"}`}>
                             {v.discountType === "percent" ? "%" : "đ"}
@@ -524,25 +399,12 @@ export const VouchersManager = () => {
                         </div>
                       </td>
 
-                      {/* Status — matches ShowtimesTab badge */}
+                      {/* Status */}
                       <td className="p-5 text-center">
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${STATUS_COLORS[display.color] || STATUS_COLORS.slate}`}>
                           <span className={`w-2 h-2 rounded-full ${display.color === 'emerald' ? 'bg-emerald-500' : display.color === 'amber' ? 'bg-amber-500' : display.color === 'red' ? 'bg-red-500' : 'bg-slate-400'}`}></span>
                           {display.label}
                         </span>
-                      </td>
-
-                      {/* Actions — matches ShowtimesTab right-align */}
-                      <td className="p-5 pr-6 text-right">
-                        <div className="flex items-center gap-1 justify-end">
-                          <button
-                            onClick={() => setConfirm({ voucher: v })}
-                            className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
-                            title="Xóa vĩnh viễn"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
                       </td>
                     </tr>
                   );

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { Star, Trash2, Search, MessageSquare, Square, CheckSquare } from "lucide-react";
+import { Star, Search, MessageSquare } from "lucide-react";
 import toast from "react-hot-toast";
 import axiosInstance from "../../api/axiosConfig";
 
@@ -49,9 +48,6 @@ export const ReviewsManager = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [deleting, setDeleting] = useState(false);
-  const [selectedIds, setSelectedIds] = useState(new Set());
 
   useEffect(() => { fetchReviews(); }, [search, filterRating, currentPage]);
 
@@ -76,46 +72,6 @@ export const ReviewsManager = () => {
       toast.error("Không thể tải đánh giá");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    setDeleting(true);
-    try {
-      await axiosInstance.delete(`/reviews/admin/${deleteTarget._id}`);
-      toast.success("Đã xóa đánh giá");
-      setDeleteTarget(null);
-      fetchReviews();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Xóa thất bại");
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  const toggleSelect = (id) => {
-    setSelectedIds((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
-  };
-  const toggleSelectAll = () => {
-    if (!Array.isArray(reviews)) return;
-    if (selectedIds.size === reviews.length && reviews.length > 0) setSelectedIds(new Set());
-    else setSelectedIds(new Set(reviews.map((r) => r._id)));
-  };
-  const clearSelection = () => setSelectedIds(new Set());
-
-  const handleBulkDelete = async () => {
-    if (selectedIds.size === 0) return;
-    setDeleting(true);
-    try {
-      const ids = [...selectedIds];
-      await axiosInstance.post("/reviews/admin/bulk-delete", { ids });
-      toast.success(`Đã xóa ${ids.length} đánh giá`);
-      clearSelection();
-      fetchReviews();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Xóa thất bại");
-    } finally {
-      setDeleting(false);
     }
   };
 
@@ -163,17 +119,6 @@ export const ReviewsManager = () => {
         </div>
       </div>
 
-      {/* Bulk action bar */}
-      {selectedIds.size > 0 && (
-        <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl px-4 py-3 animate-[fadeIn_0.2s_ease_forwards]">
-          <span className="text-sm font-bold text-red-700">Đã chọn {selectedIds.size} đánh giá</span>
-          <div className="flex items-center gap-2">
-            <button onClick={clearSelection} className="px-3 py-1.5 text-xs font-bold text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">Bỏ chọn</button>
-            <button onClick={() => setDeleteTarget({ _id: "bulk" })} className="flex items-center gap-1.5 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"><Trash2 size={14} /> Xóa {selectedIds.size} đánh giá</button>
-          </div>
-        </div>
-      )}
-
       {/* Table card */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         {loading ? (
@@ -195,23 +140,17 @@ export const ReviewsManager = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-100">
-                    <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80 w-12">
-                      <button onClick={toggleSelectAll} className="hover:text-slate-700 transition-colors">
-                        {selectedIds.size === (reviews?.length || 0) && (reviews?.length || 0) > 0 ? <CheckSquare size={16} className="text-red-600" /> : <Square size={16} />}
-                      </button>
-                    </th>
                     <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Phim</th>
                     <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Người dùng</th>
                     <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Đánh giá</th>
                     <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Nội dung</th>
                     <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80 hidden md:table-cell">Ngày</th>
-                    <th className="text-center px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80 whitespace-nowrap">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {(!reviews || reviews.length === 0) ? (
                     <tr>
-                      <td colSpan={7} className="text-center py-16">
+                      <td colSpan={5} className="text-center py-16">
                         <MessageSquare size={32} className="text-slate-200 mx-auto mb-2" />
                         <p className="text-slate-400 text-sm font-medium">Không tìm thấy đánh giá nào.</p>
                       </td>
@@ -221,12 +160,6 @@ export const ReviewsManager = () => {
                       key={r._id}
                       className="group border-l-2 border-transparent hover:border-red-400 hover:bg-slate-50/60 transition-[border-color,background-color] duration-200"
                     >
-                      {/* Checkbox */}
-                      <td className="px-5 py-4">
-                        <button onClick={(e) => { e.stopPropagation(); toggleSelect(r._id); }} className="hover:text-red-600 transition-colors">
-                          {selectedIds.has(r._id) ? <CheckSquare size={16} className="text-red-600" /> : <Square size={16} className="text-slate-300 group-hover:text-slate-500" />}
-                        </button>
-                      </td>
                       {/* Movie */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
@@ -275,17 +208,6 @@ export const ReviewsManager = () => {
                           {new Date(r.createdAt).toLocaleDateString("vi-VN")}
                         </span>
                       </td>
-
-                      {/* Actions */}
-                      <td className="px-4 py-4 text-center">
-                        <button
-                          onClick={() => setDeleteTarget(r)}
-                          className="p-2 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all duration-150"
-                          title="Xóa đánh giá"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -320,45 +242,6 @@ export const ReviewsManager = () => {
         )}
       </div>
 
-      {/* Delete confirm modal */}
-      {deleteTarget && createPortal(
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteTarget(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center animate-[scaleIn_0.2s_ease_forwards]">
-            <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Trash2 size={22} className="text-red-500" />
-            </div>
-            {deleteTarget._id === "bulk" ? (
-              <>
-                <h3 className="text-lg font-black text-slate-800 mb-1">Xóa {selectedIds.size} đánh giá?</h3>
-                <p className="text-slate-500 text-sm mb-5">Hành động này không thể hoàn tác.</p>
-                <div className="flex gap-2">
-                  <button onClick={() => setDeleteTarget(null)} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-slate-600 font-semibold hover:bg-slate-50 text-sm transition-colors">Hủy</button>
-                  <button onClick={handleBulkDelete} disabled={deleting} className="flex-1 py-2.5 bg-red-600 rounded-xl text-white font-bold hover:bg-red-700 disabled:opacity-50 text-sm transition-colors">
-                    {deleting ? "Đang xóa..." : `Xóa ${selectedIds.size}`}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <h3 className="text-lg font-black text-slate-800 mb-1">Xóa đánh giá?</h3>
-                <p className="text-slate-500 text-sm mb-1">Đánh giá của <span className="font-bold text-slate-800">{deleteTarget.user?.name || "Người dùng đã xóa"}</span></p>
-                {deleteTarget.comment && (
-                  <p className="text-slate-400 text-xs mb-5 line-clamp-2 italic border-l-2 border-slate-200 pl-2 text-left">"{deleteTarget.comment}"</p>
-                )}
-                <div className="flex gap-2 mt-5">
-                  <button onClick={() => setDeleteTarget(null)} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-slate-600 font-semibold hover:bg-slate-50 text-sm transition-colors">Hủy</button>
-                  <button onClick={handleDelete} disabled={deleting}
-                    className="flex-1 py-2.5 bg-red-600 rounded-xl text-white font-bold hover:bg-red-700 disabled:opacity-50 text-sm transition-colors">
-                    {deleting ? "Đang xóa..." : "Xóa"}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>,
-        document.body
-      )}
     </div>
   );
 };

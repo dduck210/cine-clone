@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import {
-  Plus, X, Save, ChevronDown, Calendar, Clock, Film, MapPin, Ban, Layers, Eye, Search, Square, CheckSquare, Trash2, AlertTriangle,
+  Plus, X, Save, ChevronDown, Calendar, Clock, Film, MapPin, Ban, Layers, Eye, Search, Square, CheckSquare, AlertTriangle,
 } from "lucide-react";
 import axiosInstance from "../../api/axiosConfig";
 import toast from "react-hot-toast";
@@ -128,86 +128,86 @@ const ShowtimeDetailModal = ({ showtime: st, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
-    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
-    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-slate-100" style={{ animation: "modalIn 0.25s cubic-bezier(0.22,1,0.36,1) both" }}>
-      <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-        <div>
-          <h3 className="font-bold text-lg text-slate-800 line-clamp-1">{st.movie?.title || "Suất chiếu"}</h3>
-          <p className="text-xs text-slate-500 mt-0.5">Chi tiết suất chiếu</p>
-        </div>
-        <button onClick={onClose} className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-400 transition-all">
-          <X size={20} />
-        </button>
-      </div>
-
-      <div className="p-6 overflow-y-auto flex-1 space-y-4">
-        {/* Movie banner */}
-        <div className="flex gap-4 items-center bg-slate-50 rounded-xl p-4 border border-slate-100">
-          {st.movie?.poster && (
-            <img src={st.movie.poster} alt="" className="w-14 h-20 object-cover rounded-lg border border-slate-200 shrink-0"
-              onError={(e) => { e.target.style.display = "none"; }} />
-          )}
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-slate-100" style={{ animation: "modalIn 0.25s cubic-bezier(0.22,1,0.36,1) both" }}>
+        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
           <div>
-            <p className="font-bold text-slate-800">{st.movie?.title || "—"}</p>
-            {st.movie?.duration && <p className="text-xs text-slate-400 mt-0.5">{st.movie.duration} phút</p>}
+            <h3 className="font-bold text-lg text-slate-800 line-clamp-1">{st.movie?.title || "Suất chiếu"}</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Chi tiết suất chiếu</p>
           </div>
+          <button onClick={onClose} className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-400 transition-all">
+            <X size={20} />
+          </button>
         </div>
 
-        {/* Info grid */}
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            { label: "Rạp chiếu", value: st.cinema?.name || "—" },
-            { label: "Phòng chiếu", value: st.room?.name || "—" },
-            { label: "Ngày chiếu", value: st.date ? new Date(st.date).toLocaleDateString("vi-VN") : "—" },
-            { label: "Giờ chiếu", value: st.endTime ? `${st.startTime} → ${st.endTime}` : st.startTime || "—" },
-            { label: "Loại ngày", value: DAY_TYPE_LABEL[st.dayType] || "—" },
-            { label: "Khung giờ", value: TIME_SLOT_LABEL[st.timeSlot] || st.timeSlot || "—" },
-          ].map((item) => (
-            <div key={item.label} className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">{item.label}</p>
-              <p className="font-bold text-slate-800 text-sm">{item.value}</p>
+        <div className="p-6 overflow-y-auto flex-1 space-y-4">
+          {/* Movie banner */}
+          <div className="flex gap-4 items-center bg-slate-50 rounded-xl p-4 border border-slate-100">
+            {st.movie?.poster && (
+              <img src={st.movie.poster} alt="" className="w-14 h-20 object-cover rounded-lg border border-slate-200 shrink-0"
+                onError={(e) => { e.target.style.display = "none"; }} />
+            )}
+            <div>
+              <p className="font-bold text-slate-800">{st.movie?.title || "—"}</p>
+              {st.movie?.duration && <p className="text-xs text-slate-400 mt-0.5">{st.movie.duration} phút</p>}
             </div>
-          ))}
-        </div>
+          </div>
 
-        {/* Price config */}
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Giá vé</p>
-          <div className="grid grid-cols-3 gap-2">
+          {/* Info grid */}
+          <div className="grid grid-cols-2 gap-2">
             {[
-              { label: "Ghế thường", key: "normal", cls: "text-slate-700" },
-              { label: "Ghế VIP", key: "vip", cls: "text-amber-600" },
-              { label: "Ghế đôi", key: "couple", cls: "text-pink-600" },
-            ].map((p) => (
-              <div key={p.key} className="bg-slate-50 rounded-xl p-3 border border-slate-100 text-center">
-                <p className="text-[10px] font-bold text-slate-400 mb-1">{p.label}</p>
-                <p className={`font-black text-sm ${p.cls}`}>
-                  {st.priceConfig?.[p.key] ? `${st.priceConfig[p.key].toLocaleString()}đ` : "—"}
-                </p>
+              { label: "Rạp chiếu", value: st.cinema?.name || "—" },
+              { label: "Phòng chiếu", value: st.room?.name || "—" },
+              { label: "Ngày chiếu", value: st.date ? new Date(st.date).toLocaleDateString("vi-VN") : "—" },
+              { label: "Giờ chiếu", value: st.endTime ? `${st.startTime} → ${st.endTime}` : st.startTime || "—" },
+              { label: "Loại ngày", value: DAY_TYPE_LABEL[st.dayType] || "—" },
+              { label: "Khung giờ", value: TIME_SLOT_LABEL[st.timeSlot] || st.timeSlot || "—" },
+            ].map((item) => (
+              <div key={item.label} className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">{item.label}</p>
+                <p className="font-bold text-slate-800 text-sm">{item.value}</p>
               </div>
             ))}
           </div>
-        </div>
 
-        {/* Seats + status */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Ghế còn lại</p>
-            <p className="font-black text-xl text-slate-800">
-              {st.availableSeats ?? "—"}
-              <span className="text-sm font-medium text-slate-400"> / {st.totalSeats ?? "—"}</span>
-            </p>
+          {/* Price config */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Giá vé</p>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "Ghế thường", key: "normal", cls: "text-slate-700" },
+                { label: "Ghế VIP", key: "vip", cls: "text-amber-600" },
+                { label: "Ghế đôi", key: "couple", cls: "text-pink-600" },
+              ].map((p) => (
+                <div key={p.key} className="bg-slate-50 rounded-xl p-3 border border-slate-100 text-center">
+                  <p className="text-[10px] font-bold text-slate-400 mb-1">{p.label}</p>
+                  <p className={`font-black text-sm ${p.cls}`}>
+                    {st.priceConfig?.[p.key] ? `${st.priceConfig[p.key].toLocaleString()}đ` : "—"}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Trạng thái</p>
-            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${statusMeta.badge}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`} />
-              {statusMeta.label}
-            </span>
+
+          {/* Seats + status */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Ghế còn lại</p>
+              <p className="font-black text-xl text-slate-800">
+                {st.availableSeats ?? "—"}
+                <span className="text-sm font-medium text-slate-400"> / {st.totalSeats ?? "—"}</span>
+              </p>
+            </div>
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Trạng thái</p>
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${statusMeta.badge}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`} />
+                {statusMeta.label}
+              </span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
     </div>
   );
 };
@@ -523,14 +523,14 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
 
 const SHOWTIMES_PAGE_SIZE = 6;
 
-export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew, onCancel, onBulkCancel, onDelete, onBulkDelete, isBulkActing }) => {
+export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew, onCancel, onBulkCancel, isBulkActing }) => {
   const [search, setSearch] = useState("");
   const [filterMovie, setFilterMovie] = useState("");
   const [filterCinema, setFilterCinema] = useState("");
   const [filterStatus, setFilterStatus] = useState("active");
   const [detailShowtime, setDetailShowtime] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [nowTick, setNowTick] = useState(() => Date.now());
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -541,18 +541,11 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
     else setSelectedIds(new Set(pagedShowtimes.map((s) => s._id)));
   };
   const clearSelection = () => setSelectedIds(new Set());
-  
+
   const handleBulkCancel = async () => {
     if (selectedIds.size === 0) return;
     if (!window.confirm(`Bạn có chắc chắn muốn HỦY ${selectedIds.size} suất chiếu này? Các đơn hàng liên quan sẽ được hoàn tiền.`)) return;
     await onBulkCancel([...selectedIds]);
-    clearSelection();
-  };
-
-  const handleBulkDelete = async () => {
-    if (selectedIds.size === 0) return;
-    if (!window.confirm(`Bạn có chắc chắn muốn XÓA VĨNH VIỄN ${selectedIds.size} suất chiếu này? Chỉ những suất chưa có đơn hàng mới có thể xóa.`)) return;
-    await onBulkDelete([...selectedIds]);
     clearSelection();
   };
 
@@ -597,14 +590,6 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
     await onCancel(cancelTarget);
     setCancelling(false);
     setCancelTarget(null);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    await onDelete(deleteTarget._id);
-    setDeleting(false);
-    setDeleteTarget(null);
   };
 
   return (
@@ -672,50 +657,8 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
                 className="flex-1 py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {cancelling ? (
-                  <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Đang hủy...</>
+                  <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Đang hủy...</>
                 ) : "Xác nhận hủy"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete confirm modal */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur-sm">
-          <div className="bg-white rounded-[28px] shadow-2xl max-w-sm w-full overflow-hidden border border-slate-100" style={{ animation: "cancelIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both" }}>
-            <div className="bg-gradient-to-br from-slate-700 to-slate-800 px-6 pt-7 pb-6 text-center">
-              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 ring-4 ring-white/30">
-                <Trash2 className="w-7 h-7 text-white" strokeWidth={2.5} />
-              </div>
-              <h2 className="text-lg font-black text-white mb-1">Xóa vĩnh viễn suất chiếu</h2>
-              <p className="text-slate-300 text-sm">Chỉ có thể xóa khi chưa có đơn hàng</p>
-            </div>
-            <div className="p-5">
-               <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-400 font-medium">Phim</span>
-                  <span className="font-bold text-slate-800 text-right max-w-[60%] line-clamp-1">{deleteTarget.movie?.title || "—"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400 font-medium">Suất chiếu</span>
-                  <span className="font-bold text-slate-800">{deleteTarget.startTime}</span>
-                </div>
-              </div>
-            </div>
-            <div className="px-5 pb-5 flex gap-3">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                className="flex-1 py-3 rounded-2xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                disabled={deleting}
-                className="flex-1 py-3 rounded-2xl bg-slate-900 hover:bg-slate-950 text-white font-black text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {deleting ? "Đang xóa..." : "Xác nhận xóa"}
               </button>
             </div>
           </div>
@@ -792,13 +735,10 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
             <button onClick={clearSelection} disabled={isBulkActing} className="px-3 py-1.5 text-xs font-bold text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50">Bỏ chọn</button>
             <button onClick={handleBulkCancel} disabled={isBulkActing} className="flex items-center gap-1.5 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50">
               {isBulkActing ? (
-                <><svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Đang xử lý...</>
+                <><svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Đang xử lý...</>
               ) : (
                 <><Ban size={14} /> Hủy {selectedIds.size} suất chiếu</>
               )}
-            </button>
-            <button onClick={handleBulkDelete} disabled={isBulkActing} className="flex items-center gap-1.5 px-4 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50">
-              {isBulkActing ? "Đang xóa..." : <><Trash2 size={14} /> Xóa vĩnh viễn</>}
             </button>
           </div>
         </div>
@@ -838,70 +778,65 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
 
                     return (
                       <tr key={st._id} onClick={() => setDetailShowtime(st)} className="hover:bg-slate-50/80 transition-all duration-150 group cursor-pointer" style={{ animation: "rowIn 0.25s cubic-bezier(0.22,1,0.36,1) both", animationDelay: `${idx * 40}ms` }}>
-                      <td className="p-5 pl-6">
-                        <button onClick={(e) => { e.stopPropagation(); toggleSelect(st._id); }} className="hover:text-red-600 transition-colors">
-                          {selectedIds.has(st._id) ? <CheckSquare size={16} className="text-red-600" /> : <Square size={16} className="text-slate-300 group-hover:text-slate-500" />}
-                        </button>
-                      </td>
-                      <td className="p-5">
-                        <div className="flex items-center gap-4">
-                          {st.movie?.poster && (
-                            <img src={st.movie.poster} alt="" className="w-14 h-[76px] object-cover rounded-xl border border-slate-100 shrink-0"
-                              onError={(e) => { e.target.style.display = "none"; }} />
-                          )}
-                          <span className="font-bold text-slate-800 text-[16px] line-clamp-2">{st.movie?.title || "—"}</span>
-                        </div>
-                      </td>
-                      <td className="p-5 text-[15px] text-slate-600">
-                        <p className="font-medium">{st.cinema?.name || "—"}</p>
-                        <p className="text-[13px] text-slate-400 mt-0.5">{st.room?.name || "—"}</p>
-                      </td>
-                      <td className="p-5 text-[15px] text-slate-600">
-                        <span className="flex items-center gap-1.5">
-                          <Calendar size={14} className="text-slate-400" />
-                          {st.date ? new Date(st.date).toLocaleDateString("vi-VN") : "—"}
-                        </span>
-                      </td>
-                      <td className="p-5">
-                        <span className="flex items-center gap-1.5 font-bold text-slate-800 text-[16px]">
-                          <Clock size={15} className="text-[#dc2626]" /> {st.startTime}
-                        </span>
-                      </td>
-                      <td className="p-5 text-[13px] text-slate-600 space-y-1">
-                        <p><span className="font-medium text-slate-400">T:</span> <span className="font-bold text-slate-700">{st.priceConfig?.normal?.toLocaleString() || st.basePrice?.toLocaleString() || "—"}đ</span></p>
-                        <p><span className="font-medium text-amber-500">V:</span> <span className="font-bold text-amber-600">{st.priceConfig?.vip?.toLocaleString() || "—"}đ</span></p>
-                        <p><span className="font-medium text-pink-400">Đ:</span> <span className="font-bold text-slate-700">{st.priceConfig?.couple?.toLocaleString() || "—"}đ</span></p>
-                      </td>
-                      <td className="p-5 text-[15px] font-medium text-slate-600">
-                        {st.availableSeats ?? "—"} / {st.totalSeats ?? "—"}
-                      </td>
-                      <td className="p-5 text-center">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${statusMeta.badge}`}>
-                          <span className={`w-2 h-2 rounded-full ${statusMeta.dot}`}></span>
-                          {statusMeta.label}
-                        </span>
-                      </td>
-                      <td className="p-5 pr-6 text-right" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center gap-1 justify-end">
-                          <button onClick={() => setDetailShowtime(st)}
-                            className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                            title="Xem chi tiết">
-                            <Eye size={18} />
+                        <td className="p-5 pl-6">
+                          <button onClick={(e) => { e.stopPropagation(); toggleSelect(st._id); }} className="hover:text-red-600 transition-colors">
+                            {selectedIds.has(st._id) ? <CheckSquare size={16} className="text-red-600" /> : <Square size={16} className="text-slate-300 group-hover:text-slate-500" />}
                           </button>
-                          {st.effectiveStatus === "active" && (
-                            <button onClick={(e) => { e.stopPropagation(); setCancelTarget(st); }}
-                              className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                              title="Hủy suất chiếu">
-                              <Ban size={18} />
+                        </td>
+                        <td className="p-5">
+                          <div className="flex items-center gap-4">
+                            {st.movie?.poster && (
+                              <img src={st.movie.poster} alt="" className="w-14 h-[76px] object-cover rounded-xl border border-slate-100 shrink-0"
+                                onError={(e) => { e.target.style.display = "none"; }} />
+                            )}
+                            <span className="font-bold text-slate-800 text-[16px] line-clamp-2">{st.movie?.title || "—"}</span>
+                          </div>
+                        </td>
+                        <td className="p-5 text-[15px] text-slate-600">
+                          <p className="font-medium">{st.cinema?.name || "—"}</p>
+                          <p className="text-[13px] text-slate-400 mt-0.5">{st.room?.name || "—"}</p>
+                        </td>
+                        <td className="p-5 text-[15px] text-slate-600">
+                          <span className="flex items-center gap-1.5">
+                            <Calendar size={14} className="text-slate-400" />
+                            {st.date ? new Date(st.date).toLocaleDateString("vi-VN") : "—"}
+                          </span>
+                        </td>
+                        <td className="p-5">
+                          <span className="flex items-center gap-1.5 font-bold text-slate-800 text-[16px]">
+                            <Clock size={15} className="text-[#dc2626]" /> {st.startTime}
+                          </span>
+                        </td>
+                        <td className="p-5 text-[13px] text-slate-600 space-y-1">
+                          <p><span className="font-medium text-slate-400">T:</span> <span className="font-bold text-slate-700">{st.priceConfig?.normal?.toLocaleString() || st.basePrice?.toLocaleString() || "—"}đ</span></p>
+                          <p><span className="font-medium text-amber-500">V:</span> <span className="font-bold text-amber-600">{st.priceConfig?.vip?.toLocaleString() || "—"}đ</span></p>
+                          <p><span className="font-medium text-pink-400">Đ:</span> <span className="font-bold text-slate-700">{st.priceConfig?.couple?.toLocaleString() || "—"}đ</span></p>
+                        </td>
+                        <td className="p-5 text-[15px] font-medium text-slate-600">
+                          {st.availableSeats ?? "—"} / {st.totalSeats ?? "—"}
+                        </td>
+                        <td className="p-5 text-center">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${statusMeta.badge}`}>
+                            <span className={`w-2 h-2 rounded-full ${statusMeta.dot}`}></span>
+                            {statusMeta.label}
+                          </span>
+                        </td>
+                        <td className="p-5 pr-6 text-right" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-1 justify-end">
+                            <button onClick={() => setDetailShowtime(st)}
+                              className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                              title="Xem chi tiết">
+                              <Eye size={18} />
                             </button>
-                          )}
-                          <button onClick={(e) => { e.stopPropagation(); setDeleteTarget(st); }}
-                            className="p-2.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all"
-                            title="Xóa vĩnh viễn">
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </td>
+                            {st.effectiveStatus === "active" && (
+                              <button onClick={(e) => { e.stopPropagation(); setCancelTarget(st); }}
+                                className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                title="Hủy suất chiếu">
+                                <Ban size={18} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     );
                   })

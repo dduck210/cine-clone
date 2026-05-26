@@ -222,8 +222,6 @@ const Dashboard = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentMovie, setCurrentMovie] = useState(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [movieToDelete, setMovieToDelete] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -605,39 +603,7 @@ const Dashboard = () => {
 
   const [bulkActing, setBulkActing] = useState(false);
 
-  const handleDeleteClick = (movie) => {
-    setMovieToDelete(movie);
-    setIsDeleteModalOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!movieToDelete) return;
-    try {
-      await axiosInstance.delete(`/movies/${movieToDelete._id}`);
-      setMovies(movies.filter((m) => m._id !== movieToDelete._id));
-      toast.success("Đã xóa phim thành công!");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Xóa phim thất bại");
-    }
-    setIsDeleteModalOpen(false);
-    setMovieToDelete(null);
-  };
-
-  // Bulk delete handlers
-  const handleBulkDeleteMovies = async (ids) => {
-    if (!ids?.length) return;
-    setBulkActing(true);
-    try {
-      const res = await axiosInstance.post("/movies/bulk-delete", { ids });
-      setMovies((prev) => prev.filter((m) => !ids.includes(m._id)));
-      toast.success(res.data?.message || `Đã xóa ${res.data?.affectedCount || ids.length} phim`);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Xóa phim thất bại");
-    } finally {
-      setBulkActing(false);
-    }
-  };
-
+  // Bulk cancel showtimes
   const handleBulkCancelShowtimes = async (ids) => {
     if (!ids?.length) return;
     setBulkActing(true);
@@ -647,44 +613,6 @@ const Dashboard = () => {
       toast.success(res.data?.message || `Đã hủy ${ids.length} suất chiếu`);
     } catch (err) {
       toast.error(err.response?.data?.message || "Hủy suất chiếu thất bại");
-    } finally {
-      setBulkActing(false);
-    }
-  };
-
-  const handleDeleteShowtime = async (id) => {
-    try {
-      await axiosInstance.delete(`/showtimes/${id}`);
-      setShowtimes((prev) => prev.filter((s) => s._id !== id));
-      toast.success("Đã xóa suất chiếu thành công!");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Xóa suất chiếu thất bại");
-    }
-  };
-
-  const handleBulkDeleteShowtimes = async (ids) => {
-    if (!ids?.length) return;
-    setBulkActing(true);
-    try {
-      const res = await axiosInstance.post("/showtimes/bulk-delete", { ids });
-      setShowtimes((prev) => prev.filter((s) => !ids.includes(s._id)));
-      toast.success(res.data?.message || `Đã xóa ${res.data?.affectedCount || ids.length} suất chiếu`);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Xóa suất chiếu thất bại");
-    } finally {
-      setBulkActing(false);
-    }
-  };
-
-  const handleBulkDeleteUsers = async (ids) => {
-    if (!ids?.length) return;
-    setBulkActing(true);
-    try {
-      const res = await axiosInstance.post("/admin/users/bulk-delete", { ids });
-      setUsers((prev) => prev.filter((u) => !ids.includes(u._id)));
-      toast.success(res.data?.message || `Đã xóa ${res.data?.affectedCount || ids.length} người dùng`);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Xóa người dùng thất bại");
     } finally {
       setBulkActing(false);
     }
@@ -757,15 +685,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    try {
-      await axiosInstance.delete(`/admin/users/${userId}`);
-      setUsers(users.filter((u) => u._id !== userId));
-      toast.success("Đã xóa thành viên!");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Xóa thất bại");
-    }
-  };
 
   const handlePrintTicket = async (bookingId) => {
     try {
@@ -923,10 +842,10 @@ const Dashboard = () => {
               moviesLoading ? (
                 <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-4 border-red-600 border-t-transparent" /></div>
               ) : (
-                <MoviesManager movies={movies} handleAddNew={handleAddNew} handleEdit={handleEdit} handleDeleteClick={handleDeleteClick} onBulkDelete={handleBulkDeleteMovies} isBulkActing={bulkActing} />
+                <MoviesManager movies={movies} handleAddNew={handleAddNew} handleEdit={handleEdit} />
               )
             )}
-            {activeTab === "users" && <UsersManager users={users} loading={usersLoading} onUpdate={handleUpdateUser} onDelete={handleDeleteUser} onBulkDelete={handleBulkDeleteUsers} isBulkActing={bulkActing} />}
+            {activeTab === "users" && <UsersManager users={users} loading={usersLoading} onUpdate={handleUpdateUser} />}
             {activeTab === "showtimes" && (
               <ShowtimesManager
                 showtimes={showtimes}
@@ -941,8 +860,6 @@ const Dashboard = () => {
                 }}
                 onCancel={handleCancelShowtime}
                 onBulkCancel={handleBulkCancelShowtimes}
-                onDelete={handleDeleteShowtime}
-                onBulkDelete={handleBulkDeleteShowtimes}
                 isBulkActing={bulkActing}
               />
             )}
@@ -977,28 +894,6 @@ const Dashboard = () => {
       )}
       {isOrderModalOpen && (
         <OrderDetailModal order={selectedOrder} onClose={() => setIsOrderModalOpen(false)} onPrint={handlePrintTicket} />
-      )}
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsDeleteModalOpen(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-600">
-              <AlertTriangle size={32} />
-            </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Xác nhận xoá phim?</h3>
-            <p className="text-gray-500 text-sm mb-6 px-2">
-              Bạn có chắc chắn muốn xoá phim <span className="font-bold text-gray-800">"{movieToDelete?.title}"</span>?
-            </p>
-            <div className="flex gap-3 justify-center">
-              <button onClick={() => setIsDeleteModalOpen(false)} className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors">
-                Hủy bỏ
-              </button>
-              <button onClick={confirmDelete} className="px-5 py-2.5 rounded-xl bg-red-600 text-white font-bold shadow-lg shadow-red-200 hover:bg-red-700 transition-all">
-                Đồng ý xóa
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );

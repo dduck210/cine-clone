@@ -9,13 +9,10 @@ import {
   Plus,
   Clock,
   Edit,
-  Trash2,
   Star,
   PlayCircle,
   Search,
   Info,
-  Square,
-  CheckSquare,
 } from "lucide-react";
 
 export const ErrorMsg = ({ msg }) => (
@@ -497,33 +494,12 @@ export const MoviesManager = ({
   movies,
   handleAddNew,
   handleEdit,
-  handleDeleteClick,
-  onBulkDelete,
-  isBulkActing,
 }) => {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterGenre, setFilterGenre] = useState("");
   const [detailMovie, setDetailMovie] = useState(null);
-  const [selectedIds, setSelectedIds] = useState(new Set());
   const [currentPage, setCurrentPage] = useState(1);
-
-  const toggleSelect = (id) => {
-    setSelectedIds((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
-  };
-  const toggleSelectAll = () => {
-    if (selectedIds.size === pagedMovies.length && pagedMovies.length > 0) setSelectedIds(new Set());
-    else setSelectedIds(new Set(pagedMovies.map((m) => m._id)));
-  };
-  const clearSelection = () => setSelectedIds(new Set());
-  
-  const handleBulkDelete = async () => {
-    if (selectedIds.size === 0) return;
-    if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} phim đã chọn?`)) {
-      await onBulkDelete([...selectedIds]);
-      clearSelection();
-    }
-  };
 
   const genreOptions = Array.from(new Set(
     movies.flatMap((m) =>
@@ -620,35 +596,13 @@ export const MoviesManager = ({
       </div>
     </div>
 
-    {/* Bulk action bar */}
-    {selectedIds.size > 0 && (
-      <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl px-4 py-3 animate-[fadeIn_0.2s_ease_forwards]">
-        <span className="text-sm font-bold text-red-700">Đã chọn {selectedIds.size} phim</span>
-        <div className="flex items-center gap-2">
-          <button onClick={clearSelection} disabled={isBulkActing} className="px-3 py-1.5 text-xs font-bold text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50">Bỏ chọn</button>
-          <button onClick={handleBulkDelete} disabled={isBulkActing} className="flex items-center gap-1.5 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50">
-            {isBulkActing ? (
-              <><svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Đang xóa...</>
-            ) : (
-              <><Trash2 size={14} /> Xóa {selectedIds.size} phim</>
-            )}
-          </button>
-        </div>
-      </div>
-    )}
-
     {/* Table */}
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50/80 border-b border-slate-200 text-[13px] uppercase tracking-wider text-slate-500 font-bold">
-              <th className="p-5 pl-6 w-12">
-                <button onClick={toggleSelectAll} className="hover:text-slate-700 transition-colors">
-                  {selectedIds.size === filteredMovies.length && filteredMovies.length > 0 ? <CheckSquare size={16} className="text-red-600" /> : <Square size={16} />}
-                </button>
-              </th>
-              <th className="p-5">Tên phim</th>
+              <th className="p-5 pl-6">Tên phim</th>
               <th className="p-5">Thể loại</th>
               <th className="p-5">Thời lượng</th>
               <th className="p-5">Đánh giá</th>
@@ -675,11 +629,6 @@ export const MoviesManager = ({
                   style={{ animation: "rowIn 0.25s cubic-bezier(0.22,1,0.36,1) both", animationDelay: `${idx * 40}ms` }}
                 >
                   <td className="p-5 pl-6">
-                    <button onClick={(e) => { e.stopPropagation(); toggleSelect(movie._id); }} className="hover:text-red-600 transition-colors">
-                      {selectedIds.has(movie._id) ? <CheckSquare size={16} className="text-red-600" /> : <Square size={16} className="text-slate-300 group-hover:text-slate-500" />}
-                    </button>
-                  </td>
-                  <td className="p-5">
                     <div className="flex items-center gap-4">
                       <img
                         src={movie.poster}
@@ -716,7 +665,6 @@ export const MoviesManager = ({
                     <div className="flex justify-end gap-1">
                       <button onClick={() => setDetailMovie(movie)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Xem"><Eye size={18} /></button>
                       <button onClick={() => handleEdit(movie)} className="p-2 text-slate-400 hover:text-[#dc2626] hover:bg-red-50 rounded-xl transition-all" title="Sửa"><Edit size={18} /></button>
-                      <button onClick={() => handleDeleteClick(movie)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all" title="Xóa"><Trash2 size={18} /></button>
                     </div>
                   </td>
                 </tr>
