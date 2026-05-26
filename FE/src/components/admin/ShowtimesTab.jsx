@@ -341,7 +341,14 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
             <div className="relative">
               <select {...register("cinemaId", { required: "Vui lòng chọn rạp" })} className={`${selectClass} ${!selectedMovie ? "opacity-50 cursor-not-allowed" : ""}`} disabled={!selectedMovie}>
                 <option value="">{!selectedMovie ? "Chọn phim trước" : "-- Chọn rạp --"}</option>
-                {cinemas.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+                {cinemas.map((c) => {
+                  const isMaintenance = c.status === 'incident' || c.status === 'inactive';
+                  return (
+                    <option key={c._id} value={c._id} disabled={isMaintenance}>
+                      {c.name}{isMaintenance ? ' (Đang bảo trì)' : ''}
+                    </option>
+                  );
+                })}
               </select>
               <ChevronDown className="absolute right-4 top-3.5 text-slate-400 pointer-events-none" size={18} />
             </div>
@@ -358,7 +365,14 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
                 disabled={!selectedCinema || loadingRooms}
               >
                 <option value="">{loadingRooms ? "Đang tải..." : selectedCinema ? "-- Chọn phòng --" : "Chọn rạp trước"}</option>
-                {rooms.map((r) => <option key={r._id} value={r._id}>{r.name} ({r.totalSeats} ghế)</option>)}
+                {rooms.map((r) => {
+                  const isMaintenance = r.status === 'maintenance';
+                  return (
+                    <option key={r._id} value={r._id} disabled={isMaintenance}>
+                      {r.name} ({r.totalSeats} ghế){isMaintenance ? ' — Đang bảo trì' : ''}
+                    </option>
+                  );
+                })}
               </select>
               <ChevronDown className="absolute right-4 top-3.5 text-slate-400 pointer-events-none" size={18} />
             </div>
