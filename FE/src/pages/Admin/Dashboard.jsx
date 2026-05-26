@@ -377,7 +377,7 @@ const Dashboard = () => {
                 if (!skipToastTypes.includes(incoming.type)) {
                   toast.success(incoming.title || "Có thông báo mới", { id: incoming.id });
                 }
-                if (incoming.type === "showtime_expired" && activeTab === "showtimes") {
+                if ((incoming.type === "showtime_expired" || incoming.type === "showtime_cancelled") && activeTab === "showtimes") {
                   axiosInstance.get("/admin/showtimes")
                     .then((r) => setShowtimes(r.data))
                     .catch(() => {});
