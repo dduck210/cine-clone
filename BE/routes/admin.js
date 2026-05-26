@@ -60,6 +60,31 @@ function getTodayFloor() {
     return today;
 }
 
+async function buildEmergencyPreview(showtimes) {
+    const preview = await Promise.all(showtimes.map(async (showtime) => {
+        const bookings = await Booking.find({
+            showtime: showtime._id,
+            status: { $in: ['pending', 'paid'] },
+        });
+        return {
+            _id: showtime._id,
+            movieTitle: showtime.movie?.title || '—',
+            roomId: showtime.room?._id?.toString() || showtime.room?.toString() || '',
+            roomName: showtime.room?.name || '—',
+            date: showtime.date,
+            startTime: showtime.startTime,
+            totalBookings: bookings.length,
+            paidBookings: bookings.filter((b) => b.status === 'paid').length,
+        };
+    }));
+    return {
+        totalShowtimes: preview.length,
+        totalBookings: preview.reduce((sum, item) => sum + item.totalBookings, 0),
+        totalRefunds: preview.reduce((sum, item) => sum + item.paidBookings, 0),
+        showtimes: preview,
+    };
+}
+
 async function cancelShowtimesDbUpdates(showtimes, reason) {
     let cancelledShowtimes = 0;
     let cancelledBookings = 0;
