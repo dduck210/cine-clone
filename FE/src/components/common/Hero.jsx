@@ -67,13 +67,13 @@ const Hero = ({ movies = [] }) => {
             alt={m.title}
             className="w-full h-full object-cover object-center"
             style={{
-              filter: m.backdrop ? "brightness(0.9)" : "blur(4px) saturate(1.3) brightness(0.8)",
-              transform: i === current ? "scale(1.06)" : "scale(1)",
-              transition: "transform 8s ease-out",
+              filter: m.backdrop ? "brightness(0.85)" : "blur(8px) saturate(1.2) brightness(0.7)",
+              transform: i === current ? "scale(1.05)" : "scale(1)",
+              transition: "transform 10s ease-out",
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-black/10" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/20" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
         </div>
       ))}
 
@@ -100,34 +100,34 @@ const Hero = ({ movies = [] }) => {
       {/* Content */}
       <div className="relative z-10 h-full flex items-end sm:items-center pb-20 sm:pb-0">
         <div className="w-full px-5 sm:px-10 lg:px-16 max-w-screen-xl mx-auto">
-          <div className="max-w-xl lg:max-w-2xl space-y-3 sm:space-y-5">
+          <div className="max-w-[480px] lg:max-w-[520px] space-y-2.5 sm:space-y-4">
             {/* Badges */}
             <div className="flex flex-wrap items-center gap-2">
               {movie.ageRestriction && (
-                <span className="bg-red-600 text-white text-xs font-black px-2 py-0.5 rounded">
+                <span className="bg-red-600 text-white text-[10px] sm:text-xs font-black px-2 py-0.5 rounded shadow-sm">
                   {movie.ageRestriction}
                 </span>
               )}
               {movie.rating > 0 && (
-                <span className="flex items-center gap-1 bg-yellow-500/20 border border-yellow-500/40 text-yellow-400 text-xs font-bold px-2.5 py-0.5 rounded">
+                <span className="flex items-center gap-1 bg-yellow-500/20 border border-yellow-500/40 text-yellow-400 text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded backdrop-blur-sm">
                   <Star size={10} fill="currentColor" /> {movie.rating}
                 </span>
               )}
               {movie.duration > 0 && (
-                <span className="flex items-center gap-1 bg-white/10 text-white/60 text-xs font-bold px-2.5 py-0.5 rounded">
+                <span className="flex items-center gap-1 bg-white/10 text-white/70 text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded backdrop-blur-sm">
                   <Clock size={10} /> {movie.duration} phút
                 </span>
               )}
             </div>
 
-            <h1 className="font-sans font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white leading-tight drop-shadow-xl">
+            <h1 className="font-sans font-black text-2xl sm:text-4xl md:text-5xl lg:text-5xl text-white leading-[1.1] md:leading-[1.05] drop-shadow-2xl line-clamp-2 md:line-clamp-3">
               {movie.title}
             </h1>
 
             {Array.isArray(movie.genre) && movie.genre.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
-                {movie.genre.slice(0, 4).map((g, i) => (
-                  <span key={i} className="text-xs text-white/70 bg-white/10 backdrop-blur-sm px-2.5 py-0.5 rounded-full">
+                {movie.genre.slice(0, 3).map((g, i) => (
+                  <span key={i} className="text-[10px] sm:text-xs text-white/60 bg-white/5 border border-white/10 px-2.5 py-0.5 rounded-full">
                     {typeof g === "string" ? g : g.name}
                   </span>
                 ))}
@@ -135,7 +135,7 @@ const Hero = ({ movies = [] }) => {
             )}
 
             {movie.description && (
-              <p className="hidden sm:block text-sm md:text-base text-gray-300/90 leading-relaxed line-clamp-3 max-w-lg">
+              <p className="hidden sm:block text-sm lg:text-base text-gray-300/80 leading-relaxed line-clamp-4 lg:line-clamp-5">
                 {movie.description}
               </p>
             )}
@@ -143,15 +143,15 @@ const Hero = ({ movies = [] }) => {
             <div className="pt-1 sm:pt-2 flex items-center gap-3 flex-wrap">
               <button
                 onClick={() => navigate(`/movie/${movie._id}`)}
-                className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold px-7 py-3.5 rounded-xl shadow-lg shadow-red-900/50 transition-all text-sm"
+                className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-red-900/40 transition-all text-sm"
               >
                 <Ticket size={16} /> Đặt Vé Ngay
               </button>
               <button
                 onClick={() => navigate(`/movie/${movie._id}`)}
-                className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 hover:border-white/40 text-white font-bold px-5 py-3.5 rounded-xl transition-all text-sm"
+                className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 hover:border-white/40 text-white font-bold px-5 py-3 rounded-xl transition-all text-sm"
               >
-                <Play size={13} fill="currentColor" /> Xem chi tiết
+                <Play size={13} fill="currentColor" /> Chi tiết
               </button>
             </div>
           </div>

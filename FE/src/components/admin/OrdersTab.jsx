@@ -30,14 +30,14 @@ const QrScannerModal = ({ onScanned, onClose }) => {
 
     scanner.render(
       (text) => {
-        scanner.clear().catch(() => {});
+        scanner.clear().catch(() => { });
         onScanned(text.trim());
       },
-      () => {}
+      () => { }
     );
 
     return () => {
-      scanner.clear().catch(() => {});
+      scanner.clear().catch(() => { });
     };
   }, []);
 
@@ -147,94 +147,94 @@ export const OrderDetailModal = ({ order, onClose, onPrint }) => {
           </div>
 
           <div id="print-wrapper">
-          <div
-            id="print-ticket"
-            className="mx-auto w-full max-w-[360px] rounded-xl shadow-2xl overflow-hidden font-mono text-gray-900 print:shadow-none print:rounded-none"
-            style={{
-              border: "1px solid rgb(229,224,213)",
-              backgroundColor: "rgb(253,248,240)",
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='100'%3E%3Ctext x='0' y='60' font-family='monospace' font-size='14' font-weight='900' letter-spacing='2' fill='%23000' opacity='0.20' transform='rotate(-28 90 50)'%3E5CINE%20TICKET%3C/text%3E%3C/svg%3E")`,
-              backgroundSize: "180px 100px",
-            }}
-          >
-            {/* Header */}
-            <div className="px-5 pt-5 pb-4 border-b border-dashed border-gray-300 text-center">
-              <p className="text-[13px] font-black tracking-[0.3em] text-gray-700 uppercase">THẺ VÀO PHÒNG CHIẾU PHIM</p>
-            </div>
-
-            {/* Cinema info */}
-            <div className="relative z-10 px-5 py-4 border-b border-dashed border-gray-300 space-y-0.5">
-              <p className="font-black text-[14px] text-gray-900 uppercase">{order.cinemaName}</p>
-              {order._raw?.showtime?.room?.name && (
-                <p className="text-[11px] font-bold text-gray-500 uppercase">{order._raw.showtime.room.name}</p>
-              )}
-              <p className="text-[10px] text-gray-400 pt-1">Mã ĐH: {order.orderId}</p>
-              <p className="text-[10px] text-gray-400">{order.showDate} — {order.showTime}</p>
-            </div>
-
-            {/* Torn-edge divider */}
-            <div className="relative z-10 h-5 flex items-center">
-              <div className="absolute -left-3 w-6 h-6 rounded-full bg-gray-100 shadow-inner" style={{ border: "1px solid rgb(229,224,213)" }} />
-              <div className="absolute -right-3 w-6 h-6 rounded-full bg-gray-100 shadow-inner" style={{ border: "1px solid rgb(229,224,213)" }} />
-              <div className="w-full mx-4 border-t-2 border-dashed border-gray-300" />
-            </div>
-
-            {/* Movie + details */}
-            <div className="relative z-10 px-5 pt-3 pb-4">
-              <p className="text-[18px] font-black text-gray-900 uppercase leading-tight mb-3">{order.movieTitle}</p>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 text-[11px]">
-                <div>
-                  <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-0.5">Suất chiếu</p>
-                  <p className="font-black text-gray-800">{order.showTime}</p>
-                </div>
-                <div>
-                  <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-0.5">Ngày chiếu</p>
-                  <p className="font-black text-gray-800">{order.showDate}</p>
-                </div>
-                {order._raw?.showtime?.room?.name && (
-                  <div>
-                    <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-0.5">Phòng</p>
-                    <p className="font-black text-gray-800 uppercase">{order._raw.showtime.room.name}</p>
-                  </div>
-                )}
-                <div>
-                  <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-0.5">Ghế</p>
-                  <p className="font-black text-[#dc2626] text-[16px] leading-none">{order.selectedSeats?.join(", ")}</p>
-                </div>
+            <div
+              id="print-ticket"
+              className="mx-auto w-full max-w-[360px] rounded-xl shadow-2xl overflow-hidden font-mono text-gray-900 print:shadow-none print:rounded-none"
+              style={{
+                border: "1px solid rgb(229,224,213)",
+                backgroundColor: "rgb(253,248,240)",
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='100'%3E%3Ctext x='0' y='60' font-family='monospace' font-size='14' font-weight='900' letter-spacing='2' fill='%23000' opacity='0.20' transform='rotate(-28 90 50)'%3E5CINE%20TICKET%3C/text%3E%3C/svg%3E")`,
+                backgroundSize: "180px 100px",
+              }}
+            >
+              {/* Header */}
+              <div className="px-5 pt-5 pb-4 border-b border-dashed border-gray-300 text-center">
+                <p className="text-[13px] font-black tracking-[0.3em] text-gray-700 uppercase">THẺ VÀO PHÒNG CHIẾU PHIM</p>
               </div>
 
-              {order.combos?.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-dashed border-gray-200 space-y-1.5">
-                  <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-1">F&amp;B / Combo</p>
-                  {order.combos.map((item, i) => (
-                    <div key={i} className="flex justify-between text-[11px]">
-                      <span className="text-gray-600">{item.name} <span className="text-gray-400">×{item.quantity}</span></span>
-                      <span className="font-black text-gray-800">{(item.price * item.quantity).toLocaleString()}đ</span>
+              {/* Cinema info */}
+              <div className="relative z-10 px-5 py-4 border-b border-dashed border-gray-300 space-y-0.5">
+                <p className="font-black text-[14px] text-gray-900 uppercase">{order.cinemaName}</p>
+                {order._raw?.showtime?.room?.name && (
+                  <p className="text-[11px] font-bold text-gray-500 uppercase">{order._raw.showtime.room.name}</p>
+                )}
+                <p className="text-[10px] text-gray-400 pt-1">Mã ĐH: {order.orderId}</p>
+                <p className="text-[10px] text-gray-400">{order.showDate} — {order.showTime}</p>
+              </div>
+
+              {/* Torn-edge divider */}
+              <div className="relative z-10 h-5 flex items-center">
+                <div className="absolute -left-3 w-6 h-6 rounded-full bg-gray-100 shadow-inner" style={{ border: "1px solid rgb(229,224,213)" }} />
+                <div className="absolute -right-3 w-6 h-6 rounded-full bg-gray-100 shadow-inner" style={{ border: "1px solid rgb(229,224,213)" }} />
+                <div className="w-full mx-4 border-t-2 border-dashed border-gray-300" />
+              </div>
+
+              {/* Movie + details */}
+              <div className="relative z-10 px-5 pt-3 pb-4">
+                <p className="text-[18px] font-black text-gray-900 uppercase leading-tight mb-3">{order.movieTitle}</p>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 text-[11px]">
+                  <div>
+                    <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-0.5">Suất chiếu</p>
+                    <p className="font-black text-gray-800">{order.showTime}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-0.5">Ngày chiếu</p>
+                    <p className="font-black text-gray-800">{order.showDate}</p>
+                  </div>
+                  {order._raw?.showtime?.room?.name && (
+                    <div>
+                      <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-0.5">Phòng</p>
+                      <p className="font-black text-gray-800 uppercase">{order._raw.showtime.room.name}</p>
                     </div>
-                  ))}
+                  )}
+                  <div>
+                    <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-0.5">Ghế</p>
+                    <p className="font-black text-[#dc2626] text-[16px] leading-none">{order.selectedSeats?.join(", ")}</p>
+                  </div>
                 </div>
-              )}
-            </div>
 
-            {/* QR Code */}
-            <div className="relative z-10 border-t-2 border-dashed border-gray-300 px-5 py-4 flex flex-col items-center gap-2">
-              <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black">Quét mã để xác thực vé</p>
-              <QRCodeSVG
-                value={order.orderId}
-                size={90}
-                bgColor="transparent"
-                fgColor="#111827"
-                level="M"
-              />
-              <p className="font-mono font-bold text-gray-600 text-[11px] tracking-[0.28em] uppercase">{order.orderId}</p>
-            </div>
+                {order.combos?.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-dashed border-gray-200 space-y-1.5">
+                    <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-1">F&amp;B / Combo</p>
+                    {order.combos.map((item, i) => (
+                      <div key={i} className="flex justify-between text-[11px]">
+                        <span className="text-gray-600">{item.name} <span className="text-gray-400">×{item.quantity}</span></span>
+                        <span className="font-black text-gray-800">{(item.price * item.quantity).toLocaleString()}đ</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-            {/* Footer */}
-            <div className="relative z-10 px-5 py-3 flex justify-between items-center bg-gray-900">
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Paid</span>
-              <span className="font-mono font-black text-white text-[18px]">{order.finalTotalPrice?.toLocaleString()} ₫</span>
+              {/* QR Code */}
+              <div className="relative z-10 border-t-2 border-dashed border-gray-300 px-5 py-4 flex flex-col items-center gap-2">
+                <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black">Quét mã để xác thực vé</p>
+                <QRCodeSVG
+                  value={order.orderId}
+                  size={90}
+                  bgColor="transparent"
+                  fgColor="#111827"
+                  level="M"
+                />
+                <p className="font-mono font-bold text-gray-600 text-[11px] tracking-[0.28em] uppercase">{order.orderId}</p>
+              </div>
+
+              {/* Footer */}
+              <div className="relative z-10 px-5 py-3 flex justify-between items-center bg-gray-900">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Paid</span>
+                <span className="font-mono font-black text-white text-[18px]">{order.finalTotalPrice?.toLocaleString()} ₫</span>
+              </div>
             </div>
-          </div>
           </div>
         </div>
 
@@ -390,19 +390,17 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               onBlur={() => { if (scanning && !search) setScanning(false); }}
-              className={`w-full pl-9 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all ${
-                scanning
-                  ? "border-[#dc2626] focus:ring-red-200 bg-red-50"
-                  : "border-slate-200 focus:border-[#dc2626] focus:ring-red-100"
-              }`}
+              className={`w-full pl-9 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all ${scanning
+                ? "border-[#dc2626] focus:ring-red-200 bg-red-50"
+                : "border-slate-200 focus:border-[#dc2626] focus:ring-red-100"
+                }`}
             />
           </div>
           <div className="relative" ref={filterRef}>
             <button
               onClick={() => setShowFilter((v) => !v)}
-              className={`px-3.5 py-2.5 border rounded-xl font-medium text-sm transition-all duration-150 active:scale-95 flex items-center gap-2 shadow-sm ${
-                filterStatus ? "bg-red-50 border-red-200 text-red-600" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
+              className={`px-3.5 py-2.5 border rounded-xl font-medium text-sm transition-all duration-150 active:scale-95 flex items-center gap-2 shadow-sm ${filterStatus ? "bg-red-50 border-red-200 text-red-600" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                }`}
             >
               <Filter size={16} />
               <span className="hidden sm:inline">{filterStatus || "Lọc"}</span>
@@ -418,9 +416,8 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
                   <button
                     key={opt.value}
                     onClick={() => { handleFilterStatus(opt.value); setShowFilter(false); }}
-                    className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${
-                      filterStatus === opt.value ? "bg-red-50 text-red-600" : "text-slate-600 hover:bg-slate-50"
-                    }`}
+                    className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${filterStatus === opt.value ? "bg-red-50 text-red-600" : "text-slate-600 hover:bg-slate-50"
+                      }`}
                   >
                     {opt.label}
                   </button>
@@ -436,106 +433,95 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
             <div className="animate-spin rounded-full h-8 w-8 border-4 border-red-600 border-t-transparent mx-auto"></div>
           </div>
         ) : (
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-50/80 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-bold">
-              <th className="p-4 pl-6">Mã vé</th>
-              <th className="p-4">Khách hàng</th>
-              <th className="p-4">Phim / Suất chiếu</th>
-              <th className="p-4">Tổng tiền</th>
-              <th className="p-4 text-center">Trạng thái đơn</th>
-              <th className="p-4 text-center">Trạng thái vé</th>
-              <th className="p-4 text-right pr-6">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody key={currentPage} className="divide-y divide-slate-100">
-            {filteredOrders.length === 0 ? (
-              <tr><td colSpan="7" className="p-12 text-center text-slate-400 italic">
-                {search || filterStatus ? "Không tìm thấy đơn hàng phù hợp." : "Chưa có đơn hàng nào."}
-              </td></tr>
-            ) : pagedOrders.map((order, index) => (
-              <tr
-                key={`${order.orderId}-${index}`}
-                className="hover:bg-slate-50/80 transition-all duration-150"
-                style={{ animation: "rowIn 0.25s cubic-bezier(0.22,1,0.36,1) both", animationDelay: `${index * 40}ms` }}
-              >
-                <td className="p-4 pl-6 font-mono font-bold text-slate-700">
-                  {order.orderId}
-                </td>
-                <td className="p-4">
-                  <div className="font-medium text-slate-800">
-                    {order.customerName}
-                  </div>
-                  <div className="text-xs text-slate-500 flex items-center gap-1.5">
-                    <Mail size={12} className="text-slate-400" />
-                    <span className="truncate">{order.customerEmail || "—"}</span>
-                  </div>
-                  <div className="text-xs text-slate-500">{order.phone}</div>
-                </td>
-                <td className="p-4">
-                  <div className="font-bold text-slate-700">
-                    {order.movieTitle}
-                  </div>
-                  <div className="text-xs text-slate-500">
-                    {order.showDate} - {order.showTime}
-                  </div>
-                </td>
-                <td className="p-4 font-bold text-[#dc2626]">
-                  {order.finalTotalPrice?.toLocaleString()} đ
-                </td>
-                <td className="p-4 text-center">
-                  <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                    order.status === "Đã thanh toán" ? "bg-emerald-50 text-emerald-600 border-emerald-200" :
-                    order.status === "Đã hoàn tiền" ? "bg-blue-50 text-blue-600 border-blue-200" :
-                    order.status === "Đã hủy" ? "bg-red-50 text-red-500 border-red-200" :
-                    order.status === "Hết hạn" ? "bg-slate-100 text-slate-500 border-slate-200" :
-                    "bg-amber-50 text-amber-600 border-amber-200"
-                  }`}>
-                    {order.status}
-                  </span>
-                </td>
-                <td className="p-4 text-center">
-                  {order.status === "Đã thanh toán" ? (
-                    <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                      order.ticketStatus === "printed"
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/80 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-bold">
+                <th className="p-4 pl-6">Mã vé</th>
+                <th className="p-4">Khách hàng</th>
+                <th className="p-4">Phim / Suất chiếu</th>
+                <th className="p-4">Tổng tiền</th>
+                <th className="p-4 text-center">Trạng thái đơn</th>
+                <th className="p-4 text-center">Trạng thái vé</th>
+                <th className="p-4 text-right pr-6">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody key={currentPage} className="divide-y divide-slate-100">
+              {filteredOrders.length === 0 ? (
+                <tr><td colSpan="7" className="p-12 text-center text-slate-400 italic">
+                  {search || filterStatus ? "Không tìm thấy đơn hàng phù hợp." : "Chưa có đơn hàng nào."}
+                </td></tr>
+              ) : pagedOrders.map((order, index) => (
+                <tr
+                  key={`${order.orderId}-${index}`}
+                  className="hover:bg-slate-50/80 transition-all duration-150"
+                  style={{ animation: "rowIn 0.25s cubic-bezier(0.22,1,0.36,1) both", animationDelay: `${index * 40}ms` }}
+                >
+                  <td className="p-4 pl-6 font-mono font-bold text-slate-700">
+                    {order.orderId}
+                  </td>
+                  <td className="p-4">
+                    <div className="font-medium text-slate-800">
+                      {order.customerName}
+                    </div>
+                    <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                      <Mail size={12} className="text-slate-400" />
+                      <span className="truncate">{order.customerEmail || "—"}</span>
+                    </div>
+                    <div className="text-xs text-slate-500">{order.phone}</div>
+                  </td>
+                  <td className="p-4">
+                    <div className="font-bold text-slate-700">
+                      {order.movieTitle}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {order.showDate} - {order.showTime}
+                    </div>
+                  </td>
+                  <td className="p-4 font-bold text-[#dc2626]">
+                    {order.finalTotalPrice?.toLocaleString()} đ
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold border ${order.status === "Đã thanh toán" ? "bg-emerald-50 text-emerald-600 border-emerald-200" :
+                      order.status === "Đã hoàn tiền" ? "bg-blue-50 text-blue-600 border-blue-200" :
+                        order.status === "Đã hủy" ? "bg-red-50 text-red-500 border-red-200" :
+                          order.status === "Hết hạn" ? "bg-slate-100 text-slate-500 border-slate-200" :
+                            "bg-amber-50 text-amber-600 border-amber-200"
+                      }`}>
+                      {order.status}
+                    </span>
+                  </td>
+                  <td className="p-4 text-center">
+                    {order.status === "Đã thanh toán" ? (
+                      <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold border ${order.ticketStatus === "printed"
                         ? "bg-teal-50 text-teal-600 border-teal-200"
                         : "bg-orange-50 text-orange-600 border-orange-200"
-                    }`}>
-                      {order.ticketStatus === "printed" ? "ĐÃ IN" : "CHƯA IN"}
-                    </span>
-                  ) : <span className="text-slate-300 text-xs">—</span>}
-                </td>
-                <td className="p-4 pr-6 text-right">
-                  <div className="flex items-center justify-end gap-1.5">
-                    {order.status === "Chờ thanh toán" && order.paymentMethod === "cash" && (
+                        }`}>
+                        {order.ticketStatus === "printed" ? "ĐÃ IN" : "CHƯA IN"}
+                      </span>
+                    ) : <span className="text-slate-300 text-xs">—</span>}
+                  </td>
+                  <td className="p-4 pr-6 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      {order.status === "Chờ thanh toán" && order.paymentMethod === "cash" && (
+                        <button
+                          onClick={() => onConfirm(order.bookingRawId)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold transition-all duration-150 active:scale-95 border border-emerald-200"
+                        >
+                          <CheckCircle size={14} /> Xác nhận
+                        </button>
+                      )}
                       <button
-                        onClick={() => onConfirm(order.bookingRawId)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold transition-all duration-150 active:scale-95 border border-emerald-200"
+                        onClick={() => onViewTicket(order)}
+                        className="p-2 text-slate-400 hover:text-[#dc2626] hover:bg-red-50 rounded-lg transition-all duration-150 active:scale-90"
                       >
-                        <CheckCircle size={14} /> Xác nhận
+                        <Eye size={18} />
                       </button>
-                    )}
-                    {order.status === "Đã thanh toán" && order.ticketStatus !== "printed" && (
-                      <button
-                        onClick={() => onPrint?.(order.bookingRawId)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-lg text-xs font-bold transition-all duration-150 active:scale-95 border border-teal-200"
-                        title="Đánh dấu vé đã in"
-                      >
-                        <Printer size={14} /> In vé
-                      </button>
-                    )}
-                    <button
-                      onClick={() => onViewTicket(order)}
-                      className="p-2 text-slate-400 hover:text-[#dc2626] hover:bg-red-50 rounded-lg transition-all duration-150 active:scale-90"
-                    >
-                      <Eye size={18} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
 
@@ -566,11 +552,10 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
                   <button
                     key={p}
                     onClick={() => setCurrentPage(p)}
-                    className={`w-9 h-9 rounded-lg text-sm font-bold transition-all duration-150 active:scale-95 ${
-                      currentPage === p
-                        ? "bg-[#dc2626] text-white shadow-sm shadow-red-200"
-                        : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                    }`}
+                    className={`w-9 h-9 rounded-lg text-sm font-bold transition-all duration-150 active:scale-95 ${currentPage === p
+                      ? "bg-[#dc2626] text-white shadow-sm shadow-red-200"
+                      : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                      }`}
                   >
                     {p}
                   </button>
