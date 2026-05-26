@@ -129,22 +129,23 @@ const BankTransferPaymentPage = () => {
       <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
 
       {isPaid && (
-        <div className="fixed inset-0 bg-slate-900/90 z-[90] flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-[32px] shadow-2xl max-w-sm w-full overflow-hidden border border-slate-100">
-            <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-8 text-center">
-              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 ring-4 ring-white/30">
-                <CheckCircle className="w-11 h-11 text-white" strokeWidth={2.5} />
-              </div>
-              <h2 className="text-2xl font-black text-white mb-1">Thanh toán thành công!</h2>
-              <p className="text-emerald-100 text-sm font-medium">Vé của bạn đã được xác nhận</p>
+        <div className="fixed inset-0 bg-slate-900/95 z-[90] flex flex-col items-center justify-center gap-6 backdrop-blur-md">
+          <div className="relative w-20 h-20">
+            <svg className="w-20 h-20 animate-spin" viewBox="0 0 80 80" fill="none">
+              <circle cx="40" cy="40" r="34" stroke="white" strokeOpacity="0.15" strokeWidth="6" />
+              <path d="M40 6 A34 34 0 0 1 74 40" stroke="#10b981" strokeWidth="6" strokeLinecap="round" />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <CheckCircle className="w-8 h-8 text-emerald-400" strokeWidth={2.5} />
             </div>
-            <div className="px-6 pb-6 pt-4">
-              <div className="w-full bg-slate-100 rounded-full h-1.5 mb-2">
-                <div className="bg-emerald-500 h-1.5 rounded-full transition-all duration-1000"
-                  style={{ width: `${((3 - countdown) / 3) * 100}%` }} />
-              </div>
-              <p className="text-center text-slate-400 text-xs font-medium">Đang chuyển đến trang vé ({countdown}s)...</p>
-            </div>
+          </div>
+          <div className="text-center space-y-1">
+            <p className="text-white font-black text-lg tracking-tight">Đang xử lý vé của bạn...</p>
+            <p className="text-slate-400 text-sm">Vui lòng không tắt trình duyệt</p>
+          </div>
+          <div className="w-48 bg-white/10 rounded-full h-1 overflow-hidden">
+            <div className="bg-emerald-400 h-1 rounded-full transition-all duration-1000"
+              style={{ width: `${((3 - countdown) / 3) * 100}%` }} />
           </div>
         </div>
       )}
