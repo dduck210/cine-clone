@@ -4,6 +4,7 @@ const Voucher = require('../models/Voucher');
 const { protect, admin } = require('../middleware/auth');
 const voucherService = require('../services/voucher-service');
 const voucherStatusService = require('../services/voucher-status-service');
+const bulkController = require('../controllers/bulkController');
 
 // POST /api/vouchers/validate — check code and return discount amount (protected)
 router.post('/validate', protect, async (req, res) => {
@@ -34,21 +35,7 @@ router.post('/validate', protect, async (req, res) => {
 
 // Admin CRUD
 // POST /api/vouchers/admin/bulk-delete — xóa nhiều voucher
-router.post('/admin/bulk-delete', protect, admin, async (req, res) => {
-    try {
-        const { ids } = req.body;
-        if (!Array.isArray(ids) || ids.length === 0) {
-            return res.status(400).json({ message: 'Danh sách ID không hợp lệ' });
-        }
-        const result = await Voucher.deleteMany({ _id: { $in: ids } });
-        res.json({ 
-            message: `Đã xóa ${result.deletedCount} voucher thành công`, 
-            deletedCount: result.deletedCount 
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message || 'Lỗi khi xóa voucher' });
-    }
-});
+router.post('/admin/bulk-delete', protect, admin, bulkController.bulkDeleteVouchers);
 
 router.get('/admin', protect, admin, async (req, res) => {
     try {

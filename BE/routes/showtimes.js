@@ -13,134 +13,13 @@ const { isShowtimeExpired } = require('../utils/showtime-status');
 const { sendRefundEmail, sendShowtimeCancelledEmail } = require('../services/email-service');
 const notificationService = require('../services/notification-service');
 const { countActualSeats } = require('../utils/seat-validator');
+const bulkController = require('../controllers/bulkController');
 
 // POST /api/showtimes/bulk-delete — xóa nhiều suất chiếu
-router.post('/bulk-delete', protect, admin, async (req, res) => {
-    try {
-        const { ids } = req.body;
-        if (!Array.isArray(ids) || ids.length === 0) {
-            return res.status(400).json({ message: 'Danh sách ID không hợp lệ' });
-        }
-
-        let deletedCount = 0;
-        let skippedCount = 0;
-
-        for (const id of ids) {
-            const bookingsCount = await Booking.countDocuments({ showtime: id });
-            if (bookingsCount > 0) {
-                skippedCount++;
-                continue;
-            }
-            await Seat.deleteMany({ showtime: id });
-            await Showtime.findByIdAndDelete(id);
-            deletedCount++;
-        }
-
-        res.json({
-            message: `Đã xóa ${deletedCount} suất chiếu. ${skippedCount > 0 ? `Bỏ qua ${skippedCount} suất đã có đơn hàng.` : ''}`,
-            deletedCount,
-            skippedCount
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
+router.post('/bulk-delete', protect, admin, bulkController.bulkDeleteShowtimes);
 
 // POST /api/showtimes/bulk-cancel — hủy nhiều suất chiếu + hoàn tiền
-router.post('/bulk-cancel', protect, admin, async (req, res) => {
-    try {
-        const { ids } = req.body;
-        if (!Array.isArray(ids) || ids.length === 0) {
-            return res.status(400).json({ message: 'Danh sách ID không hợp lệ' });
-        }
-
-        let cancelledCount = 0;
-        let totalRefundedBookings = 0;
-
-        for (const id of ids) {
-            const showtime = await Showtime.findById(id);
-            if (!showtime || showtime.status === 'cancelled') continue;
-
-            showtime.status = 'cancelled';
-            await showtime.save();
-
-            const bookings = await Booking.find({
-                showtime: id,
-                status: { $in: ['pending', 'paid'] },
-            });
-
-            if (bookings.length > 0) {
-                const bookingIds = bookings.map(b => b._id);
-                const seatIds = bookings.flatMap(b => b.seats);
-
-                await Seat.updateMany({ _id: { $in: seatIds } }, { status: 'available', bookedBy: null });
-                await Booking.updateMany({ _id: { $in: bookingIds } }, { status: 'cancelled' });
-
-                const confirmedPaidBookings = bookings.filter(b => b.status === 'paid');
-                if (confirmedPaidBookings.length > 0) {
-                    const confirmedIds = confirmedPaidBookings.map(b => b._id);
-                    
-                    for (const booking of confirmedPaidBookings) {
-                        await Payment.updateMany(
-                            { booking: booking._id, status: 'success' },
-                            {
-                                $set: {
-                                    status: 'refunded',
-                                    refundDate: new Date(),
-                                    refundAmount: booking.totalPrice,
-                                },
-                            }
-                        );
-                    }
-
-                    await Booking.updateMany({ _id: { $in: confirmedIds } }, { status: 'refunded' });
-
-                    for (const booking of confirmedPaidBookings) {
-                        try {
-                            const bookingContext = await Booking.findById(booking._id)
-                                .populate('user', 'name email phone')
-                                .populate({
-                                    path: 'showtime',
-                                    populate: [
-                                        { path: 'movie', select: 'title poster' },
-                                        { path: 'cinema', select: 'name address' },
-                                        { path: 'room', select: 'name' },
-                                    ],
-                                });
-                            await sendShowtimeCancelledEmail(bookingContext, 'Suất chiếu bị hủy bởi quản trị viên (Hàng loạt)');
-                            await sendRefundEmail(bookingContext, 'Suất chiếu bị hủy bởi quản trị viên (Hàng loạt)');
-                        } catch (err) {
-                            console.error(`Error sending bulk cancel email for booking ${booking._id}:`, err);
-                        }
-                    }
-                    totalRefundedBookings += confirmedPaidBookings.length;
-                }
-            }
-            cancelledCount++;
-        }
-
-        if (cancelledCount > 0) {
-            notificationService.createNotification({
-                type: 'showtime_cancelled',
-                title: 'Hủy hàng loạt suất chiếu',
-                message: `Đã hủy ${cancelledCount} suất chiếu, hoàn tổng cộng ${totalRefundedBookings} đơn hàng`,
-                data: {
-                    showtimeIds: ids,
-                    cancelledCount,
-                    totalRefundedBookings,
-                },
-            });
-        }
-
-        res.json({
-            message: `Đã hủy ${cancelledCount} suất chiếu`,
-            cancelledCount,
-            totalRefundedBookings,
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
+router.post('/bulk-cancel', protect, admin, bulkController.bulkCancelShowtimes);
 
 // Get all showtimes with filters
 router.get('/', async (req, res) => {

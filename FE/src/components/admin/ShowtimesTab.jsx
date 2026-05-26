@@ -523,7 +523,7 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
 
 const SHOWTIMES_PAGE_SIZE = 6;
 
-export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew, onCancel, onBulkCancel, onDelete, onBulkDelete }) => {
+export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew, onCancel, onBulkCancel, onDelete, onBulkDelete, isBulkActing }) => {
   const [search, setSearch] = useState("");
   const [filterMovie, setFilterMovie] = useState("");
   const [filterCinema, setFilterCinema] = useState("");
@@ -531,8 +531,6 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
   const [detailShowtime, setDetailShowtime] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [cancelling, setCancelling] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [nowTick, setNowTick] = useState(() => Date.now());
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -547,18 +545,14 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
   const handleBulkCancel = async () => {
     if (selectedIds.size === 0) return;
     if (!window.confirm(`Bạn có chắc chắn muốn HỦY ${selectedIds.size} suất chiếu này? Các đơn hàng liên quan sẽ được hoàn tiền.`)) return;
-    setCancelling(true);
     await onBulkCancel([...selectedIds]);
-    setCancelling(false);
     clearSelection();
   };
 
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
     if (!window.confirm(`Bạn có chắc chắn muốn XÓA VĨNH VIỄN ${selectedIds.size} suất chiếu này? Chỉ những suất chưa có đơn hàng mới có thể xóa.`)) return;
-    setDeleting(true);
     await onBulkDelete([...selectedIds]);
-    setDeleting(false);
     clearSelection();
   };
 
@@ -795,9 +789,17 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
         <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl px-4 py-3 animate-[fadeIn_0.2s_ease_forwards]">
           <span className="text-sm font-bold text-red-700">Đã chọn {selectedIds.size} suất chiếu</span>
           <div className="flex items-center gap-2">
-            <button onClick={clearSelection} className="px-3 py-1.5 text-xs font-bold text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">Bỏ chọn</button>
-            <button onClick={handleBulkCancel} disabled={cancelling} className="flex items-center gap-1.5 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50"><Ban size={14} /> Hủy {selectedIds.size} suất chiếu</button>
-            <button onClick={handleBulkDelete} disabled={deleting} className="flex items-center gap-1.5 px-4 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50"><Trash2 size={14} /> Xóa vĩnh viễn</button>
+            <button onClick={clearSelection} disabled={isBulkActing} className="px-3 py-1.5 text-xs font-bold text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50">Bỏ chọn</button>
+            <button onClick={handleBulkCancel} disabled={isBulkActing} className="flex items-center gap-1.5 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50">
+              {isBulkActing ? (
+                <><svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Đang xử lý...</>
+              ) : (
+                <><Ban size={14} /> Hủy {selectedIds.size} suất chiếu</>
+              )}
+            </button>
+            <button onClick={handleBulkDelete} disabled={isBulkActing} className="flex items-center gap-1.5 px-4 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50">
+              {isBulkActing ? "Đang xóa..." : <><Trash2 size={14} /> Xóa vĩnh viễn</>}
+            </button>
           </div>
         </div>
       )}

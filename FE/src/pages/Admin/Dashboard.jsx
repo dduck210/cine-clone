@@ -603,6 +603,8 @@ const Dashboard = () => {
     setIsSidebarOpen(false);
   };
 
+  const [bulkActing, setBulkActing] = useState(false);
+
   const handleDeleteClick = (movie) => {
     setMovieToDelete(movie);
     setIsDeleteModalOpen(true);
@@ -614,8 +616,8 @@ const Dashboard = () => {
       await axiosInstance.delete(`/movies/${movieToDelete._id}`);
       setMovies(movies.filter((m) => m._id !== movieToDelete._id));
       toast.success("Đã xóa phim thành công!");
-    } catch {
-      toast.error("Xóa phim thất bại");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Xóa phim thất bại");
     }
     setIsDeleteModalOpen(false);
     setMovieToDelete(null);
@@ -623,19 +625,31 @@ const Dashboard = () => {
 
   // Bulk delete handlers
   const handleBulkDeleteMovies = async (ids) => {
+    if (!ids?.length) return;
+    setBulkActing(true);
     try {
-      await axiosInstance.post("/movies/bulk-delete", { ids });
+      const res = await axiosInstance.post("/movies/bulk-delete", { ids });
       setMovies((prev) => prev.filter((m) => !ids.includes(m._id)));
-      toast.success(`Đã xóa ${ids.length} phim`);
-    } catch { toast.error("Xóa phim thất bại"); }
+      toast.success(res.data?.message || `Đã xóa ${res.data?.affectedCount || ids.length} phim`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Xóa phim thất bại");
+    } finally {
+      setBulkActing(false);
+    }
   };
 
   const handleBulkCancelShowtimes = async (ids) => {
+    if (!ids?.length) return;
+    setBulkActing(true);
     try {
       const res = await axiosInstance.post("/showtimes/bulk-cancel", { ids });
       setShowtimes((prev) => prev.map((s) => ids.includes(s._id) ? { ...s, status: "cancelled" } : s));
       toast.success(res.data?.message || `Đã hủy ${ids.length} suất chiếu`);
-    } catch { toast.error("Hủy suất chiếu thất bại"); }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Hủy suất chiếu thất bại");
+    } finally {
+      setBulkActing(false);
+    }
   };
 
   const handleDeleteShowtime = async (id) => {
@@ -649,19 +663,31 @@ const Dashboard = () => {
   };
 
   const handleBulkDeleteShowtimes = async (ids) => {
+    if (!ids?.length) return;
+    setBulkActing(true);
     try {
       const res = await axiosInstance.post("/showtimes/bulk-delete", { ids });
       setShowtimes((prev) => prev.filter((s) => !ids.includes(s._id)));
-      toast.success(res.data?.message || `Đã xóa ${ids.length} suất chiếu`);
-    } catch { toast.error("Xóa suất chiếu thất bại"); }
+      toast.success(res.data?.message || `Đã xóa ${res.data?.affectedCount || ids.length} suất chiếu`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Xóa suất chiếu thất bại");
+    } finally {
+      setBulkActing(false);
+    }
   };
 
   const handleBulkDeleteUsers = async (ids) => {
+    if (!ids?.length) return;
+    setBulkActing(true);
     try {
-      await axiosInstance.post("/admin/users/bulk-delete", { ids });
+      const res = await axiosInstance.post("/admin/users/bulk-delete", { ids });
       setUsers((prev) => prev.filter((u) => !ids.includes(u._id)));
-      toast.success(`Đã xóa ${ids.length} người dùng`);
-    } catch { toast.error("Xóa người dùng thất bại"); }
+      toast.success(res.data?.message || `Đã xóa ${res.data?.affectedCount || ids.length} người dùng`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Xóa người dùng thất bại");
+    } finally {
+      setBulkActing(false);
+    }
   };
 
   const handleAddNew = () => {
@@ -897,10 +923,10 @@ const Dashboard = () => {
               moviesLoading ? (
                 <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-4 border-red-600 border-t-transparent" /></div>
               ) : (
-                <MoviesManager movies={movies} handleAddNew={handleAddNew} handleEdit={handleEdit} handleDeleteClick={handleDeleteClick} onBulkDelete={handleBulkDeleteMovies} />
+                <MoviesManager movies={movies} handleAddNew={handleAddNew} handleEdit={handleEdit} handleDeleteClick={handleDeleteClick} onBulkDelete={handleBulkDeleteMovies} isBulkActing={bulkActing} />
               )
             )}
-            {activeTab === "users" && <UsersManager users={users} loading={usersLoading} onUpdate={handleUpdateUser} onDelete={handleDeleteUser} onBulkDelete={handleBulkDeleteUsers} />}
+            {activeTab === "users" && <UsersManager users={users} loading={usersLoading} onUpdate={handleUpdateUser} onDelete={handleDeleteUser} onBulkDelete={handleBulkDeleteUsers} isBulkActing={bulkActing} />}
             {activeTab === "showtimes" && (
               <ShowtimesManager
                 showtimes={showtimes}
@@ -917,6 +943,7 @@ const Dashboard = () => {
                 onBulkCancel={handleBulkCancelShowtimes}
                 onDelete={handleDeleteShowtime}
                 onBulkDelete={handleBulkDeleteShowtimes}
+                isBulkActing={bulkActing}
               />
             )}
             {activeTab === "cinemas" && <CinemasManager />}

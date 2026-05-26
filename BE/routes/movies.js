@@ -10,20 +10,22 @@ const { protect, admin } = require('../middleware/auth');
 const { calcEndTime } = require('../utils/pricing');
 const { sendRefundEmail, sendShowtimeCancelledEmail } = require('../services/email-service');
 const notificationService = require('../services/notification-service');
+const bulkController = require('../controllers/bulkController');
 
 // Utility to handle common Mongoose errors
 const handleErrors = (res, error, defaultMsg = 'Internal Server Error') => {
     console.error(`[Error] ${defaultMsg}:`, error);
     if (error.name === 'ValidationError') {
         return res.status(400).json({ 
+            success: false,
             message: error.message, 
             details: Object.keys(error.errors).map(key => error.errors[key].message) 
         });
     }
     if (error.name === 'CastError') {
-        return res.status(400).json({ message: 'ID không hợp lệ' });
+        return res.status(400).json({ success: false, message: 'ID không hợp lệ' });
     }
-    return res.status(500).json({ message: error.message || defaultMsg });
+    return res.status(500).json({ success: false, message: error.message || defaultMsg });
 };
 
 router.get('/genres', async (req, res) => {
@@ -36,18 +38,7 @@ router.get('/genres', async (req, res) => {
 });
 
 // POST /api/movies/bulk-delete — xóa nhiều phim
-router.post('/bulk-delete', protect, admin, async (req, res) => {
-    try {
-        const { ids } = req.body;
-        if (!Array.isArray(ids) || ids.length === 0) {
-            return res.status(400).json({ message: 'Danh sách ID không hợp lệ' });
-        }
-        const result = await Movie.deleteMany({ _id: { $in: ids } });
-        res.json({ message: `Đã xóa ${result.deletedCount} phim`, deletedCount: result.deletedCount });
-    } catch (error) {
-        handleErrors(res, error, 'Lỗi khi xóa phim');
-    }
-});
+router.post('/bulk-delete', protect, admin, bulkController.bulkDeleteMovies);
 
 router.get('/', async (req, res) => {
     try {

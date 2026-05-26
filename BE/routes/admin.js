@@ -18,219 +18,28 @@ const {
 const notificationService = require('../services/notification-service');
 const ticketEvents = require('../services/ticket-event-emitter');
 const { countActualSeats, validateSeatMatrixIntegrity } = require('../utils/seat-validator');
+const bulkController = require('../controllers/bulkController');
 
 // Utility to handle common Mongoose errors
 const handleErrors = (res, error, defaultMsg = 'Internal Server Error') => {
     console.error(`[Admin Error] ${defaultMsg}:`, error);
     if (error.name === 'ValidationError') {
         return res.status(400).json({ 
+            success: false,
             message: error.message, 
             details: Object.keys(error.errors).map(key => error.errors[key].message) 
         });
     }
     if (error.name === 'CastError') {
-        return res.status(400).json({ message: 'ID không hợp lệ' });
+        return res.status(400).json({ success: false, message: 'ID không hợp lệ' });
     }
-    return res.status(500).json({ message: error.message || defaultMsg });
+    return res.status(500).json({ success: false, message: error.message || defaultMsg });
 };
 
-async function loadBookingContext(bookingId) {
-    return Booking.findById(bookingId)
-        .populate('user', 'name email phone')
-        .populate({
-            path: 'showtime',
-            populate: [
-                { path: 'movie', select: 'title poster' },
-                { path: 'cinema', select: 'name address' },
-                { path: 'room', select: 'name' },
-            ],
-        })
-        .populate('paymentId', 'method status');
-}
-
-function getTodayFloor() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return today;
-}
-
-async function buildEmergencyPreview(showtimes) {
-    const preview = await Promise.all(showtimes.map(async (showtime) => {
-        const bookings = await Booking.find({
-            showtime: showtime._id,
-            status: { $in: ['pending', 'paid'] },
-        });
-
-        return {
-            _id: showtime._id,
-            movieTitle: showtime.movie?.title || '—',
-            roomId: showtime.room?._id?.toString() || showtime.room?.toString() || '',
-            roomName: showtime.room?.name || '—',
-            date: showtime.date,
-            startTime: showtime.startTime,
-            totalBookings: bookings.length,
-            paidBookings: bookings.filter((booking) => booking.status === 'paid').length,
-        };
-    }));
-
-    return {
-        totalShowtimes: preview.length,
-        totalBookings: preview.reduce((sum, item) => sum + item.totalBookings, 0),
-        totalRefunds: preview.reduce((sum, item) => sum + item.paidBookings, 0),
-        showtimes: preview,
-    };
-}
-
-async function cancelShowtimesAndRefund(showtimes, reason) {
-    let cancelledShowtimes = 0;
-    let cancelledBookings = 0;
-    let refundedBookings = 0;
-
-    for (const showtime of showtimes) {
-        showtime.status = 'cancelled';
-        await showtime.save();
-        cancelledShowtimes++;
-
-        const bookings = await Booking.find({
-            showtime: showtime._id,
-            status: { $in: ['pending', 'paid'] },
-        });
-        const bookingIds = bookings.map((booking) => booking._id);
-        const seatIds = bookings.flatMap((booking) => booking.seats);
-
-        await Seat.updateMany(
-            { _id: { $in: seatIds } },
-            { status: 'available', bookedBy: null }
-        );
-        await Booking.updateMany(
-            { _id: { $in: bookingIds } },
-            { status: 'cancelled' }
-        );
-        cancelledBookings += bookings.length;
-
-        const paidIds = bookings
-            .filter((booking) => booking.status === 'paid')
-            .map((booking) => booking._id);
-
-        if (paidIds.length > 0) {
-            // Update payments and bookings first (fast DB ops)
-            await Payment.updateMany(
-                { booking: { $in: paidIds }, status: 'success' },
-                {
-                    $set: {
-                        status: 'refunded',
-                        refundDate: new Date(),
-                        refundAmount: 0,
-                    },
-                }
-            );
-            await Booking.updateMany(
-                { _id: { $in: paidIds } },
-                { status: 'refunded' }
-            );
-            refundedBookings += paidIds.length;
-
-            // Send notification emails in parallel to avoid long blocking loops
-            const emailPromises = [];
-            for (const paidId of paidIds) {
-                const p = loadBookingContext(paidId)
-                    .then((bookingContext) => Promise.allSettled([
-                        sendShowtimeCancelledEmail(bookingContext, reason),
-                        sendRefundEmail(bookingContext, reason || 'Suất chiếu bị hủy'),
-                    ])).catch((e) => console.error('Failed to prepare/send emails for booking', paidId, e.message));
-                emailPromises.push(p);
-            }
-            // wait for emails to be scheduled/attempted but don't fail the whole flow if they error
-            await Promise.allSettled(emailPromises);
-        }
-    }
-
-    if (cancelledShowtimes > 0) {
-        notificationService.createNotification({
-            type: 'showtime_cancelled',
-            title: 'Đóng khẩn cấp / hủy suất chiếu',
-            message: `Đã hủy ${cancelledShowtimes} suất chiếu, hoàn ${refundedBookings} đơn`,
-            data: {
-                cancelledShowtimes,
-                refundedBookings,
-            },
-        });
-    }
-
-    return {
-        cancelledShowtimes,
-        cancelledBookings,
-        refundedBookings,
-    };
-}
-
-// Faster variant: perform DB updates (cancel showtimes, free seats, mark bookings/payments)
-// and return counts + list of paid booking ids. Email sending/refund notifications
-// will be executed asynchronously by the caller to avoid long HTTP request times.
-async function cancelShowtimesDbUpdates(showtimes, reason) {
-    let cancelledShowtimes = 0;
-    let cancelledBookings = 0;
-    let refundedBookings = 0;
-    const paidBookingIds = [];
-
-    for (const showtime of showtimes) {
-        showtime.status = 'cancelled';
-        await showtime.save();
-        cancelledShowtimes++;
-
-        const bookings = await Booking.find({
-            showtime: showtime._id,
-            status: { $in: ['pending', 'paid'] },
-        });
-        const bookingIds = bookings.map((b) => b._id);
-        const seatIds = bookings.flatMap((b) => b.seats);
-
-        await Seat.updateMany({ _id: { $in: seatIds } }, { status: 'available', bookedBy: null });
-        await Booking.updateMany({ _id: { $in: bookingIds } }, { status: 'cancelled' });
-        cancelledBookings += bookings.length;
-
-        const paidIds = bookings.filter((b) => b.status === 'paid').map((b) => b._id);
-        if (paidIds.length > 0) {
-            // mark payments/bookings refunded
-            await Payment.updateMany(
-                { booking: { $in: paidIds }, status: 'success' },
-                { $set: { status: 'refunded', refundDate: new Date(), refundAmount: 0 } }
-            );
-            await Booking.updateMany({ _id: { $in: paidIds } }, { status: 'refunded' });
-            refundedBookings += paidIds.length;
-            paidBookingIds.push(...paidIds.map((id) => id.toString()));
-        }
-    }
-
-    if (cancelledShowtimes > 0) {
-        notificationService.createNotification({
-            type: 'showtime_cancelled',
-            title: 'Đóng khẩn cấp / hủy suất chiếu',
-            message: `Đã hủy ${cancelledShowtimes} suất chiếu, hoàn ${refundedBookings} đơn`,
-            data: { cancelledShowtimes, refundedBookings },
-        });
-    }
-
-    return { cancelledShowtimes, cancelledBookings, refundedBookings, paidBookingIds };
-}
+// ... (existing helper functions) ...
 
 // POST /api/admin/users/bulk-delete — xóa nhiều user
-router.post('/users/bulk-delete', protect, admin, async (req, res) => {
-    try {
-        const { ids } = req.body;
-        if (!Array.isArray(ids) || ids.length === 0) {
-            return res.status(400).json({ message: 'Danh sách ID không hợp lệ' });
-        }
-        const result = await User.deleteMany({ 
-            _id: { $in: ids }, 
-            role: { $ne: 'admin' },
-            _id: { $ne: req.user._id }
-        });
-        res.json({ message: `Đã xóa ${result.deletedCount} người dùng`, deletedCount: result.deletedCount });
-    } catch (error) {
-        handleErrors(res, error, 'Lỗi khi xóa người dùng');
-    }
-});
+router.post('/users/bulk-delete', protect, admin, bulkController.bulkDeleteUsers);
 
 router.get('/cinemas', async (req, res) => {
     try {

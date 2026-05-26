@@ -6,6 +6,7 @@ const Review = require('../models/Review');
 const Booking = require('../models/Booking');
 const Showtime = require('../models/Showtime');
 const Movie = require('../models/Movie');
+const bulkController = require('../controllers/bulkController');
 
 // endTime is "HH:mm" Vietnam time (UTC+7); date is stored as UTC Date
 function isShowtimeEnded(showtime) {
@@ -27,27 +28,7 @@ async function recalcMovieRating(movieId) {
 }
 
 // POST /api/reviews/admin/bulk-delete — xóa nhiều review
-router.post('/admin/bulk-delete', protect, admin, async (req, res) => {
-    try {
-        const { ids } = req.body;
-        if (!Array.isArray(ids) || ids.length === 0) {
-            return res.status(400).json({ message: 'Danh sách ID không hợp lệ' });
-        }
-
-        const reviews = await Review.find({ _id: { $in: ids } });
-        const movieIds = [...new Set(reviews.map(r => r.movie.toString()))];
-
-        const result = await Review.deleteMany({ _id: { $in: ids } });
-
-        for (const movieId of movieIds) {
-            await recalcMovieRating(movieId);
-        }
-
-        res.json({ message: `Đã xóa ${result.deletedCount} đánh giá`, deletedCount: result.deletedCount });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
+router.post('/admin/bulk-delete', protect, admin, bulkController.bulkDeleteReviews);
 
 // GET /api/reviews/movie/:movieId — public
 router.get('/movie/:movieId', async (req, res) => {

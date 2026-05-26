@@ -79,7 +79,7 @@ export const UserEditModal = ({ user, onClose, onSave }) => {
 
 const USERS_PAGE_SIZE = 6;
 
-export const UsersManager = ({ users, loading, onUpdate, onDelete, onBulkDelete }) => {
+export const UsersManager = ({ users, loading, onUpdate, onDelete, onBulkDelete, isBulkActing }) => {
   const [search, setSearch] = useState("");
   const [editUser, setEditUser] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -104,10 +104,10 @@ export const UsersManager = ({ users, loading, onUpdate, onDelete, onBulkDelete 
   const clearSelection = () => setSelectedIds(new Set());
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
-    setDeleting(true);
-    await onBulkDelete([...selectedIds]);
-    setDeleting(false);
-    clearSelection();
+    if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} thành viên đã chọn?`)) {
+      await onBulkDelete([...selectedIds]);
+      clearSelection();
+    }
   };
 
   const totalPages = Math.ceil(filtered.length / USERS_PAGE_SIZE);

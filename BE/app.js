@@ -42,13 +42,15 @@ initNotificationService(io);
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Request logger for debugging 404s
+// Request logger for debugging
 app.use((req, res, next) => {
     console.log(`[Request] ${req.method} ${req.url}`);
     next();
 });
 
 // Routes
+app.get('/api/test-routing', (req, res) => res.json({ message: 'Routing is working!' }));
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/movies', require('./routes/movies'));
 app.use('/api/showtimes', require('./routes/showtimes'));

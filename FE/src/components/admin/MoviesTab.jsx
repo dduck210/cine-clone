@@ -499,27 +499,31 @@ export const MoviesManager = ({
   handleEdit,
   handleDeleteClick,
   onBulkDelete,
+  isBulkActing,
 }) => {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterGenre, setFilterGenre] = useState("");
   const [detailMovie, setDetailMovie] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
 
   const toggleSelect = (id) => {
     setSelectedIds((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
   };
   const toggleSelectAll = () => {
-    if (selectedIds.size === filteredMovies.length && filteredMovies.length > 0) setSelectedIds(new Set());
-    else setSelectedIds(new Set(filteredMovies.map((m) => m._id)));
+    if (selectedIds.size === pagedMovies.length && pagedMovies.length > 0) setSelectedIds(new Set());
+    else setSelectedIds(new Set(pagedMovies.map((m) => m._id)));
   };
   const clearSelection = () => setSelectedIds(new Set());
+  
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
-    await onBulkDelete([...selectedIds]);
-    clearSelection();
+    if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} phim đã chọn?`)) {
+      await onBulkDelete([...selectedIds]);
+      clearSelection();
+    }
   };
-  const [currentPage, setCurrentPage] = useState(1);
 
   const genreOptions = Array.from(new Set(
     movies.flatMap((m) =>
@@ -540,6 +544,7 @@ export const MoviesManager = ({
     );
   });
 
+  const MOVIES_PAGE_SIZE = 6;
   const totalPages = Math.ceil(filteredMovies.length / MOVIES_PAGE_SIZE);
   const pagedMovies = filteredMovies.slice((currentPage - 1) * MOVIES_PAGE_SIZE, currentPage * MOVIES_PAGE_SIZE);
 
@@ -620,8 +625,14 @@ export const MoviesManager = ({
       <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl px-4 py-3 animate-[fadeIn_0.2s_ease_forwards]">
         <span className="text-sm font-bold text-red-700">Đã chọn {selectedIds.size} phim</span>
         <div className="flex items-center gap-2">
-          <button onClick={clearSelection} className="px-3 py-1.5 text-xs font-bold text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">Bỏ chọn</button>
-          <button onClick={handleBulkDelete} className="flex items-center gap-1.5 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"><Trash2 size={14} /> Xóa {selectedIds.size} phim</button>
+          <button onClick={clearSelection} disabled={isBulkActing} className="px-3 py-1.5 text-xs font-bold text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50">Bỏ chọn</button>
+          <button onClick={handleBulkDelete} disabled={isBulkActing} className="flex items-center gap-1.5 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50">
+            {isBulkActing ? (
+              <><svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Đang xóa...</>
+            ) : (
+              <><Trash2 size={14} /> Xóa {selectedIds.size} phim</>
+            )}
+          </button>
         </div>
       </div>
     )}
