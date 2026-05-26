@@ -217,7 +217,7 @@ const inputClass = "w-full !bg-slate-50 border border-slate-200 rounded-xl px-4 
 
 export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({
-    defaultValues: { movieId: "", cinemaId: "", roomId: "", date: "", startTime: "", basePrice: "", dayType: "weekday" },
+    defaultValues: { movieId: "", cinemaId: "", roomId: "", date: "", startTime: "", basePrice: "", dayType: "weekday", bookingLockMinutes: 5 },
   });
 
   const [rooms, setRooms] = useState([]);
@@ -277,12 +277,14 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
           movieId: data.movieId, cinemaId: data.cinemaId, roomId: data.roomId,
           date, startTime: data.startTime, basePrice: Number(data.basePrice),
           dayType: data.dayType || undefined,
+          bookingLockMinutes: Number(data.bookingLockMinutes) || 5,
         }));
       } else {
         payload = {
           movieId: data.movieId, cinemaId: data.cinemaId, roomId: data.roomId,
           date: data.date, startTime: data.startTime, basePrice: Number(data.basePrice),
           dayType: data.dayType || undefined,
+          bookingLockMinutes: Number(data.bookingLockMinutes) || 5,
         };
       }
       await axiosInstance.post("/showtimes", payload);
@@ -509,6 +511,22 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
                 <ChevronDown className="absolute right-4 top-3.5 text-slate-400 pointer-events-none" size={18} />
               </div>
             )}
+          </div>
+
+          {/* Khóa vé trước giờ chiếu */}
+          <div className={!selectedRoom ? "pointer-events-none opacity-50" : ""}>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+              Khóa vé trước giờ chiếu (phút)
+            </label>
+            <input
+              type="number"
+              min={0}
+              max={60}
+              {...register("bookingLockMinutes", { min: 0, max: 60 })}
+              className={inputClass}
+              disabled={!selectedRoom}
+            />
+            <p className="text-xs text-slate-400 mt-1">Hệ thống tự khóa đặt vé trước giờ chiếu N phút (mặc định: 5 phút)</p>
           </div>
 
           <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">

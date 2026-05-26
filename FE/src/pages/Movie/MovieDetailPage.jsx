@@ -10,6 +10,14 @@ import {
   Ticket, Play, X,
 } from "lucide-react";
 
+function isShowtimeLocked(showtime) {
+  const lockMins = showtime.bookingLockMinutes ?? 5;
+  if (!showtime.date || !showtime.startTime) return false;
+  const vnDate = new Date(showtime.date).toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
+  const startVN = new Date(`${vnDate}T${showtime.startTime}:00+07:00`);
+  return Date.now() >= startVN.getTime() - lockMins * 60 * 1000;
+}
+
 function getYoutubeId(url) {
   if (!url) return null;
   const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([^&\s?]+)/);
@@ -339,18 +347,25 @@ const MovieDetailPage = () => {
                           <div className="flex flex-wrap gap-2.5">
                             {filtered.map((showtime) => {
                               const isSelected = selectedShowtime?.showtimeId === showtime._id;
+                              const locked = isShowtimeLocked(showtime);
                               return (
                                 <button
                                   key={showtime._id}
-                                  onClick={() => handleSelectTime(showtime, cinema)}
-                                  className={`flex flex-col items-center min-w-[90px] px-4 py-3 rounded-xl font-bold text-sm border-2 transition-all hover:scale-[1.04] active:scale-[0.97] ${isSelected ? "bg-[#dc2626] text-white border-[#dc2626] shadow-lg shadow-red-100" : "bg-slate-50 text-slate-700 border-slate-200 hover:border-[#dc2626] hover:text-[#dc2626] hover:bg-red-50"}`}
+                                  onClick={() => !locked && handleSelectTime(showtime, cinema)}
+                                  disabled={locked}
+                                  title={locked ? `Đã khóa đặt vé (trước ${showtime.bookingLockMinutes ?? 5} phút)` : undefined}
+                                  className={`flex flex-col items-center min-w-[90px] px-4 py-3 rounded-xl font-bold text-sm border-2 transition-all ${
+                                    locked
+                                      ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60"
+                                      : isSelected
+                                        ? "bg-[#dc2626] text-white border-[#dc2626] shadow-lg shadow-red-100"
+                                        : "bg-slate-50 text-slate-700 border-slate-200 hover:scale-[1.04] active:scale-[0.97] hover:border-[#dc2626] hover:text-[#dc2626] hover:bg-red-50"
+                                  }`}
                                 >
                                   <span className="font-black text-base">{showtime.startTime}</span>
-                                  {showtime.availableSeats !== undefined && (
-                                    <span className={`text-[10px] font-medium mt-0.5 ${isSelected ? "text-red-100" : "text-slate-400"}`}>
-                                      {showtime.availableSeats} ghế trống
-                                    </span>
-                                  )}
+                                  <span className={`text-[10px] font-medium mt-0.5 ${isSelected ? "text-red-100" : locked ? "text-slate-400" : "text-slate-400"}`}>
+                                    {locked ? "Đã khóa" : showtime.availableSeats !== undefined ? `${showtime.availableSeats} ghế trống` : ""}
+                                  </span>
                                 </button>
                               );
                             })}
