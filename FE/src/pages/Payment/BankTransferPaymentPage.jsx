@@ -23,9 +23,10 @@ const BankTransferPaymentPage = () => {
     voucherCode, voucherType, voucherValue,
   } = location.state || {};
 
-  const [isPaid, setIsPaid] = useState(false);
+  const [qrPhase, setQrPhase] = useState(true); // true = hiện QR, false = loading
   const [isChecking, setIsChecking] = useState(false);
   const pollRef = useRef(null);
+  const qrTimerRef = useRef(null);
 
   const transferContent = bookingCode ? `5CINE ${bookingCode}` : "";
   const qrUrl = `https://img.vietqr.io/image/${MB_BANK_CODE}-${MB_ACCOUNT}-qr_only.png?amount=${amount}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(MB_ACCOUNT_NAME)}`;
@@ -33,12 +34,10 @@ const BankTransferPaymentPage = () => {
 
   const handlePaid = (state) => {
     if (pollRef.current) clearInterval(pollRef.current);
-    setIsPaid(true);
-    setTimeout(() => {
-      navigate("/payment-success", {
-        state: { ...state, orderId: bookingCode, bookingId, paymentMethod: "bank" },
-      });
-    }, 300);
+    if (qrTimerRef.current) clearTimeout(qrTimerRef.current);
+    navigate("/payment-success", {
+      state: { ...state, orderId: bookingCode, bookingId, paymentMethod: "bank" },
+    });
   };
 
   const pollStatus = async () => {
@@ -73,7 +72,11 @@ const BankTransferPaymentPage = () => {
     window.scrollTo(0, 0);
     if (!location.state) { navigate("/"); return; }
     pollRef.current = setInterval(pollStatus, 1500);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+    qrTimerRef.current = setTimeout(() => setQrPhase(false), 3000);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (qrTimerRef.current) clearTimeout(qrTimerRef.current);
+    };
   }, []);
 
   if (!location.state) return null;
@@ -121,7 +124,7 @@ const BankTransferPaymentPage = () => {
       <Navbar />
       <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
 
-      {isPaid && (
+      {!qrPhase && (
         <div className="fixed inset-0 bg-slate-900/95 z-[90] flex flex-col items-center justify-center gap-6 backdrop-blur-md">
           <div className="relative w-20 h-20">
             <svg className="w-20 h-20 animate-spin" viewBox="0 0 80 80" fill="none">
@@ -133,7 +136,7 @@ const BankTransferPaymentPage = () => {
             </div>
           </div>
           <div className="text-center space-y-1">
-            <p className="text-white font-black text-lg tracking-tight">Đang xử lý vé của bạn...</p>
+            <p className="text-white font-black text-lg tracking-tight">Đang chờ xác nhận thanh toán...</p>
             <p className="text-slate-400 text-sm">Vui lòng không tắt trình duyệt</p>
           </div>
         </div>
