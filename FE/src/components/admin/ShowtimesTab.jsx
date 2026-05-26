@@ -515,7 +515,7 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
           </div>
 
           {/* Khóa vé trước giờ chiếu */}
-          <div className={!selectedRoom ? "pointer-events-none opacity-50" : ""}>
+          <div className={!selectedRoom ? "pointer-events-none" : ""}>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
               Khóa vé trước giờ chiếu (phút)
             </label>
