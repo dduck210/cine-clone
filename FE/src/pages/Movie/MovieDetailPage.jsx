@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import Navbar from "../../components/common/Navbar";
@@ -10,12 +10,12 @@ import {
   Ticket, Play, X,
 } from "lucide-react";
 
-function isShowtimeLocked(showtime) {
+function isShowtimeLocked(showtime, now = Date.now()) {
   const lockMins = showtime.bookingLockMinutes ?? 5;
   if (!showtime.date || !showtime.startTime) return false;
   const vnDate = new Date(showtime.date).toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
   const startVN = new Date(`${vnDate}T${showtime.startTime}:00+07:00`);
-  return Date.now() >= startVN.getTime() - lockMins * 60 * 1000;
+  return now >= startVN.getTime() - lockMins * 60 * 1000;
 }
 
 function getYoutubeId(url) {
@@ -41,9 +41,28 @@ const MovieDetailPage = () => {
   const [selectedDate, setSelectedDate] = useState(() => toVNDateStr());
   const [isTrailerOpen, setIsTrailerOpen] = useState(false);
   const [showtimeVisible, setShowtimeVisible] = useState(false);
+  const [nowTick, setNowTick] = useState(() => Date.now());
   const showtimeSectionRef = useRef(null);
 
   useEffect(() => { window.scrollTo(0, 0); }, [id]);
+
+  const fetchShowtimes = useCallback(async () => {
+    try {
+      const res = await axiosInstance.get(`/showtimes?movieId=${id}`);
+      setCinemaList((prev) => {
+        const openIds = new Set(prev.filter((c) => c.isOpen).map((c) => c.id));
+        const grouped = {};
+        res.data.forEach((st) => {
+          if (!st.cinema) return;
+          const cid = st.cinema._id;
+          if (!grouped[cid])
+            grouped[cid] = { id: cid, name: st.cinema.name, address: st.cinema.address, showtimes: [], isOpen: openIds.has(cid) };
+          grouped[cid].showtimes.push(st);
+        });
+        return Object.values(grouped);
+      });
+    } catch {}
+  }, [id]);
 
   useEffect(() => {
     (async () => {
@@ -71,6 +90,13 @@ const MovieDetailPage = () => {
       }
     })();
   }, [id]);
+
+  // Poll showtimes every 60s (catches admin cancellations) + tick every 30s (updates lock state)
+  useEffect(() => {
+    const pollId = setInterval(fetchShowtimes, 60_000);
+    const tickId = setInterval(() => setNowTick(Date.now()), 30_000);
+    return () => { clearInterval(pollId); clearInterval(tickId); };
+  }, [fetchShowtimes]);
 
   const toggleCinema = (cinemaId) =>
     setCinemaList(cinemaList.map((c) => ({ ...c, isOpen: c.id === cinemaId ? !c.isOpen : false })));
@@ -347,7 +373,7 @@ const MovieDetailPage = () => {
                           <div className="flex flex-wrap gap-2.5">
                             {filtered.map((showtime) => {
                               const isSelected = selectedShowtime?.showtimeId === showtime._id;
-                              const locked = isShowtimeLocked(showtime);
+                              const locked = isShowtimeLocked(showtime, nowTick);
                               return (
                                 <button
                                   key={showtime._id}
