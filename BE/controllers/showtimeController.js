@@ -1,5 +1,6 @@
 const Showtime = require('../models/Showtime');
 const CinemaRoom = require('../models/CinemaRoom');
+const Cinema = require('../models/Cinema');
 const Seat = require('../models/Seat');
 
 // Get all showtimes with filters
@@ -56,8 +57,19 @@ const createShowtime = async (req, res) => {
     const { movieId, cinemaId, roomId, date, startTime, price } = req.body;
 
     try {
-        const room = await CinemaRoom.findById(roomId);
+        const [room, cinema] = await Promise.all([
+            CinemaRoom.findById(roomId).select('status name rows cols totalSeats'),
+            Cinema.findById(cinemaId).select('status'),
+        ]);
         if (!room) return res.status(404).json({ message: 'Room not found' });
+        if (!cinema) return res.status(404).json({ message: 'Cinema not found' });
+
+        if (room.status === 'maintenance') {
+            return res.status(400).json({ message: 'Phòng chiếu đang bảo trì, không thể tạo suất chiếu' });
+        }
+        if (cinema.status === 'incident' || cinema.status === 'inactive') {
+            return res.status(400).json({ message: 'Rạp đang bảo trì, không thể tạo suất chiếu' });
+        }
 
         // Calculate end time (assume 2.5 hours for movies)
         const [hour, min] = startTime.split(':').map(Number);
