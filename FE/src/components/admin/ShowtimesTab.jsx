@@ -262,11 +262,16 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
   };
 
   const formatConflictMsg = (e) => {
-    if (e.conflictStart) {
-      const dateStr = e.date ? new Date(e.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : '';
-      return `${dateStr ? `[${dateStr}] ` : ''}Suất ${e.startTime}: phòng đang chiếu từ ${e.conflictStart} → ${e.conflictEnd}, chưa trống giờ này.`;
+    const dateStr = e.date ? new Date(e.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : '';
+    const prefix = dateStr ? `[${dateStr}] ` : '';
+    if (e.conflicts?.length > 0) {
+      const list = e.conflicts.map(c => {
+        const m = c.conflictMovie ? `"${c.conflictMovie}" ` : '';
+        return `${m}(${c.conflictStart} → ${c.conflictEnd})`;
+      }).join(', ');
+      return `${prefix}Suất ${e.startTime} bị trùng với: ${list} — phòng chưa trống.`;
     }
-    return `Suất ${e.startTime}: ${e.error}`;
+    return `${prefix}Suất ${e.startTime}: ${e.error}`;
   };
 
   const onSubmit = async (data) => {
