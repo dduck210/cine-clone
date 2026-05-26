@@ -38,15 +38,17 @@ const handleErrors = (res, error, defaultMsg = 'Internal Server Error') => {
 
 // ... (existing helper functions) ...
 
+const { handleApiError } = require('../utils/error-handler');
+
 // POST /api/admin/users/bulk-delete — xóa nhiều user
 router.post('/users/bulk-delete', protect, admin, bulkController.bulkDeleteUsers);
 
 router.get('/cinemas', async (req, res) => {
     try {
-        const cinemas = await Cinema.find({});
+        const cinemas = await Cinema.find({}).sort({ name: 1 });
         res.json(cinemas);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        handleApiError(res, error, 'Lỗi khi lấy danh sách rạp');
     }
 });
 
@@ -56,17 +58,17 @@ router.post('/cinemas', protect, admin, async (req, res) => {
         await cinema.save();
         res.status(201).json(cinema);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        handleApiError(res, error, 'Lỗi khi tạo rạp mới');
     }
 });
 
 router.put('/cinemas/:id', protect, admin, async (req, res) => {
     try {
-        const cinema = await Cinema.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
-        if (!cinema) return res.status(404).json({ message: 'Cinema not found' });
+        const cinema = await Cinema.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+        if (!cinema) return res.status(404).json({ success: false, message: 'Không tìm thấy rạp' });
         res.json(cinema);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        handleApiError(res, error, 'Lỗi khi cập nhật rạp');
     }
 });
 
@@ -74,15 +76,15 @@ router.patch('/cinemas/:id/status', protect, admin, async (req, res) => {
     try {
         const { status } = req.body;
         if (!['active', 'incident', 'inactive'].includes(status)) {
-            return res.status(400).json({ message: 'Invalid cinema status' });
+            return res.status(400).json({ message: 'Trạng thái rạp không hợp lệ' });
         }
 
         const cinema = await Cinema.findByIdAndUpdate(
             req.params.id,
             { status },
-            { returnDocument: 'after' }
+            { new: true }
         );
-        if (!cinema) return res.status(404).json({ message: 'Cinema not found' });
+        if (!cinema) return res.status(404).json({ message: 'Không tìm thấy rạp' });
 
         notificationService.createNotification({
             type: 'cinema_status',
@@ -91,8 +93,7 @@ router.patch('/cinemas/:id/status', protect, admin, async (req, res) => {
             data: { cinemaId: cinema._id.toString(), status },
         });
 
-        console.log('[admin] Cinema status change requested:', cinema._id.toString(), '->', status);
-        // Cascade to all rooms: active → all rooms active, incident → all rooms maintenance
+        // ... rest of logic remains same ...
         try {
             const roomStatus = status === 'active' ? 'active' : 'maintenance';
             await CinemaRoom.updateMany({ cinema: cinema._id }, { status: roomStatus });
@@ -100,8 +101,6 @@ router.patch('/cinemas/:id/status', protect, admin, async (req, res) => {
             console.error('Failed to update room statuses for cinema:', cinema._id, err.message);
         }
 
-        // When setting to incident (maintenance), cancel all upcoming showtimes and refund
-        let cancelResult = null;
         if (status === 'incident') {
             await expireShowtimes();
             const showtimes = await Showtime.find({
@@ -111,26 +110,23 @@ router.patch('/cinemas/:id/status', protect, admin, async (req, res) => {
             });
 
             if (showtimes.length > 0) {
-                cancelResult = await cancelShowtimesDbUpdates(showtimes, 'Rạp tạm thời bảo trì');
-
-                // Fire-and-forget background emails
+                const cancelResult = await cancelShowtimesDbUpdates(showtimes, 'Rạp tạm thời bảo trì');
+                // background emails...
                 (async () => {
                     for (const paidId of cancelResult.paidBookingIds) {
                         try {
                             const bookingContext = await loadBookingContext(paidId);
                             await sendShowtimeCancelledEmail(bookingContext, 'Rạp tạm thời bảo trì');
                             await sendRefundEmail(bookingContext, 'Rạp tạm thời bảo trì');
-                        } catch (e) {
-                            console.error('Failed to send emails for booking', paidId, e.message);
-                        }
+                        } catch (e) { console.error(e); }
                     }
                 })();
+                return res.json({ ...cinema.toObject(), ...cancelResult });
             }
         }
-
-        res.json({ ...cinema.toObject(), ...(cancelResult || {}) });
+        res.json(cinema);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        handleApiError(res, error, 'Lỗi khi cập nhật trạng thái rạp');
     }
 });
 

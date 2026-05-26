@@ -12,28 +12,14 @@ const { sendRefundEmail, sendShowtimeCancelledEmail } = require('../services/ema
 const notificationService = require('../services/notification-service');
 const bulkController = require('../controllers/bulkController');
 
-// Utility to handle common Mongoose errors
-const handleErrors = (res, error, defaultMsg = 'Internal Server Error') => {
-    console.error(`[Error] ${defaultMsg}:`, error);
-    if (error.name === 'ValidationError') {
-        return res.status(400).json({ 
-            success: false,
-            message: error.message, 
-            details: Object.keys(error.errors).map(key => error.errors[key].message) 
-        });
-    }
-    if (error.name === 'CastError') {
-        return res.status(400).json({ success: false, message: 'ID không hợp lệ' });
-    }
-    return res.status(500).json({ success: false, message: error.message || defaultMsg });
-};
+const { handleApiError } = require('../utils/error-handler');
 
 router.get('/genres', async (req, res) => {
     try {
         const genres = await Genre.find({}).sort({ name: 1 });
         res.json(genres);
     } catch (error) {
-        handleErrors(res, error, 'Lỗi khi lấy danh sách thể loại');
+        handleApiError(res, error, 'Lỗi khi lấy danh sách thể loại');
     }
 });
 
@@ -45,7 +31,7 @@ router.get('/', async (req, res) => {
         const movies = await Movie.find({}).populate('genre');
         res.json(movies);
     } catch (error) {
-        handleErrors(res, error, 'Lỗi khi lấy danh sách phim');
+        handleApiError(res, error, 'Lỗi khi lấy danh sách phim');
     }
 });
 
@@ -55,7 +41,7 @@ router.get('/:id', async (req, res) => {
         if (!movie) return res.status(404).json({ message: 'Phim không tồn tại' });
         res.json(movie);
     } catch (error) {
-        handleErrors(res, error, 'Lỗi khi lấy thông tin phim');
+        handleApiError(res, error, 'Lỗi khi lấy thông tin phim');
     }
 });
 
@@ -83,7 +69,7 @@ router.post('/', protect, admin, async (req, res) => {
 
         return res.status(201).json(createdMovie);
     } catch (error) {
-        handleErrors(res, error, 'Lỗi khi thêm phim');
+        handleApiError(res, error, 'Lỗi khi thêm phim');
     }
 });
 
@@ -140,7 +126,7 @@ router.put('/:id', protect, admin, async (req, res) => {
                 : null,
         });
     } catch (error) {
-        handleErrors(res, error, 'Lỗi khi cập nhật phim');
+        handleApiError(res, error, 'Lỗi khi cập nhật phim');
     }
 });
 
@@ -227,7 +213,7 @@ router.post('/:id/cancel-affected', protect, admin, async (req, res) => {
             totalRefunded,
         });
     } catch (error) {
-        handleErrors(res, error, 'Lỗi khi hủy suất chiếu bị ảnh hưởng');
+        handleApiError(res, error, 'Lỗi khi hủy suất chiếu bị ảnh hưởng');
     }
 });
 
@@ -238,7 +224,7 @@ router.delete('/:id', protect, admin, async (req, res) => {
         await movie.deleteOne();
         res.json({ message: 'Đã xóa phim' });
     } catch (error) {
-        handleErrors(res, error, 'Lỗi khi xóa phim');
+        handleApiError(res, error, 'Lỗi khi xóa phim');
     }
 });
 
