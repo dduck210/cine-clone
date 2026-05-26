@@ -24,7 +24,6 @@ const BankTransferPaymentPage = () => {
   } = location.state || {};
 
   const [isPaid, setIsPaid] = useState(false);
-  const [countdown, setCountdown] = useState(3);
   const [isChecking, setIsChecking] = useState(false);
   const pollRef = useRef(null);
 
@@ -35,17 +34,11 @@ const BankTransferPaymentPage = () => {
   const handlePaid = (state) => {
     if (pollRef.current) clearInterval(pollRef.current);
     setIsPaid(true);
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev === 1) {
-          clearInterval(timer);
-          navigate("/payment-success", {
-            state: { ...state, orderId: bookingCode, bookingId, paymentMethod: "bank" },
-          });
-        }
-        return prev - 1;
+    setTimeout(() => {
+      navigate("/payment-success", {
+        state: { ...state, orderId: bookingCode, bookingId, paymentMethod: "bank" },
       });
-    }, 1000);
+    }, 300);
   };
 
   const pollStatus = async () => {
@@ -142,10 +135,6 @@ const BankTransferPaymentPage = () => {
           <div className="text-center space-y-1">
             <p className="text-white font-black text-lg tracking-tight">Đang xử lý vé của bạn...</p>
             <p className="text-slate-400 text-sm">Vui lòng không tắt trình duyệt</p>
-          </div>
-          <div className="w-48 bg-white/10 rounded-full h-1 overflow-hidden">
-            <div className="bg-emerald-400 h-1 rounded-full transition-all duration-1000"
-              style={{ width: `${((3 - countdown) / 3) * 100}%` }} />
           </div>
         </div>
       )}
