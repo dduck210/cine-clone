@@ -104,6 +104,7 @@ async function run() {
                         room: room._id,
                         date: targetDate,
                         startTime,
+                        status: 'active',
                     }).lean();
                     if (conflict) { totalSkipped++; continue; }
 

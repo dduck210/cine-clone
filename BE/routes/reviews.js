@@ -9,14 +9,19 @@ const Showtime = require('../models/Showtime');
 const Movie = require('../models/Movie');
 const bulkController = require('../controllers/bulkController');
 
-// endTime is "HH:mm" Vietnam time (UTC+7); date is stored as UTC Date
+// endTime is "HH:mm" Vietnam time (UTC+7)
+// date may be stored as UTC midnight OR Vietnam midnight depending on script origin
 function isShowtimeEnded(showtime) {
-    if (!showtime.endTime) return false;
-    const d = new Date(showtime.date);
-    const [h, m] = showtime.endTime.split(':').map(Number);
-    // Convert VN endTime to UTC: subtract 7 hours (Date.UTC handles underflow)
-    const endUtc = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), h - 7, m);
-    return Date.now() > endUtc;
+    if (!showtime.endTime || !showtime.date) return false;
+    // Always extract Vietnam calendar date to avoid off-by-one from timezone mismatch
+    const vnDateStr = new Date(showtime.date)
+        .toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' }); // YYYY-MM-DD
+    const endVN = new Date(`${vnDateStr}T${showtime.endTime}:00+07:00`);
+    // Handle midnight crossing: e.g. startTime 23:00, endTime 01:30 → end is next day
+    if (showtime.startTime && showtime.endTime < showtime.startTime) {
+        endVN.setUTCDate(endVN.getUTCDate() + 1);
+    }
+    return Date.now() > endVN.getTime();
 }
 
 async function recalcMovieRating(movieId) {
