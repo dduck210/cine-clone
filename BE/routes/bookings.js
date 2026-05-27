@@ -185,47 +185,106 @@ router.get('/:id', protect, async (req, res) => {
     }
 });
 
-// Cancel booking by user (only pending allowed)
+// Cancel booking by user
+// - pending → cancel immediately, free seats
+// - paid   → refund only if: not_printed + showtime not started + 2+ hours before showtime
 router.put('/:id/cancel', protect, async (req, res) => {
     try {
-        const booking = await Booking.findById(req.params.id);
-        if (!booking) return res.status(404).json({ message: 'Booking not found' });
+        const booking = await Booking.findById(req.params.id)
+            .populate('showtime', 'date startTime');
+        if (!booking) return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
 
-        if (!['pending', 'paid'].includes(booking.status)) {
-            return res.status(400).json({ message: 'Cannot cancel this booking' });
+        // Owner check
+        if (booking.user.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Bạn không có quyền hủy đơn hàng này' });
         }
 
-        const wasConfirmed = booking.status === 'paid';
-        booking.status = wasConfirmed ? 'refunded' : 'cancelled';
-        await booking.save();
+        // ---- PENDING: cancel freely ----
+        if (booking.status === 'pending') {
+            booking.status = 'cancelled';
+            await booking.save();
 
-        await Seat.updateMany(
-            { _id: { $in: booking.seats } },
-            { status: 'available', bookedBy: null }
-        );
-        await Showtime.findByIdAndUpdate(booking.showtime, { $inc: { availableSeats: booking.seats.length } });
+            await Seat.updateMany(
+                { _id: { $in: booking.seats } },
+                { status: 'available', bookedBy: null }
+            );
+            await Showtime.findByIdAndUpdate(booking.showtime, { $inc: { availableSeats: booking.seats.length } });
 
-        if (wasConfirmed && booking.paymentId) {
-            await Payment.findByIdAndUpdate(booking.paymentId, {
-                status: 'refunded',
-                refundDate: new Date(),
-                refundAmount: booking.totalPrice,
-            });
+            return res.json({ message: 'Đã hủy đơn hàng', booking });
+        }
 
-            const bookingContext = await Booking.findById(booking._id)
-                .populate('user', 'name email phone')
-                .populate({
-                    path: 'showtime',
-                    populate: [
-                        { path: 'movie', select: 'title poster' },
-                        { path: 'cinema', select: 'name address' },
-                        { path: 'room', select: 'name' },
-                    ],
+        // ---- PAID: refund with business rules ----
+        if (booking.status === 'paid') {
+            // Rule 1: ticket must not be printed
+            if (booking.ticketStatus === 'printed') {
+                return res.status(400).json({ message: 'Vé đã được in, không thể hoàn vé' });
+            }
+
+            // Rule 2: showtime not started + 2-hour window
+            const st = booking.showtime;
+            if (!st || !st.date || !st.startTime) {
+                return res.status(400).json({ message: 'Không thể xác định giờ chiếu' });
+            }
+            const [h, m] = st.startTime.split(':').map(Number);
+            const showtimeDate = new Date(st.date);
+            showtimeDate.setHours(h, m, 0, 0);
+            const deadline = new Date(showtimeDate.getTime() - 2 * 60 * 60 * 1000);
+            const now = new Date();
+
+            if (now >= showtimeDate) {
+                return res.status(400).json({ message: 'Suất chiếu đã bắt đầu, không thể hoàn vé' });
+            }
+            if (now > deadline) {
+                const minsLeft = Math.round((showtimeDate - now) / 60000);
+                return res.status(400).json({
+                    message: `Chỉ còn ${minsLeft} phút trước giờ chiếu. Phải hoàn vé trước ít nhất 2 tiếng.`,
                 });
-            await sendRefundEmail(bookingContext, 'Khách hàng đã hủy vé');
+            }
+
+            // Process refund: 80% of total price
+            const refundAmount = Math.round(booking.totalPrice * 0.8);
+            booking.status = 'refunded';
+            await booking.save();
+
+            await Seat.updateMany(
+                { _id: { $in: booking.seats } },
+                { status: 'available', bookedBy: null }
+            );
+            await Showtime.findByIdAndUpdate(booking.showtime, { $inc: { availableSeats: booking.seats.length } });
+
+            if (booking.paymentId) {
+                await Payment.findByIdAndUpdate(booking.paymentId, {
+                    status: 'refunded',
+                    refundDate: new Date(),
+                    refundAmount,
+                });
+            }
+
+            // Send refund email (fire-and-forget)
+            try {
+                const bookingContext = await Booking.findById(booking._id)
+                    .populate('user', 'name email phone')
+                    .populate({
+                        path: 'showtime',
+                        populate: [
+                            { path: 'movie', select: 'title poster' },
+                            { path: 'cinema', select: 'name address' },
+                            { path: 'room', select: 'name' },
+                        ],
+                    });
+                await sendRefundEmail(bookingContext, 'Khách hàng yêu cầu hoàn vé');
+            } catch (e) {
+                console.error('Refund email failed:', e.message);
+            }
+
+            return res.json({
+                message: `Đã hoàn ${refundAmount.toLocaleString()}đ (80% giá trị vé)`,
+                booking,
+                refundAmount,
+            });
         }
 
-        res.json({ message: wasConfirmed ? 'Booking refunded' : 'Booking cancelled', booking });
+        return res.status(400).json({ message: 'Không thể hủy đơn hàng ở trạng thái này' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
