@@ -185,8 +185,8 @@ sequenceDiagram
 │ expired  │   │    │ refunded │              │
 └──────────┘   │    └──────────┘              │
                │                              │
-          ┌────┴──────┐                       │
-          │ cancelled │───────────────────────┘
+          ┌────┴──────┐
+          │ cancelled │  (admin hủy suất chiếu)
           └───────────┘
 ```
 
@@ -194,8 +194,8 @@ sequenceDiagram
 | ----------- | ---------------------------- | ---------------------------------- |
 | `pending`   | Đã giữ ghế, chưa thanh toán  | Thanh toán hoặc tự hủy sau 5 phút  |
 | `paid`      | Đã thanh toán                | Xem vé · in vé · quét soát vé      |
-| `cancelled` | Người dùng hủy thủ công      | —                                  |
 | `expired`   | Hết 5 phút không thanh toán  | Có thể đặt lại                     |
+| `cancelled` | Admin hủy suất chiếu         | Tự động chuyển sang refunded nếu đã paid |
 | `refunded`  | Admin hoàn tiền              | —                                  |
 
 ---
