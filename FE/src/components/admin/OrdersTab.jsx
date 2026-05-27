@@ -315,6 +315,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
     { value: "Đã thanh toán", label: "Đã thanh toán", cls: "bg-emerald-50 text-emerald-600 border-emerald-200" },
     { value: "Chờ thanh toán", label: "Chờ thanh toán", cls: "bg-amber-50 text-amber-600 border-amber-200" },
     { value: "Đã hoàn tiền", label: "Đã hoàn tiền", cls: "bg-blue-50 text-blue-600 border-blue-200" },
+    { value: "Đã hủy", label: "Đã hủy", cls: "bg-red-50 text-red-500 border-red-200" },
     { value: "Hết hạn", label: "Hết hạn", cls: "bg-slate-100 text-slate-500 border-slate-200" },
   ];
 
@@ -460,7 +461,8 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
                   <td className="p-4 text-center">
                     <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold border ${order.status === "Đã thanh toán" ? "bg-emerald-50 text-emerald-600 border-emerald-200" :
                       order.status === "Đã hoàn tiền" ? "bg-blue-50 text-blue-600 border-blue-200" :
-                        order.status === "Hết hạn" ? "bg-slate-100 text-slate-500 border-slate-200" :
+                        order.status === "Đã hủy" ? "bg-red-50 text-red-500 border-red-200" :
+                          order.status === "Hết hạn" ? "bg-slate-100 text-slate-500 border-slate-200" :
                           "bg-amber-50 text-amber-600 border-amber-200"
                       }`}>
                       {order.status}
