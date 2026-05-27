@@ -299,10 +299,10 @@ const statusMap = {
   },
   refunded: {
     label: "Đã hoàn tiền",
-    bg: "bg-blue-50",
-    text: "text-blue-600",
-    border: "border-blue-200",
-    dot: "bg-blue-500",
+    bg: "bg-rose-50",
+    text: "text-rose-600",
+    border: "border-rose-200",
+    dot: "bg-rose-500",
   },
 };
 
@@ -356,7 +356,7 @@ const HistoryTab = ({ navigate }) => {
   };
 
   const paidBookings = bookings.filter(
-    (b) => b.status === "paid" || b.status === "success",
+    (b) => b.status === "paid" || b.status === "refunded",
   );
 
   return (
@@ -449,9 +449,24 @@ const HistoryTab = ({ navigate }) => {
 
                 {/* Right: price + status */}
                 <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                  <span className="font-black text-gray-800 text-sm">
-                    {b.totalPrice?.toLocaleString()}đ
-                  </span>
+                  {b.status === "refunded" ? (
+                    <>
+                      <span className="font-black text-rose-600 text-sm">
+                        Đã hoàn {b.refundAmount?.toLocaleString() || Math.round(b.totalPrice * 0.8).toLocaleString()}đ
+                      </span>
+                      {b.refundedAt && (
+                        <span className="text-[10px] text-rose-400">
+                          {new Date(b.refundedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                          {" — "}
+                          {new Date(b.refundedAt).toLocaleDateString('vi-VN')}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="font-black text-gray-800 text-sm">
+                      {b.totalPrice?.toLocaleString()}đ
+                    </span>
+                  )}
                   <span
                     className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg border text-[11px] font-bold ${status.bg} ${status.text} ${status.border}`}
                   >

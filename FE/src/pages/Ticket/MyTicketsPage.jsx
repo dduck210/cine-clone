@@ -12,7 +12,15 @@ const BOOKING_STATUS = {
   paid: { label: "Đã thanh toán", bg: "bg-green-100", text: "text-green-700", border: "border-green-300", dot: "bg-green-500" },
   cancelled: { label: "Đã hủy", bg: "bg-red-100", text: "text-red-500", border: "border-red-300", dot: "bg-red-400" },
   expired: { label: "Hết hạn", bg: "bg-slate-100", text: "text-slate-500", border: "border-slate-300", dot: "bg-slate-400" },
-  refunded: { label: "Đã hoàn tiền", bg: "bg-blue-100", text: "text-blue-600", border: "border-blue-300", dot: "bg-blue-500" },
+  refunded: { label: "Đã hoàn tiền", bg: "bg-rose-100", text: "text-rose-600", border: "border-rose-300", dot: "bg-rose-500" },
+};
+
+// Payment status (separate from booking status for refund granularity)
+const PAYMENT_STATUS = {
+  paid: { label: "Đã thanh toán", bg: "bg-emerald-100", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-500", icon: CreditCard },
+  refunded: { label: "Đã hoàn tiền", bg: "bg-rose-100", text: "text-rose-600", border: "border-rose-300", dot: "bg-rose-500", icon: Undo2 },
+  refund_pending: { label: "Đang hoàn tiền", bg: "bg-amber-100", text: "text-amber-700", border: "border-amber-300", dot: "bg-amber-500 animate-pulse", icon: Clock },
+  refund_failed: { label: "Hoàn tiền thất bại", bg: "bg-red-100", text: "text-red-600", border: "border-red-300", dot: "bg-red-500", icon: Ban },
 };
 
 const TICKET_STATUS = {
@@ -433,6 +441,28 @@ const MyTicketsPage = () => {
                         )}
                       </div>
 
+                      {/* Refund info bar */}
+                      {booking.status === "refunded" && (
+                        <div className="mt-3 pt-2 border-t border-dashed border-rose-200">
+                          <div className="flex items-center gap-4 text-xs text-rose-600">
+                            <span className="flex items-center gap-1">
+                              <Undo2 size={11} /> Đã hoàn {booking.refundAmount?.toLocaleString() || Math.round(booking.totalPrice * 0.8).toLocaleString()}đ
+                            </span>
+                            {booking.refundedAt && (
+                              <span className="flex items-center gap-1 text-rose-400">
+                                <Clock size={11} />
+                                {new Date(booking.refundedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                                {" — "}
+                                {new Date(booking.refundedAt).toLocaleDateString('vi-VN')}
+                              </span>
+                            )}
+                          </div>
+                          {booking.refundReason && (
+                            <p className="text-[11px] text-rose-400 mt-1">{booking.refundReason}</p>
+                          )}
+                        </div>
+                      )}
+
                       {/* Action buttons & price */}
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
@@ -472,8 +502,16 @@ const MyTicketsPage = () => {
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2 text-red-600 font-bold ml-auto">
-                          {booking.totalPrice?.toLocaleString()} đ
+                        <div className="flex items-center gap-2 font-bold ml-auto">
+                          {booking.status === "refunded" ? (
+                            <span className="text-blue-600">
+                              Đã hoàn {booking.refundAmount?.toLocaleString() || Math.round(booking.totalPrice * 0.8).toLocaleString()} đ
+                            </span>
+                          ) : (
+                            <span className="text-red-600">
+                              {booking.totalPrice?.toLocaleString()} đ
+                            </span>
+                          )}
                           <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
                         </div>
                       </div>

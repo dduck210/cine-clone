@@ -244,6 +244,9 @@ router.put('/:id/cancel', protect, async (req, res) => {
             // Process refund: 80% of total price
             const refundAmount = Math.round(booking.totalPrice * 0.8);
             booking.status = 'refunded';
+            booking.refundAmount = refundAmount;
+            booking.refundedAt = new Date();
+            booking.refundReason = 'Người dùng yêu cầu hoàn vé';
             await booking.save();
 
             await Seat.updateMany(

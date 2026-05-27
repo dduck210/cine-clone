@@ -34,6 +34,9 @@ const bookingSchema = new mongoose.Schema({
     momoTransId: { type: String },
     momoOrderId: { type: String },
     payosOrderCode: { type: Number },
+    refundAmount: { type: Number, default: 0 },
+    refundedAt: { type: Date },
+    refundReason: { type: String },
 }, { timestamps: true });
 
 bookingSchema.pre('save', async function () {
