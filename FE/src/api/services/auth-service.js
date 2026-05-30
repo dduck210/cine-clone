@@ -17,3 +17,6 @@ export const verifyEmail = (email, otp) =>
 
 export const resendVerifyOtp = (email) =>
   axiosInstance.post("/auth/resend-verify-otp", { email }).then((r) => r.data);
+
+export const getProfile = () =>
+  axiosInstance.get("/auth/profile").then((r) => r.data);

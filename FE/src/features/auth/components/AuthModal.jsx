@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Eye, EyeOff, Calendar } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
-import axiosInstance from "@/api/axiosConfig";
+import { login, register } from "@/api/services/auth-service";
 
 const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -81,10 +81,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
 
     try {
       if (isLogin) {
-        const { data } = await axiosInstance.post("/auth/login", {
-          email: formData.email,
-          password: formData.password,
-        });
+        const data = await login(formData.email, formData.password);
         localStorage.setItem("token", data.token);
         if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
         const user = { name: data.name, email: data.email, role: data.role, avatar: null };
@@ -93,11 +90,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
         if (onLoginSuccess) onLoginSuccess(user);
         setTimeout(onClose, 800);
       } else {
-        await axiosInstance.post("/auth/register", {
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-        });
+        await register(formData.name, formData.email, formData.password);
         toast.success("Đăng ký thành công! Vui lòng đăng nhập.", { id: "auth-toast" });
         setIsLogin(true);
         setFormData({ name: "", email: formData.email, phone: "", gender: "nam", dob: "", password: "" });

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Star, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
-import axiosInstance from "@/api/axiosConfig";
+import { getMovieReviews, canReview as fetchCanReview, createReview, deleteOwnReview } from "@/api/services/review-service";
 
 const StarRating = ({ value, onChange, readonly = false }) => (
   <div className="flex gap-0.5">
@@ -45,8 +45,8 @@ const ReviewSection = ({ movieId }) => {
 
   const fetchReviews = async () => {
     try {
-      const res = await axiosInstance.get(`/reviews/movie/${movieId}`);
-      setReviews(res.data);
+      const data = await getMovieReviews(movieId);
+      setReviews(data);
     } catch {
       // silent
     }
@@ -54,11 +54,11 @@ const ReviewSection = ({ movieId }) => {
 
   const checkEligibility = async () => {
     try {
-      const res = await axiosInstance.get(`/reviews/can-review/${movieId}`);
-      setCanReview(res.data.canReview);
-      setHasReviewed(res.data.hasReviewed);
-      setMyReviewId(res.data.reviewId || null);
-      setHasPendingShowtime(res.data.hasPendingShowtime || false);
+      const data = await fetchCanReview(movieId);
+      setCanReview(data.canReview);
+      setHasReviewed(data.hasReviewed);
+      setMyReviewId(data.reviewId || null);
+      setHasPendingShowtime(data.hasPendingShowtime || false);
     } catch (err) {
       console.error("can-review error:", err.response?.status, err.response?.data);
     }
@@ -69,7 +69,7 @@ const ReviewSection = ({ movieId }) => {
     if (!comment.trim()) return toast.error("Vui lòng nhập nội dung đánh giá");
     setSubmitting(true);
     try {
-      await axiosInstance.post("/reviews", { movieId, rating, comment: comment.trim() });
+      await createReview({ movieId, rating, comment: comment.trim() });
       toast.success("Đã gửi đánh giá!");
       setComment("");
       setRating(5);
@@ -85,7 +85,7 @@ const ReviewSection = ({ movieId }) => {
 
   const handleDelete = async (reviewId) => {
     try {
-      await axiosInstance.delete(`/reviews/${reviewId}`);
+      await deleteOwnReview(reviewId);
       toast.success("Đã xóa đánh giá");
       setHasReviewed(false);
       setCanReview(true);

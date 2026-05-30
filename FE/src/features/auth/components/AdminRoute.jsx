@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import axiosInstance from "@/api/axiosConfig";
+import { getProfile } from "@/api/services/auth-service";
 
 const AdminRoute = ({ children }) => {
   const localUser = JSON.parse(localStorage.getItem("currentUser") || "null");
@@ -12,8 +12,8 @@ const AdminRoute = ({ children }) => {
     if (!token || !localUser) { setStatus("deny"); return; }
     if (localUser.role !== "admin") { setStatus("deny"); return; }
 
-    axiosInstance.get("/auth/profile")
-      .then(({ data }) => {
+    getProfile()
+      .then((data) => {
         if (data.role === "admin") setStatus("ok");
         else setStatus("deny");
       })

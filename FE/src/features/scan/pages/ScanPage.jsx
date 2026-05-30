@@ -3,7 +3,7 @@ import { Html5Qrcode } from "html5-qrcode";
 import toast from "react-hot-toast";
 import { Camera, CheckCircle, XCircle, Ticket, Home, ScanLine, Keyboard, ImagePlus, CameraOff, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
-import axiosInstance from "@/api/axiosConfig";
+import { scanTicket, hardCopyTicket } from "@/api/services/ticket-service";
 import TicketCard from "@/features/tickets/components/TicketCard";
 
 const ScanPage = () => {
@@ -23,9 +23,9 @@ const ScanPage = () => {
     if (!code) return;
     setLoading(true);
     try {
-      const res = await axiosInstance.post("/tickets/scan", { bookingCode: code });
-      setTicket(res.data.booking);
-      if (res.data.message.includes("thành công")) toast.success(res.data.message);
+      const data = await scanTicket(code);
+      setTicket(data.booking);
+      if (data.message.includes("thành công")) toast.success(data.message);
     } catch (err) {
       setError(err.response?.data?.message || "Không thể xử lý mã vé này");
       toast.error(err.response?.data?.message || "Xử lý thất bại");
@@ -116,8 +116,8 @@ const ScanPage = () => {
     if (!ticket?._id) return;
     setDownloadingPdf(true);
     try {
-      const res = await axiosInstance.post(`/tickets/${ticket._id}/hard-copy`);
-      toast.success(`Đã gửi vé đến email ${res.data.to || "khách hàng"}!`, { duration: 2000 });
+      const data = await hardCopyTicket(ticket._id);
+      toast.success(`Đã gửi vé đến email ${data.to || "khách hàng"}!`, { duration: 2000 });
     } catch {
       toast.error("Không thể gửi vé. Vui lòng thử lại.");
     } finally {

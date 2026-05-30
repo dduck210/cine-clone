@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { EventSourcePolyfill } from "event-source-polyfill";
-import axiosInstance from "@/api/axiosConfig";
+import { getTicketByView } from "@/api/services/ticket-service";
 import toast, { Toaster } from "react-hot-toast";
 import { usePushSubscription } from "@/shared/hooks/use-push-subscription";
 import TicketCard from "@/features/tickets/components/TicketCard";
@@ -20,11 +20,10 @@ const TicketPage = () => {
   usePushSubscription(isPrinted ? null : bookingCode);
 
   useEffect(() => {
-    axiosInstance
-      .get(`/tickets/view/${bookingCode}`)
-      .then((res) => {
-        setTicket(res.data);
-        setTicketStatus(res.data.ticketStatus);
+    getTicketByView(bookingCode)
+      .then((data) => {
+        setTicket(data);
+        setTicketStatus(data.ticketStatus);
       })
       .catch((err) => setError(err.response?.data?.message || "Không tìm thấy vé"))
       .finally(() => setLoading(false));

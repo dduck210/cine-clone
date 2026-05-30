@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { ArrowLeft, KeyRound, CheckCircle, AlertCircle } from "lucide-react";
-import axiosInstance from "@/api/axiosConfig";
+import { verifyEmail, resendVerifyOtp } from "@/api/services/auth-service";
 
 const COOLDOWN_SECONDS = 45;
 
@@ -29,8 +29,7 @@ const VerifyEmailPage = () => {
     if (codeFromUrl && email && !autoVerifiedRef.current) {
       autoVerifiedRef.current = true;
       setIsLoading(true);
-      axiosInstance
-        .post("/auth/verify-email", { email, otp: codeFromUrl })
+      verifyEmail(email, codeFromUrl)
         .then(() => navigate("/login", { state: { verifiedEmail: email } }))
         .catch((err) => {
           const msg = err.response?.data?.message || "Xác thực thất bại";
@@ -88,7 +87,7 @@ const VerifyEmailPage = () => {
     setServerError("");
     setIsLoading(true);
     try {
-      await axiosInstance.post("/auth/verify-email", { email, otp });
+      await verifyEmail(email, otp);
       navigate("/login", { state: { verifiedEmail: email } });
     } catch (err) {
       const msg = err.response?.data?.message || "Xác thực thất bại";
@@ -107,7 +106,7 @@ const VerifyEmailPage = () => {
     setResendStatus("");
     setServerError("");
     try {
-      await axiosInstance.post("/auth/resend-verify-otp", { email });
+      await resendVerifyOtp(email);
       setResendStatus("sent");
       setCooldown(COOLDOWN_SECONDS);
     } catch (err) {

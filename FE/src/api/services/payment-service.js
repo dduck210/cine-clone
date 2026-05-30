@@ -17,3 +17,6 @@ export const initMomoPayment = (orderId) =>
 
 export const initBankTransfer = (orderId) =>
   axiosInstance.post("/payments/bank/init", { orderId }).then((r) => r.data);
+
+export const confirmMomoPayment = (params) =>
+  axiosInstance.post("/payments/momo/confirm", params).then((r) => r.data);

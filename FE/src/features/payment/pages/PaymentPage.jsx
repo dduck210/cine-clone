@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "@/shared/components/common/Navbar";
 import Footer from "@/shared/components/common/Footer";
-import axiosInstance from "@/api/axiosConfig";
+import { createMomoPayment } from "@/api/services/payment-service";
+import { createBooking } from "@/api/services/booking-service";
 import {
   User, Mail, CheckCircle, MapPin, Calendar, Armchair, Popcorn,
   Ticket, Clock, Tag,
@@ -82,9 +83,9 @@ const PaymentPage = () => {
       if (existingBookingId) { bookingId = existingBookingId; bookingCode = existingBookingCode || ""; }
       else {
         const extraItems = combos.filter((c) => c.quantity > 0).map((c) => ({ name: c.name, quantity: c.quantity, price: c.price }));
-        const bookingRes = await axiosInstance.post("/bookings", { showtimeId, seats: selectedSeats, extraItems, voucherCode: voucherCode || undefined });
-        bookingId = bookingRes.data._id;
-        bookingCode = bookingRes.data.bookingCode;
+        const bookingRes = await createBooking({ showtimeId, seats: selectedSeats, extraItems, voucherCode: voucherCode || undefined });
+        bookingId = bookingRes._id;
+        bookingCode = bookingRes.bookingCode;
       }
 
       const navState = {
@@ -95,11 +96,11 @@ const PaymentPage = () => {
       };
 
       if (paymentMethod === "momo") {
-        const momoRes = await axiosInstance.post("/payments/momo/create", { bookingId });
+        const momoData = await createMomoPayment(bookingId);
         toast.dismiss(loadingToast);
         setIsProcessing(false);
         navigate("/payment/momo", {
-          state: { ...navState, payUrl: momoRes.data.payUrl, deeplink: momoRes.data.deeplink, qrCodeUrl: momoRes.data.qrCodeUrl },
+          state: { ...navState, payUrl: momoData.payUrl, deeplink: momoData.deeplink, qrCodeUrl: momoData.qrCodeUrl },
         });
       } else if (paymentMethod === "bank") {
         toast.dismiss(loadingToast);

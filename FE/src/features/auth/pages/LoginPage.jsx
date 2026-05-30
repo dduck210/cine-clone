@@ -2,7 +2,7 @@ import React, { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
-import axiosInstance from "@/api/axiosConfig";
+import { login } from "@/api/services/auth-service";
 import { validateEmail, validatePassword } from "@/shared/utils";
 
 const validateField = (name, value) => {
@@ -65,10 +65,7 @@ const LoginPage = () => {
     setIsLoading(true);
     setServerError("");
     try {
-      const { data } = await axiosInstance.post("/auth/login", {
-        email: fields.email,
-        password: fields.password,
-      });
+      const data = await login(fields.email, fields.password);
       localStorage.setItem("token", data.token);
       if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
       localStorage.setItem(

@@ -7,7 +7,7 @@ import Hero from "@/shared/components/common/Hero";
 import Footer from "@/shared/components/common/Footer";
 import FeaturesStrip from "@/features/home/components/FeaturesStrip";
 import MovieCard from "@/shared/components/movie/MovieCard";
-import axiosInstance from "@/api/axiosConfig";
+import { getMovies } from "@/api/services/movie-service";
 import { NEWS_LIST } from "@/features/news/data/news-data";
 import useInView from "@/shared/hooks/use-in-view";
 
@@ -41,8 +41,8 @@ const HomePage = () => {
     const fetchData = async () => {
       try {
         setError(null);
-        const [moviesRes] = await Promise.all([axiosInstance.get("/movies")]);
-        setMovies(moviesRes.data);
+        const moviesData = await getMovies();
+        setMovies(moviesData);
       } catch (err) {
         console.error("Home fetch failed:", err);
         setError(err);

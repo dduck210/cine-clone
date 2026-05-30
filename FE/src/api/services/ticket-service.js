@@ -14,3 +14,6 @@ export const scanTicket = (bookingCode) =>
 
 export const hardCopyTicket = (ticketId) =>
   axiosInstance.post(`/tickets/${ticketId}/hard-copy`).then((r) => r.data);
+
+export const getTicketByView = (bookingCode) =>
+  axiosInstance.get(`/tickets/view/${bookingCode}`).then((r) => r.data);

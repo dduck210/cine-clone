@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { Home, Ticket, Clock, CheckCircle, Camera } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
-import axiosInstance from "@/api/axiosConfig";
+import { getTicketByCode } from "@/api/services/ticket-service";
 
 const TicketViewPage = () => {
   const { code } = useParams();
@@ -15,8 +15,8 @@ const TicketViewPage = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
     if (!code) { setError("Thiếu mã vé"); setLoading(false); return; }
-    axiosInstance.get(`/tickets/code/${code}`)
-      .then((res) => { setTicket(res.data); setTicketStatus(res.data.ticketStatus); })
+    getTicketByCode(code)
+      .then((data) => { setTicket(data); setTicketStatus(data.ticketStatus); })
       .catch((err) => setError(err.response?.data?.message || "Không tìm thấy vé"))
       .finally(() => setLoading(false));
   }, [code]);

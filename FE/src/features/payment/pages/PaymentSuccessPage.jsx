@@ -16,7 +16,7 @@ import {
   XCircle,
   Clock,
 } from "lucide-react";
-import axiosInstance from "@/api/axiosConfig";
+import { confirmMomoPayment } from "@/api/services/payment-service";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import toast, { Toaster } from "react-hot-toast";
 import { usePushSubscription } from "@/shared/hooks/use-push-subscription";
@@ -62,10 +62,9 @@ const PaymentSuccessPage = () => {
       const params = {};
       searchParams.forEach((v, k) => { params[k] = v; });
 
-      axiosInstance
-        .post("/payments/momo/confirm", params)
-        .then((res) => {
-          setTicketData(res.data);
+      confirmMomoPayment(params)
+        .then((data) => {
+          setTicketData(data);
         })
         .catch((err) =>
           setError(err.response?.data?.message || "Xác nhận thanh toán thất bại"),

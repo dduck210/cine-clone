@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import Navbar from "@/shared/components/common/Navbar";
 import Footer from "@/shared/components/common/Footer";
-import axiosInstance from "@/api/axiosConfig";
+import { getCinemas } from "@/api/services/cinema-service";
+import { getCinemaShowtimes } from "@/api/services/showtime-service";
 import {
   MapPin, Phone, ChevronLeft, Film, Clock, Ticket, Star,
   Info, Calendar, Car, Coffee, Wifi, Accessibility, Monitor, Music, Navigation
@@ -31,14 +32,14 @@ const CinemaDetailPage = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [cinemasRes, showtimesRes] = await Promise.all([
-          axiosInstance.get("/admin/cinemas"),
-          axiosInstance.get(`/showtimes?cinemaId=${id}`),
+        const [cinemasData, showtimesData] = await Promise.all([
+          getCinemas(),
+          getCinemaShowtimes(id),
         ]);
-        const found = cinemasRes.data.find((c) => c._id === id);
+        const found = cinemasData.find((c) => c._id === id);
         setCinema(found || null);
         const grouped = {};
-        showtimesRes.data.forEach((st) => {
+        showtimesData.forEach((st) => {
           if (!st.movie) return;
           const mid = st.movie._id;
           if (!grouped[mid]) grouped[mid] = { movie: st.movie, showtimes: [] };

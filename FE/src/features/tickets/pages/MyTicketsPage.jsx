@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import Navbar from "@/shared/components/common/Navbar";
 import Footer from "@/shared/components/common/Footer";
-import axiosInstance from "@/api/axiosConfig";
+import { getShowtime } from "@/api/services/showtime-service";
+import { getUserBookings, cancelBooking } from "@/api/services/booking-service";
 import { Calendar, MapPin, Clock, Ticket, ChevronRight, CreditCard, Printer, X, AlertTriangle, Ban, Undo2 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -110,8 +111,8 @@ const MyTicketsPage = () => {
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const res = await axiosInstance.get("/bookings/user/all");
-      setBookings(res.data);
+      const data = await getUserBookings();
+      setBookings(data);
     } catch {
       setBookings([]);
     } finally {
@@ -125,7 +126,7 @@ const MyTicketsPage = () => {
     if (!confirmCancel) return;
     setActing(true);
     try {
-      await axiosInstance.put(`/bookings/${confirmCancel.booking._id}/cancel`);
+      await cancelBooking(confirmCancel.booking._id);
       toast.success("Đã hủy đơn hàng");
       setConfirmCancel(null);
       fetchBookings();
@@ -140,8 +141,8 @@ const MyTicketsPage = () => {
     if (!confirmCancel) return;
     setActing(true);
     try {
-      const res = await axiosInstance.put(`/bookings/${confirmCancel.booking._id}/cancel`);
-      toast.success(res.data?.message || "Đã hoàn vé");
+      const data = await cancelBooking(confirmCancel.booking._id);
+      toast.success(data?.message || "Đã hoàn vé");
       setConfirmCancel(null);
       fetchBookings();
     } catch (err) {
@@ -158,8 +159,8 @@ const MyTicketsPage = () => {
     let roomName = showtime.room?.name || "";
     if (!roomName && showtime._id) {
       try {
-        const res = await axiosInstance.get(`/showtimes/${showtime._id}`);
-        roomName = res.data?.data?.room?.name || "";
+        const data = await getShowtime(showtime._id);
+        roomName = data?.data?.room?.name || "";
       } catch { }
     }
     const sharedState = {

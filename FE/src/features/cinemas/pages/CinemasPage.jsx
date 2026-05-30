@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "@/shared/components/common/Navbar";
 import Footer from "@/shared/components/common/Footer";
 import { MapPin, Phone, ArrowRight, Search, Navigation, Clapperboard, ChevronDown } from "lucide-react";
-import axiosInstance from "@/api/axiosConfig";
+import { getCinemas } from "@/api/services/cinema-service";
 
 const cinemaFallback = (id) => `https://picsum.photos/seed/${id}/800/400`;
 
@@ -47,7 +47,7 @@ const CinemasPage = () => {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   useEffect(() => {
-    axiosInstance.get("/admin/cinemas").then((res) => setCinemas(res.data)).catch(() => setCinemas([])).finally(() => setLoading(false));
+    getCinemas().then((data) => setCinemas(data)).catch(() => setCinemas([])).finally(() => setLoading(false));
   }, []);
 
   const cities = useMemo(() => {

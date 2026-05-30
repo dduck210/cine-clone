@@ -1,4 +1,5 @@
 export * as authService         from "./auth-service";
+export * as bookingService      from "./booking-service";
 export * as movieService        from "./movie-service";
 export * as cinemaService       from "./cinema-service";
 export * as roomService         from "./room-service";

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Mail, Lock, ArrowLeft, KeyRound, CheckCircle, AlertCircle } from "lucide-react";
-import axiosInstance from "@/api/axiosConfig";
+import { forgotPassword, resetPassword } from "@/api/services/auth-service";
 import { validateEmail, validatePassword } from "@/shared/utils";
 
 const validateField = (name, value, allValues = {}) => {
@@ -113,7 +113,7 @@ const ForgotPasswordPage = () => {
     setIsLoading(true);
     setServerError("");
     try {
-      await axiosInstance.post("/auth/forgot-password", { email: fields.email });
+      await forgotPassword(fields.email);
       setStep(2);
       setErrors({});
       setTouched({});
@@ -137,11 +137,7 @@ const ForgotPasswordPage = () => {
     setIsLoading(true);
     setServerError("");
     try {
-      await axiosInstance.post("/auth/reset-password", {
-        email: fields.email,
-        otp: fields.otp,
-        newPassword: fields.newPassword,
-      });
+      await resetPassword(fields.email, fields.otp, fields.newPassword);
       navigate("/login");
     } catch (err) {
       setServerError(err.response?.data?.message || "OTP không hợp lệ hoặc đã hết hạn");

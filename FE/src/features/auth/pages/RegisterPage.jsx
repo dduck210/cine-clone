@@ -2,7 +2,7 @@ import React, { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, User, ArrowLeft, ShieldCheck, CheckCircle, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
-import axiosInstance from "@/api/axiosConfig";
+import { register } from "@/api/services/auth-service";
 import { validateEmail, validatePassword } from "@/shared/utils";
 
 const validateField = (name, value, allValues = {}) => {
@@ -83,16 +83,12 @@ const RegisterPage = () => {
     setLoading(true);
     setServerError("");
     try {
-      const res = await axiosInstance.post("/auth/register", {
-        name: fields.name,
-        email: fields.email,
-        password: fields.password,
-      });
+      const data = await register(fields.name, fields.email, fields.password);
       localStorage.removeItem("token");
       localStorage.removeItem("currentUser");
-      toast.success(res.data.message || "Vui lòng kiểm tra email để xác thực tài khoản.");
+      toast.success(data.message || "Vui lòng kiểm tra email để xác thực tài khoản.");
       navigate("/verify-email", {
-        state: { email: res.data.email || fields.email, emailFailed: !!res.data.emailFailed },
+        state: { email: data.email || fields.email, emailFailed: !!data.emailFailed },
       });
     } catch (err) {
       setServerError(err.response?.data?.message || "Đăng ký thất bại, vui lòng thử lại");

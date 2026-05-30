@@ -4,7 +4,7 @@ import Navbar from "@/shared/components/common/Navbar";
 import Footer from "@/shared/components/common/Footer";
 import { Film, Calendar, Search, X, Clapperboard, ChevronDown, Tag } from "lucide-react";
 import MovieCard from "@/shared/components/movie/MovieCard";
-import axiosInstance from "@/api/axiosConfig";
+import { getMovies } from "@/api/services/movie-service";
 
 const MoviesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -21,7 +21,7 @@ const MoviesPage = () => {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   useEffect(() => {
-    axiosInstance.get("/movies").then((res) => setMovies(res.data)).catch(() => setMovies([])).finally(() => setLoading(false));
+    getMovies().then((data) => setMovies(data)).catch(() => setMovies([])).finally(() => setLoading(false));
   }, []);
 
   const nowShowing = movies.filter((m) => m.status === "now_showing");
