@@ -508,10 +508,24 @@ VITE_API_URL=http://localhost:5000/api
 
 ## Môi trường triển khai
 
-| Môi trường  | URL                                       |
-| ----------- | ----------------------------------------- |
-| Production  | https://cine-clone-kappa.vercel.app/      |
-| Local FE    | http://localhost:5173                     |
-| Local BE    | http://localhost:5000                     |
+| Môi trường  | Nền tảng          | URL                                              |
+| ----------- | ----------------- | ------------------------------------------------ |
+| FE          | Vercel            | https://cine-clone-kappa.vercel.app/             |
+| BE          | ngrok tunnel      | https://antitrust-sprawl-gliding.ngrok-free.dev  |
+| Local FE    | localhost         | http://localhost:5173                            |
+| Local BE    | localhost         | http://localhost:5000                            |
 
-> API production có cấu trúc endpoints y hệt local (`/api/...`), dùng để test tính năng trực tiếp trên môi trường thật.
+> BE chạy local và expose ra internet qua **ngrok** để nhận IPN webhook callback từ PayOS / Casso / Sepay.  
+> `SERVER_URL` trong `.env` trỏ đến ngrok URL, cần cập nhật mỗi khi ngrok tunnel restart (free plan đổi URL).
+
+---
+
+## Giới hạn hiện tại (Phạm vi DATN)
+
+| Hạng mục                        | Trạng thái                                                        |
+| ------------------------------- | ----------------------------------------------------------------- |
+| Deploy production cloud         | FE trên Vercel. BE chạy local, expose qua ngrok tunnel (chưa deploy lên server thật) |
+| PayOS / Casso / Sepay           | Đang dùng **sandbox** / test mode, chưa kết nối production        |
+| App mobile native (iOS/Android) | Chưa có — chỉ có web app (responsive)                             |
+| Đề xuất phim (AI/ML)            | Chưa có                                                           |
+| Đa ngôn ngữ (i18n)              | Chưa có — toàn bộ giao diện bằng tiếng Việt                       |
