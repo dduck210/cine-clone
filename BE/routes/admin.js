@@ -149,6 +149,7 @@ router.post('/cinemas', protect, admin, async (req, res) => {
     try {
         const cinema = new Cinema(req.body);
         await cinema.save();
+        auditLog(req, 'CREATE_CINEMA', 'Cinema', cinema._id, `Created cinema: ${cinema.name}`);
         res.status(201).json(cinema);
     } catch (error) {
         handleApiError(res, error, 'Lỗi khi tạo rạp mới');
@@ -159,6 +160,7 @@ router.put('/cinemas/:id', protect, admin, async (req, res) => {
     try {
         const cinema = await Cinema.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
         if (!cinema) return res.status(404).json({ success: false, message: 'Không tìm thấy rạp' });
+        auditLog(req, 'UPDATE_CINEMA', 'Cinema', cinema._id, `Updated cinema: ${cinema.name}`);
         res.json(cinema);
     } catch (error) {
         handleApiError(res, error, 'Lỗi khi cập nhật rạp');
@@ -509,6 +511,7 @@ router.put('/bookings/:id/print', protect, admin, async (req, res) => {
 
         booking.ticketStatus = 'printed';
         await booking.save();
+        auditLog(req, 'PRINT_TICKET', 'Booking', booking._id, `Printed ticket for booking ${booking.bookingCode}`);
 
         // Emit real-time event so user's phone auto-updates
         ticketEvents.emit(booking._id, 'ticket_printed', {
@@ -598,6 +601,7 @@ router.put('/bookings/:id/confirm', protect, admin, async (req, res) => {
             },
         });
 
+        auditLog(req, 'CONFIRM_PAYMENT', 'Booking', booking._id, `Confirmed cash payment for booking ${booking.bookingCode}`);
         res.json({ message: 'Payment confirmed', booking });
     } catch (error) {
         res.status(500).json({ message: error.message });
