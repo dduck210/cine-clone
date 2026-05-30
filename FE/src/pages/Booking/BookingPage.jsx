@@ -109,6 +109,7 @@ const BookingPage = () => {
   }, [recalcScale]);
   const [seatMap, setSeatMap] = useState({});
   const [loadingSeats, setLoadingSeats] = useState(() => !!showtimeId);
+  const [seatLoadError, setSeatLoadError] = useState(false);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [gapError, setGapError] = useState("");
   const [fallbackShowDate] = useState(() => new Date());
@@ -124,8 +125,10 @@ const BookingPage = () => {
   const [voucherError, setVoucherError] = useState("");
   const [voucherLoading, setVoucherLoading] = useState(false);
 
-  useEffect(() => {
+  const loadSeats = useCallback(() => {
     if (!showtimeId) return;
+    setLoadingSeats(true);
+    setSeatLoadError(false);
     axiosInstance.get(`/showtimes/${showtimeId}`)
       .then((res) => {
         setShowtimeData(res.data.data);
@@ -140,10 +143,14 @@ const BookingPage = () => {
         if (error?.response?.status === 410) {
           window.alert("Suất chiếu này đã hết hạn hoặc không còn khả dụng. Vui lòng chọn suất khác.");
           navigate(`/movie/${id}`);
+        } else {
+          setSeatLoadError(true);
         }
       })
       .finally(() => setLoadingSeats(false));
   }, [showtimeId, navigate, id]);
+
+  useEffect(() => { loadSeats(); }, [loadSeats]);
 
   useEffect(() => {
     if (!timerStarted) return;
@@ -552,7 +559,17 @@ const BookingPage = () => {
                     {loadingSeats ? (
                       <div className="flex justify-center py-16"><div className="animate-spin rounded-full h-10 w-10 border-4 border-red-600 border-t-transparent" /></div>
                     ) : seats.length === 0 ? (
-                      <div className="text-center py-16 text-gray-400 font-bold">Không tải được sơ đồ ghế.</div>
+                      <div className="text-center py-16">
+                        <p className="text-gray-400 font-bold mb-3">Không tải được sơ đồ ghế.</p>
+                        {seatLoadError && (
+                          <button
+                            onClick={loadSeats}
+                            className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-xl transition-all active:scale-95"
+                          >
+                            Thử lại
+                          </button>
+                        )}
+                      </div>
                     ) : (
                       <div className="flex justify-center pb-4">
                         <div className="flex flex-col gap-2.5 min-w-max px-2">

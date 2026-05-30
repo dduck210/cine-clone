@@ -18,7 +18,7 @@ import {
   Ticket,
   MapPin,
   Calendar,
-  Clock,
+  Phone,
 } from "lucide-react";
 
 const ProfilePage = () => {
@@ -137,6 +137,7 @@ const MenuButton = ({ active, onClick, icon, label }) => (
 const PersonalInfoTab = ({ storedUser }) => {
   const [form, setForm] = useState({
     name: storedUser?.name || "",
+    phone: storedUser?.phone || "",
   });
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
@@ -151,6 +152,8 @@ const PersonalInfoTab = ({ storedUser }) => {
     if (!form.name.trim()) errs.name = "Họ tên không được để trống";
     else if (form.name.trim().length < 2)
       errs.name = "Họ tên phải có ít nhất 2 ký tự";
+    if (form.phone && !/^[0-9]{9,11}$/.test(form.phone.replace(/\s/g, "")))
+      errs.phone = "Số điện thoại không hợp lệ (9-11 chữ số)";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -162,16 +165,14 @@ const PersonalInfoTab = ({ storedUser }) => {
     try {
       const res = await axiosInstance.put("/auth/profile", {
         name: form.name,
+        phone: form.phone,
       });
       const fresh = JSON.parse(localStorage.getItem("currentUser") || "{}");
       localStorage.setItem(
         "currentUser",
-        JSON.stringify({
-          ...fresh,
-          name: res.data.name,
-        }),
+        JSON.stringify({ ...fresh, name: res.data.name, phone: res.data.phone }),
       );
-      setForm({ name: res.data.name });
+      setForm({ name: res.data.name, phone: res.data.phone || "" });
       toast.success("Cập nhật thông tin thành công!");
     } catch (err) {
       toast.error(
@@ -217,6 +218,26 @@ const PersonalInfoTab = ({ storedUser }) => {
         </div>
 
         <div className="space-y-2">
+          <label className="text-sm font-semibold text-gray-700">Số điện thoại</label>
+          <div className="relative">
+            <Phone
+              className={`absolute left-3 top-3 ${errors.phone ? "text-red-400" : "text-gray-400"}`}
+              size={18}
+            />
+            <input
+              type="tel"
+              value={form.phone}
+              onChange={setField("phone")}
+              placeholder="0912 345 678"
+              className={`w-full pl-10 pr-4 py-2.5 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 transition-all text-sm font-medium ${errors.phone ? "border-red-400 focus:border-red-500 focus:ring-red-100" : "border-gray-200 focus:border-[#dc2626] focus:ring-red-100"}`}
+            />
+          </div>
+          {errors.phone && (
+            <p className="text-red-500 text-xs mt-1 ml-1">{errors.phone}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
           <label className="text-sm font-semibold text-gray-700">Email</label>
           <div className="relative">
             <Mail className="absolute left-3 top-3 text-gray-400" size={18} />
@@ -230,7 +251,7 @@ const PersonalInfoTab = ({ storedUser }) => {
           <p className="text-xs text-gray-400">Email không thể thay đổi</p>
         </div>
 
-        <div className="md:col-span-2 mt-4 flex justify-end">
+        <div className="md:col-span-2 mt-2 flex justify-end">
           <button
             type="submit"
             disabled={saving}
@@ -266,6 +287,13 @@ const PersonalInfoTab = ({ storedUser }) => {
       </form>
     </div>
   );
+};
+
+const methodMap = {
+  momo: { label: "MoMo", color: "text-[#AE2070] bg-[#AE2070]/10" },
+  qr: { label: "MB Bank", color: "text-[#004C97] bg-[#004C97]/10" },
+  cash: { label: "Tiền mặt", color: "text-gray-600 bg-gray-100" },
+  credit_card: { label: "Thẻ tín dụng", color: "text-blue-600 bg-blue-50" },
 };
 
 const statusMap = {
@@ -470,11 +498,14 @@ const HistoryTab = ({ navigate }) => {
                   <span
                     className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg border text-[11px] font-bold ${status.bg} ${status.text} ${status.border}`}
                   >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.dot}`}
-                    />
+                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.dot}`} />
                     {status.label}
                   </span>
+                  {b.paymentId?.method && methodMap[b.paymentId.method] && (
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${methodMap[b.paymentId.method].color}`}>
+                      {methodMap[b.paymentId.method].label}
+                    </span>
+                  )}
                 </div>
               </div>
             );
@@ -539,8 +570,8 @@ const ChangePasswordTab = () => {
       toast.error("Mật khẩu xác nhận không khớp");
       return;
     }
-    if (form.newPassword.length < 6) {
-      toast.error("Mật khẩu mới phải có ít nhất 6 ký tự");
+    if (form.newPassword.length < 8) {
+      toast.error("Mật khẩu mới phải có ít nhất 8 ký tự");
       return;
     }
     setSaving(true);
@@ -600,7 +631,7 @@ const ChangePasswordTab = () => {
           <button
             type="submit"
             disabled={saving}
-            className={`font-bold py-3 px-6 rounded-lg shadow-md transition-colors w-full sm:w-auto flex items-center gap-2 justify-center ${saving ? "bg-red-400 cursor-not-allowed text-white" : "bg-red-600 hover:bg-red-700 text-white"}`}
+            className={`font-bold py-3 px-8 rounded-xl shadow-md transition-all w-full flex items-center gap-2 justify-center ${saving ? "bg-red-400 cursor-not-allowed text-white" : "bg-red-600 hover:bg-red-700 text-white"}`}
           >
             {saving ? (
               <svg
