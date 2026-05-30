@@ -298,4 +298,33 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
+// Get wishlist (populated movie details)
+router.get('/wishlist', protect, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).populate('wishlist', 'title poster genre rating duration status ageRestriction');
+        res.json(user.wishlist || []);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Toggle movie in wishlist (add if not present, remove if present)
+router.post('/wishlist/:movieId', protect, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        const movieId = req.params.movieId;
+        const idx = user.wishlist.findIndex((id) => id.toString() === movieId);
+
+        if (idx === -1) {
+            user.wishlist.push(movieId);
+        } else {
+            user.wishlist.splice(idx, 1);
+        }
+        await user.save();
+        res.json({ saved: idx === -1, wishlist: user.wishlist });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 module.exports = router;

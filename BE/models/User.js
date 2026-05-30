@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
     resetOtp: { type: String, default: null },
     resetOtpExpiry: { type: Date, default: null },
     isVerified: { type: Boolean, default: false },
+    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Movie' }],
 }, { timestamps: true });
 
 // Hash password before saving

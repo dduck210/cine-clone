@@ -1,6 +1,7 @@
 import React from "react";
-import { Star, Clock, Play } from "lucide-react";
+import { Star, Clock, Play, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useWishlist } from "../../context/wishlist-context";
 
 const AGE_BADGE = {
   "All ages": { label: "P",   bg: "bg-green-500" },
@@ -19,6 +20,9 @@ const formatDuration = (minutes) => {
 
 const MovieCard = ({ movie }) => {
   const movieId = movie._id || movie.id;
+  const { ids, toggle } = useWishlist();
+  const isSaved = ids.has(movieId);
+  const isLoggedIn = !!localStorage.getItem("token");
   const genreText = Array.isArray(movie.genre)
     ? movie.genre.map((g) => (typeof g === "object" ? g.name : g)).join(", ")
     : movie.genre;
@@ -64,6 +68,17 @@ const MovieCard = ({ movie }) => {
           <div className="absolute top-2 right-2 bg-amber-400 text-amber-900 text-[10px] font-black px-2 py-0.5 rounded-full leading-none shadow-sm">
             Sắp chiếu
           </div>
+        )}
+
+        {/* Wishlist heart button */}
+        {isLoggedIn && (
+          <button
+            onClick={(e) => { e.preventDefault(); toggle(movieId); }}
+            className={`absolute top-2 ${isComingSoon ? "top-8" : "top-2"} right-2 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 opacity-0 group-hover:opacity-100 ${isSaved ? "bg-red-500 opacity-100" : "bg-black/40 backdrop-blur-sm"}`}
+            title={isSaved ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
+          >
+            <Heart size={14} className={isSaved ? "fill-white text-white" : "text-white"} />
+          </button>
         )}
 
         {/* Bottom CTA on hover */}

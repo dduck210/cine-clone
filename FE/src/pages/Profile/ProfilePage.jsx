@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Navbar from "../../components/common/Navbar";
 import Footer from "../../components/common/Footer";
 import axiosInstance from "../../api/axiosConfig";
@@ -19,7 +19,9 @@ import {
   MapPin,
   Calendar,
   Phone,
+  Heart,
 } from "lucide-react";
+import { useWishlist } from "../../context/wishlist-context";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -92,6 +94,12 @@ const ProfilePage = () => {
                 label="Lịch sử giao dịch"
               />
               <MenuButton
+                active={activeTab === "wishlist"}
+                onClick={() => setActiveTab("wishlist")}
+                icon={<Heart size={18} />}
+                label="Phim yêu thích"
+              />
+              <MenuButton
                 active={activeTab === "password"}
                 onClick={() => setActiveTab("password")}
                 icon={<Lock size={18} />}
@@ -103,10 +111,9 @@ const ProfilePage = () => {
           {/* Cột phải */}
           <div className="md:col-span-8 lg:col-span-9">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 min-h-[500px]">
-              {activeTab === "info" && (
-                <PersonalInfoTab storedUser={storedUser} />
-              )}
+              {activeTab === "info" && <PersonalInfoTab storedUser={storedUser} />}
               {activeTab === "history" && <HistoryTab navigate={navigate} />}
+              {activeTab === "wishlist" && <WishlistTab />}
               {activeTab === "password" && <ChangePasswordTab />}
             </div>
           </div>
@@ -658,6 +665,84 @@ const ChangePasswordTab = () => {
           </button>
         </div>
       </form>
+    </div>
+  );
+};
+
+const WishlistTab = () => {
+  const { ids, toggle } = useWishlist();
+  const [movies, setMovies] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    axiosInstance.get("/auth/wishlist")
+      .then((res) => setMovies(res.data))
+      .catch(() => setMovies([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleRemove = async (movieId) => {
+    await toggle(movieId);
+    setMovies((prev) => prev.filter((m) => m._id !== movieId));
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-gray-800 border-l-4 border-red-600 pl-3">
+          Phim yêu thích
+        </h2>
+        {movies.length > 0 && (
+          <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+            {movies.length} phim
+          </span>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="animate-pulse">
+              <div className="aspect-[2/3] rounded-2xl bg-gray-200" />
+              <div className="mt-2 h-3 bg-gray-200 rounded w-3/4" />
+            </div>
+          ))}
+        </div>
+      ) : movies.length === 0 ? (
+        <div className="text-center py-16">
+          <Heart size={40} className="text-gray-200 mx-auto mb-3" />
+          <p className="text-gray-500 font-medium">Chưa có phim yêu thích.</p>
+          <Link to="/movies" className="mt-3 inline-block text-sm text-red-600 font-bold hover:underline">
+            Khám phá phim ngay →
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {movies.map((movie) => (
+            <div key={movie._id} className="group relative">
+              <Link to={`/movie/${movie._id}`} className="block">
+                <div className="relative aspect-[2/3] rounded-2xl overflow-hidden bg-gray-200 shadow-sm group-hover:shadow-lg transition-all">
+                  <img
+                    src={movie.poster}
+                    alt={movie.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => { e.target.src = "https://via.placeholder.com/300x450?text=No+Image"; }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                <p className="mt-2 text-sm font-bold text-gray-800 line-clamp-2 group-hover:text-red-600 transition-colors">{movie.title}</p>
+              </Link>
+              <button
+                onClick={() => handleRemove(movie._id)}
+                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity active:scale-90"
+                title="Bỏ yêu thích"
+              >
+                <Heart size={13} className="fill-white text-white" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

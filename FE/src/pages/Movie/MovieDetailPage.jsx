@@ -8,8 +8,9 @@ import ReviewSection from "../../components/movie/ReviewSection";
 import axiosInstance from "../../api/axiosConfig";
 import {
   Star, Clock, Calendar, MapPin, ChevronDown,
-  Ticket, Play, X,
+  Ticket, Play, X, Heart,
 } from "lucide-react";
+import { useWishlist } from "../../context/wishlist-context";
 
 function isShowtimeLocked(showtime, now = Date.now()) {
   const lockMins = showtime.bookingLockMinutes ?? 5;
@@ -35,6 +36,8 @@ const WEEKDAY = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 const MovieDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { ids: wishlistIds, toggle: toggleWishlist } = useWishlist();
+  const isLoggedIn = !!localStorage.getItem("token");
   const [movie, setMovie] = useState(null);
   const [cinemaList, setCinemaList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -293,6 +296,20 @@ const MovieDetailPage = () => {
                   className="inline-flex items-center gap-2.5 bg-white/10 hover:bg-white/15 border border-white/15 text-white font-bold py-3.5 px-7 rounded-xl transition-all text-sm"
                 >
                   <Play size={16} fill="currentColor" /> Trailer
+                </button>
+              )}
+              {isLoggedIn && movie && (
+                <button
+                  onClick={() => {
+                    toggleWishlist(movie._id);
+                    const isSaved = wishlistIds.has(movie._id);
+                    toast(isSaved ? "Đã bỏ khỏi yêu thích" : "Đã thêm vào yêu thích ❤️", { duration: 1500 });
+                  }}
+                  className={`inline-flex items-center gap-2 py-3.5 px-5 rounded-xl border transition-all text-sm font-bold ${wishlistIds.has(movie._id) ? "bg-red-500 border-red-400 text-white" : "bg-white/10 hover:bg-white/15 border-white/15 text-white"}`}
+                  title={wishlistIds.has(movie._id) ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
+                >
+                  <Heart size={16} className={wishlistIds.has(movie._id) ? "fill-white" : ""} />
+                  {wishlistIds.has(movie._id) ? "Đã lưu" : "Yêu thích"}
                 </button>
               )}
             </div>
