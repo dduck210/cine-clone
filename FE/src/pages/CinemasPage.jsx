@@ -196,14 +196,15 @@ const CinemasPage = () => {
                 >
                   <div className="group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 border border-gray-100 flex flex-col h-full">
                     {/* Image Section */}
-                    <div className="relative h-56 overflow-hidden">
+                    <div className="relative h-52 overflow-hidden bg-gray-900">
                       <img
                         src={cinema.image || cinemaFallback(cinema._id)}
                         alt={cinema.name}
                         onError={(e) => { e.target.src = cinemaFallback(cinema._id); }}
-                        className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                        className="w-full h-full object-cover object-center transition-transform duration-1000 group-hover:scale-110"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
+                      {/* Consistent dark gradient so text is always readable regardless of image brightness */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
 
                       <div className="absolute top-4 right-4">
                         <button
@@ -212,16 +213,16 @@ const CinemasPage = () => {
                             const q = encodeURIComponent(cinema.address);
                             window.open(`https://www.google.com/maps/search/?api=1&query=${q}`, "_blank");
                           }}
-                          className="p-3 bg-white/20 backdrop-blur-md hover:bg-white text-white hover:text-red-600 rounded-full transition-all duration-300 shadow-lg"
+                          className="p-2.5 bg-white/20 backdrop-blur-md hover:bg-white text-white hover:text-red-600 rounded-full transition-all duration-300 shadow-lg"
                         >
-                          <Navigation size={18} />
+                          <Navigation size={16} />
                         </button>
                       </div>
 
-                      <div className="absolute bottom-6 left-6 right-6 text-white translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                        <h3 className="text-2xl font-black mb-1 tracking-tight">{cinema.name}</h3>
-                        <div className="flex items-center gap-1.5 text-white/80 text-sm font-medium">
-                          <MapPin size={14} className="text-red-400 shrink-0" />
+                      <div className="absolute bottom-5 left-5 right-14 text-white">
+                        <h3 className="text-lg font-black mb-1 tracking-tight leading-snug line-clamp-2">{cinema.name}</h3>
+                        <div className="flex items-center gap-1.5 text-white/75 text-xs font-medium">
+                          <MapPin size={12} className="text-red-400 shrink-0" />
                           <span className="truncate">{extractCity(cinema.address)}</span>
                         </div>
                       </div>

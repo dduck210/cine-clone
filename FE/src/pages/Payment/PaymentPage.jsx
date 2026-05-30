@@ -52,7 +52,7 @@ const PaymentPage = () => {
   const [errors, setErrors] = useState({});
 
   useEffect(() => { return () => { toast.dismiss(); }; }, []);
-  useEffect(() => { window.scrollTo(0, 0); if (!location.state) navigate("/"); }, [location, navigate]);
+  useEffect(() => { window.scrollTo(0, 0); if (!location.state) navigate("/", { replace: true }); }, [location, navigate]);
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
     if (user) setCustomerInfo((p) => ({ ...p, name: user.name || "", email: user.email || "" }));
@@ -114,7 +114,7 @@ const PaymentPage = () => {
   };
 
 
-  if (!location.state) return null;
+  if (!location.state) return null; // navigate() in useEffect handles redirect
 
   const selectedMethod = PAYMENT_METHODS.find((m) => m.id === paymentMethod);
 

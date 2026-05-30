@@ -240,11 +240,13 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
 
   useEffect(() => {
     if (!selectedCinema) { setRooms([]); return; }
+    const ctrl = new AbortController();
     setLoadingRooms(true);
-    axiosInstance.get(`/admin/cinemas/${selectedCinema}/rooms`)
+    axiosInstance.get(`/admin/cinemas/${selectedCinema}/rooms`, { signal: ctrl.signal })
       .then((res) => setRooms(res.data))
-      .catch(() => setRooms([]))
+      .catch((err) => { if (err.name !== 'CanceledError') setRooms([]); })
       .finally(() => setLoadingRooms(false));
+    return () => ctrl.abort();
   }, [selectedCinema]);
 
   // Auto-detect dayType from date: holiday > weekend > weekday

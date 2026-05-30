@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, Clock, Ticket, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, Clock, Ticket, ChevronLeft, ChevronRight, Info } from "lucide-react";
 
 const SLIDE_MS = 5000;
 
@@ -140,12 +140,18 @@ const Hero = ({ movies = [] }) => {
               </p>
             )}
 
-            <div className="pt-1 sm:pt-2 flex items-center gap-3 flex-wrap">
+            <div className="pt-2 sm:pt-3 flex items-center gap-3 flex-wrap">
               <button
                 onClick={() => navigate(`/movie/${movie._id}`)}
-                className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-red-900/40 transition-all text-sm"
+                className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-500 active:scale-95 text-white font-black px-7 py-3.5 rounded-xl shadow-xl shadow-red-900/50 transition-all duration-200 text-sm sm:text-base"
               >
-                <Ticket size={16} /> Đặt Vé Ngay
+                <Ticket size={18} /> Đặt Vé Ngay
+              </button>
+              <button
+                onClick={() => navigate(`/movie/${movie._id}`)}
+                className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/30 hover:border-white/50 active:scale-95 text-white font-bold px-6 py-3.5 rounded-xl transition-all duration-200 text-sm sm:text-base"
+              >
+                <Info size={16} /> Chi Tiết
               </button>
             </div>
           </div>
