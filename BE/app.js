@@ -61,6 +61,7 @@ const corsOptions = {
 };
 
 const app = express();
+app.set('trust proxy', 1); // Trust ngrok/reverse proxy X-Forwarded-For header
 const server = http.createServer(app);
 const io = new Server(server, { cors: corsOptions });
 
