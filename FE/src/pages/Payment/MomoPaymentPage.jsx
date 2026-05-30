@@ -120,7 +120,7 @@ const MomoPaymentPage = () => {
   if (!location.state) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-950 font-sans text-slate-900 dark:text-white">
       <Navbar />
       <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
 
@@ -173,7 +173,7 @@ const MomoPaymentPage = () => {
         <div className="flex flex-col lg:flex-row gap-8 items-stretch">
           {/* ── LEFT: CINEMATIC RECEIPT (desktop only) ── */}
           <div className="hidden lg:flex lg:w-[48%]">
-            <div className="bg-white w-full rounded-[2rem] shadow-2xl overflow-hidden border border-slate-100 flex flex-col relative">
+            <div className="bg-white dark:bg-gray-800 w-full rounded-[2rem] shadow-2xl overflow-hidden border border-slate-100 dark:border-gray-700 flex flex-col relative">
               <div className="bg-gradient-to-r from-[#AE2070] to-[#C41E6B] p-7 text-center text-white relative">
                 <div className="flex items-center justify-center gap-3 mb-2">
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md">
@@ -206,10 +206,10 @@ const MomoPaymentPage = () => {
                     />
                   )}
                   <div className="flex-1">
-                    <h3 className="font-black text-slate-900 text-xl leading-tight mb-1 uppercase tracking-tighter line-clamp-2">
+                    <h3 className="font-black text-slate-900 dark:text-white text-xl leading-tight mb-1 uppercase tracking-tighter line-clamp-2">
                       {movieTitle}
                     </h3>
-                    <span className="inline-block bg-red-50 text-red-600 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest mb-2">
+                    <span className="inline-block bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest mb-2">
                       2D Phụ đề
                     </span>
                     {duration > 0 && (
@@ -228,11 +228,11 @@ const MomoPaymentPage = () => {
                       className="text-[#AE2070] shrink-0 mt-0.5"
                     />
                     <div>
-                      <p className="font-bold text-slate-800 text-sm">
+                      <p className="font-bold text-slate-800 dark:text-white text-sm">
                         {cinemaName}
                       </p>
                       {showAddress && (
-                        <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
+                        <p className="text-xs text-slate-400 dark:text-gray-400 mt-0.5 leading-relaxed">
                           {showAddress}
                         </p>
                       )}
@@ -241,14 +241,14 @@ const MomoPaymentPage = () => {
                   {roomName && (
                     <div className="flex items-center gap-3">
                       <Monitor size={16} className="text-[#AE2070] shrink-0" />
-                      <p className="font-bold text-slate-800 text-sm">
+                      <p className="font-bold text-slate-800 dark:text-white text-sm">
                         {roomName}
                       </p>
                     </div>
                   )}
                   <div className="flex items-center gap-3">
                     <Calendar size={16} className="text-[#AE2070] shrink-0" />
-                    <p className="font-bold text-slate-800 text-sm">
+                    <p className="font-bold text-slate-800 dark:text-white text-sm">
                       {showTime} • {showDate}
                     </p>
                   </div>
@@ -275,12 +275,12 @@ const MomoPaymentPage = () => {
                         .map((c) => (
                           <div
                             key={c.id || c.name}
-                            className="flex justify-between text-sm text-slate-700 font-bold"
+                            className="flex justify-between text-sm text-slate-700 dark:text-gray-300 font-bold"
                           >
                             <span>
                               {c.quantity}x {c.name}
                             </span>
-                            <span className="text-slate-400">
+                            <span className="text-slate-400 dark:text-gray-500">
                               {(c.price * c.quantity).toLocaleString()}đ
                             </span>
                           </div>
@@ -322,11 +322,11 @@ const MomoPaymentPage = () => {
                       )}
                     </div>
                   )}
-                  <div className="flex justify-between items-center bg-slate-50 rounded-2xl p-5 border border-slate-100">
-                    <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
+                  <div className="flex justify-between items-center bg-slate-50 dark:bg-gray-700 rounded-2xl p-5 border border-slate-100 dark:border-gray-600">
+                    <span className="text-[10px] text-slate-400 dark:text-gray-400 font-black uppercase tracking-widest">
                       Tổng cộng
                     </span>
-                    <span className="text-4xl font-black text-slate-900 tracking-tighter">
+                    <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">
                       {amount?.toLocaleString()}đ
                     </span>
                   </div>
@@ -345,7 +345,7 @@ const MomoPaymentPage = () => {
           </div>
 
           {/* ── MOBILE: Integrated receipt + QR in one card ── */}
-          <div className="lg:hidden w-full bg-white rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden">
+          <div className="lg:hidden w-full bg-white dark:bg-gray-800 rounded-[2rem] shadow-2xl border border-slate-100 dark:border-gray-700 overflow-hidden">
             {/* Pink header */}
             <div className="bg-gradient-to-r from-[#AE2070] to-[#C41E6B] p-5 text-white relative">
               <div className="flex items-center gap-3 mb-1">
@@ -378,7 +378,7 @@ const MomoPaymentPage = () => {
                 <div className="bg-[#AE2070] text-white px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 shadow-lg shadow-pink-200">
                   Quét mã để thanh toán
                 </div>
-                <div className="bg-slate-50 p-3 rounded-[2rem] border border-slate-100 shadow-inner">
+                <div className="bg-slate-50 dark:bg-gray-700 p-3 rounded-[2rem] border border-slate-100 dark:border-gray-600 shadow-inner">
                   <img
                     src={qrCodeUrl || momoQRFallback}
                     alt="MoMo QR"
@@ -389,7 +389,7 @@ const MomoPaymentPage = () => {
                     }}
                   />
                 </div>
-                <p className="text-slate-400 text-[10px] mt-3 text-center">
+                <p className="text-slate-400 dark:text-gray-400 text-[10px] mt-3 text-center">
                   Mở App MoMo và quét mã QR bên trên
                 </p>
               </div>
@@ -404,11 +404,11 @@ const MomoPaymentPage = () => {
                   />
                 )}
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-black text-slate-900 text-lg leading-tight mb-1 uppercase tracking-tighter line-clamp-2">
+                  <h3 className="font-black text-slate-900 dark:text-white text-lg leading-tight mb-1 uppercase tracking-tighter line-clamp-2">
                     {movieTitle}
                   </h3>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="inline-block bg-red-50 text-red-600 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest">
+                    <span className="inline-block bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest">
                       2D Phụ đề
                     </span>
                     {duration > 0 && (
@@ -431,11 +431,11 @@ const MomoPaymentPage = () => {
                     className="text-[#AE2070] shrink-0 mt-0.5"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-slate-800 text-sm">
+                    <p className="font-bold text-slate-800 dark:text-white text-sm">
                       {cinemaName}
                     </p>
                     {showAddress && (
-                      <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed truncate">
+                      <p className="text-[11px] text-slate-400 dark:text-gray-400 mt-0.5 leading-relaxed truncate">
                         {showAddress}
                       </p>
                     )}
@@ -444,14 +444,14 @@ const MomoPaymentPage = () => {
                 {roomName && (
                   <div className="flex items-center gap-2.5">
                     <Monitor size={14} className="text-[#AE2070] shrink-0" />
-                    <p className="font-bold text-slate-800 text-sm">
+                    <p className="font-bold text-slate-800 dark:text-white text-sm">
                       {roomName}
                     </p>
                   </div>
                 )}
                 <div className="flex items-center gap-2.5">
                   <Calendar size={14} className="text-[#AE2070] shrink-0" />
-                  <p className="font-bold text-slate-800 text-sm">
+                  <p className="font-bold text-slate-800 dark:text-white text-sm">
                     {showTime} • {showDate}
                   </p>
                 </div>
@@ -477,12 +477,12 @@ const MomoPaymentPage = () => {
                     .map((c) => (
                       <div
                         key={c.id || c.name}
-                        className="flex justify-between text-sm text-slate-700 font-bold"
+                        className="flex justify-between text-sm text-slate-700 dark:text-gray-300 font-bold"
                       >
                         <span>
                           {c.quantity}x {c.name}
                         </span>
-                        <span className="text-slate-400">
+                        <span className="text-slate-400 dark:text-gray-500">
                           {(c.price * c.quantity).toLocaleString()}đ
                         </span>
                       </div>
@@ -521,11 +521,11 @@ const MomoPaymentPage = () => {
                     )}
                   </>
                 )}
-                <div className="flex justify-between items-center bg-slate-50 rounded-xl p-4">
-                  <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
+                <div className="flex justify-between items-center bg-slate-50 dark:bg-gray-700 rounded-xl p-4">
+                  <span className="text-[10px] text-slate-400 dark:text-gray-400 font-black uppercase tracking-widest">
                     Tổng cộng
                   </span>
-                  <span className="text-2xl font-black text-slate-900 tracking-tighter">
+                  <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">
                     {amount?.toLocaleString()}đ
                   </span>
                 </div>
@@ -550,7 +550,7 @@ const MomoPaymentPage = () => {
                 <button
                   onClick={checkPaymentStatus}
                   disabled={isConfirming}
-                  className="bg-white hover:bg-slate-50 text-[#AE2070] border border-[#AE2070] px-7 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm disabled:opacity-60 flex items-center gap-2"
+                  className="bg-white dark:bg-gray-700 hover:bg-slate-50 dark:hover:bg-gray-600 text-[#AE2070] border border-[#AE2070] px-7 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm disabled:opacity-60 flex items-center gap-2"
                 >
                   {isConfirming && (
                     <svg
@@ -608,7 +608,7 @@ const MomoPaymentPage = () => {
 
           {/* ── RIGHT: QR PAYMENT AREA (desktop only) ── */}
           <div className="hidden lg:flex lg:w-[52%]">
-            <div className="bg-white w-full rounded-[2rem] shadow-2xl border border-slate-100 p-10 flex flex-col items-center justify-center relative overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 w-full rounded-[2rem] shadow-2xl border border-slate-100 dark:border-gray-700 p-10 flex flex-col items-center justify-center relative overflow-hidden">
               {/* Background MoMo Logo Pattern */}
               <div className="absolute top-0 right-0 opacity-[0.03] -mr-10 -mt-10">
                 <svg viewBox="0 0 48 48" className="w-64 h-64 fill-[#AE2070]">
@@ -623,7 +623,7 @@ const MomoPaymentPage = () => {
                 </div>
                 <div className="relative group">
                   <div className="absolute -inset-4 bg-gradient-to-tr from-[#AE2070] to-[#C41E6B] rounded-[2.5rem] opacity-10 blur-2xl group-hover:opacity-20 transition-opacity" />
-                  <div className="relative bg-white p-5 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100">
+                  <div className="relative bg-white dark:bg-gray-700 p-5 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100 dark:border-gray-600">
                     <img
                       src={qrCodeUrl || momoQRFallback}
                       alt="MoMo QR"
@@ -636,7 +636,7 @@ const MomoPaymentPage = () => {
                   </div>
                 </div>
                 <div className="mt-8 text-center space-y-5">
-                  <p className="text-slate-500 font-bold text-sm italic animate-pulse">
+                  <p className="text-slate-500 dark:text-gray-400 font-bold text-sm italic animate-pulse">
                     Trang web sẽ tự động cập nhật sau khi bạn thanh toán thành công...
                   </p>
 
@@ -654,7 +654,7 @@ const MomoPaymentPage = () => {
                     <button
                       onClick={checkPaymentStatus}
                       disabled={isConfirming}
-                      className="bg-white hover:bg-slate-50 text-[#AE2070] border border-[#AE2070] px-8 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm disabled:opacity-60 flex items-center gap-2"
+                      className="bg-white dark:bg-gray-700 hover:bg-slate-50 dark:hover:bg-gray-600 text-[#AE2070] border border-[#AE2070] px-8 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm disabled:opacity-60 flex items-center gap-2"
                     >
                       {isConfirming && (
                         <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
@@ -666,7 +666,7 @@ const MomoPaymentPage = () => {
                     </button>
                   </div>
 
-                  <p className="text-slate-400 text-[10px] max-w-[320px] mx-auto pt-4 border-t border-slate-100">
+                  <p className="text-slate-400 dark:text-gray-400 text-[10px] max-w-[320px] mx-auto pt-4 border-t border-slate-100 dark:border-gray-700">
                     Mã QR sẽ tự động hết hạn sau 10 phút. Vui lòng không tắt trình duyệt cho đến khi nhận được vé.
                   </p>
                 </div>
@@ -695,13 +695,13 @@ const MomoPaymentPage = () => {
         </div>
 
         <div className="mt-12 text-center">
-          <div className="inline-flex items-center gap-6 px-8 py-3 bg-white rounded-full shadow-sm border border-slate-100">
-            <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+          <div className="inline-flex items-center gap-6 px-8 py-3 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-slate-100 dark:border-gray-700">
+            <div className="flex items-center gap-2 text-slate-400 dark:text-gray-400 text-[10px] font-bold uppercase tracking-widest">
               <ShieldCheck size={14} className="text-emerald-500" /> Thanh toán
               an toàn
             </div>
-            <div className="w-px h-4 bg-slate-200" />
-            <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+            <div className="w-px h-4 bg-slate-200 dark:bg-gray-600" />
+            <div className="flex items-center gap-2 text-slate-400 dark:text-gray-400 text-[10px] font-bold uppercase tracking-widest">
               <Clock size={14} className="text-blue-500" /> Hỗ trợ 24/7
             </div>
           </div>

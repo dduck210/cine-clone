@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { ArrowLeft, KeyRound, CheckCircle, AlertCircle } from "lucide-react";
-import axiosInstance from "../../api/axiosConfig";
+import { authService } from "../../api/services";
 
 const COOLDOWN_SECONDS = 45;
 
@@ -29,8 +29,8 @@ const VerifyEmailPage = () => {
     if (codeFromUrl && email && !autoVerifiedRef.current) {
       autoVerifiedRef.current = true;
       setIsLoading(true);
-      axiosInstance
-        .post("/auth/verify-email", { email, otp: codeFromUrl })
+      authService
+        .verifyEmail(email, codeFromUrl)
         .then(() => navigate("/login", { state: { verifiedEmail: email } }))
         .catch((err) => {
           const msg = err.response?.data?.message || "Xác thực thất bại";
@@ -74,11 +74,11 @@ const VerifyEmailPage = () => {
   };
 
   const inputClass = () => {
-    const base = "w-full bg-gray-50 border rounded-xl pl-12 pr-10 py-3 focus:ring-2 outline-none transition-all duration-200 font-medium tracking-widest text-center text-lg";
+    const base = "w-full bg-gray-50 dark:bg-gray-700 border rounded-xl pl-12 pr-10 py-3 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 outline-none transition-all duration-200 font-medium tracking-widest text-center text-lg";
     const state = otpState();
-    if (state === "error") return `${base} border-red-400 focus:ring-red-100 focus:border-red-500`;
-    if (state === "success") return `${base} border-green-400 focus:ring-green-100 focus:border-green-500 bg-green-50/30`;
-    return `${base} border-gray-200 focus:ring-red-100 focus:border-[#dc2626]`;
+    if (state === "error") return `${base} border-red-400 focus:ring-red-100 dark:focus:ring-red-900/20 focus:border-red-500`;
+    if (state === "success") return `${base} border-green-400 focus:ring-green-100 dark:focus:ring-green-900/20 focus:border-green-500 bg-green-50/30 dark:bg-green-900/10`;
+    return `${base} border-gray-200 dark:border-gray-600 focus:ring-red-100 dark:focus:ring-red-900/20 focus:border-[#dc2626]`;
   };
 
   const handleVerify = async (e) => {
@@ -88,7 +88,7 @@ const VerifyEmailPage = () => {
     setServerError("");
     setIsLoading(true);
     try {
-      await axiosInstance.post("/auth/verify-email", { email, otp });
+      await authService.verifyEmail(email, otp);
       navigate("/login", { state: { verifiedEmail: email } });
     } catch (err) {
       const msg = err.response?.data?.message || "Xác thực thất bại";
@@ -107,7 +107,7 @@ const VerifyEmailPage = () => {
     setResendStatus("");
     setServerError("");
     try {
-      await axiosInstance.post("/auth/resend-verify-otp", { email });
+      await authService.resendVerifyOtp(email);
       setResendStatus("sent");
       setCooldown(COOLDOWN_SECONDS);
     } catch (err) {
@@ -120,10 +120,10 @@ const VerifyEmailPage = () => {
 
   if (!email) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-4">
         <div className="text-center">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Không tìm thấy email cần xác thực</h2>
-          <p className="text-gray-500 mb-4">Vui lòng đăng ký tài khoản trước.</p>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Không tìm thấy email cần xác thực</h2>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">Vui lòng đăng ký tài khoản trước.</p>
           <Link to="/register" className="text-[#dc2626] font-bold hover:underline">Đi đến trang đăng ký</Link>
         </div>
       </div>
@@ -134,10 +134,10 @@ const VerifyEmailPage = () => {
   if (codeFromUrl && isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-md w-full p-10 text-center">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden max-w-md w-full p-10 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#dc2626] border-t-transparent mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Đang xác thực email...</h2>
-          <p className="text-gray-500 text-sm">Vui lòng đợi trong giây lát.</p>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Đang xác thực email...</h2>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Vui lòng đợi trong giây lát.</p>
         </div>
       </div>
     );
@@ -152,7 +152,7 @@ const VerifyEmailPage = () => {
         }
       `}</style>
 
-      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row">
+      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row">
         {/* Left panel */}
         <div className="hidden md:block md:w-1/2 bg-gray-900 relative min-h-[600px]">
           <img
@@ -174,22 +174,22 @@ const VerifyEmailPage = () => {
           <div className="max-w-md mx-auto w-full">
             <Link
               to="/login"
-              className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors text-sm font-medium mb-8"
+              className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors text-sm font-medium mb-8"
             >
               <ArrowLeft size={18} /> Quay lại đăng nhập
             </Link>
 
             <div className="mb-8 text-center md:text-left">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">Kiểm tra email của bạn</h1>
-              <p className="text-gray-500 text-sm sm:text-base">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white mb-2">Kiểm tra email của bạn</h1>
+              <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">
                 Chúng tôi đã gửi mã OTP 6 chữ số đến{" "}
-                <span className="font-semibold text-gray-700">{email}</span>
+                <span className="font-semibold text-gray-700 dark:text-gray-300">{email}</span>
               </p>
             </div>
 
             {/* Cảnh báo gửi email thất bại từ RegisterPage */}
             {emailFailed && (
-              <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded-xl px-4 py-3 mb-5">
+              <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 text-sm rounded-xl px-4 py-3 mb-5">
                 <AlertCircle size={16} className="shrink-0 mt-0.5" />
                 <span>Không gửi được email OTP. Vui lòng dùng nút "Gửi lại mã" bên dưới.</span>
               </div>
@@ -197,7 +197,7 @@ const VerifyEmailPage = () => {
 
             <form onSubmit={handleVerify} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Mã OTP (6 chữ số)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mã OTP (6 chữ số)</label>
                 <div className="relative">
                   <KeyRound
                     className={`absolute left-4 top-3.5 ${otpState() === "error" ? "text-red-400" : otpState() === "success" ? "text-green-500" : "text-gray-400"}`}
@@ -231,7 +231,7 @@ const VerifyEmailPage = () => {
 
               {/* Gửi lại thành công */}
               {resendStatus === "sent" && (
-                <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3 animate-[fadeDown_0.2s_ease]">
+                <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm rounded-xl px-4 py-3 animate-[fadeDown_0.2s_ease]">
                   <CheckCircle size={16} className="shrink-0" />
                   <span>OTP đã được gửi lại vào email của bạn!</span>
                 </div>
@@ -239,7 +239,7 @@ const VerifyEmailPage = () => {
 
               {/* Server error */}
               {serverError && (
-                <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 animate-[fadeDown_0.2s_ease]">
+                <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm rounded-xl px-4 py-3 animate-[fadeDown_0.2s_ease]">
                   <AlertCircle size={16} className="shrink-0 mt-0.5" />
                   <span>{serverError}</span>
                 </div>
@@ -259,7 +259,7 @@ const VerifyEmailPage = () => {
             </form>
 
             <div className="mt-6 text-center space-y-2">
-              <p className="text-gray-500 text-sm flex items-center justify-center gap-2 flex-wrap">
+              <p className="text-gray-500 dark:text-gray-400 text-sm flex items-center justify-center gap-2 flex-wrap">
                 Không nhận được mã?{" "}
                 <button
                   type="button"
@@ -270,7 +270,7 @@ const VerifyEmailPage = () => {
                   {isResending ? "Đang gửi lại..." : cooldown > 0 ? `Gửi lại sau ${cooldown}s` : "Gửi lại mã"}
                 </button>
               </p>
-              <p className="text-gray-400 text-xs">Vui lòng kiểm tra cả thư mục spam nếu không thấy email.</p>
+              <p className="text-gray-400 dark:text-gray-500 text-xs">Vui lòng kiểm tra cả thư mục spam nếu không thấy email.</p>
             </div>
           </div>
         </div>

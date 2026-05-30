@@ -17,36 +17,36 @@ export const UserEditModal = ({ user, onClose, onSave }) => {
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 border border-slate-100"
+        className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm p-6 border border-slate-100 dark:border-gray-700"
         style={{ animation: "modalIn 0.25s cubic-bezier(0.22,1,0.36,1) both" }}
       >
         <div className="flex justify-between items-center mb-5">
-          <h3 className="text-lg font-bold text-slate-800">Chỉnh sửa thành viên</h3>
+          <h3 className="text-lg font-bold text-slate-800 dark:text-white">Chỉnh sửa thành viên</h3>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 transition-all duration-150 active:scale-90"
+            className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-400 dark:text-gray-400 transition-all duration-150 active:scale-90"
           >
             <X size={18} />
           </button>
         </div>
 
         <div className="space-y-4 mb-5">
-          <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+          <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-gray-700">
             <div className="w-11 h-11 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-lg flex-shrink-0">
               {user.name?.charAt(0).toUpperCase()}
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-700">{user.email}</p>
-              <p className="text-xs text-slate-400">{user.role === "admin" ? "Quản trị viên" : "Thành viên"}</p>
+              <p className="text-sm font-medium text-slate-700 dark:text-gray-300">{user.email}</p>
+              <p className="text-xs text-slate-400 dark:text-gray-400">{user.role === "admin" ? "Quản trị viên" : "Thành viên"}</p>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Họ tên</label>
+            <label className="block text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Họ tên</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-700 font-medium outline-none focus:border-[#dc2626] focus:ring-4 focus:ring-red-50 text-sm transition-all duration-150"
+              className="w-full border border-slate-200 dark:border-gray-600 rounded-xl px-4 py-2.5 text-slate-700 dark:text-white dark:bg-gray-700 font-medium outline-none focus:border-[#dc2626] focus:ring-4 focus:ring-red-50 text-sm transition-all duration-150"
             />
           </div>
         </div>
@@ -54,7 +54,7 @@ export const UserEditModal = ({ user, onClose, onSave }) => {
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 border border-slate-200 rounded-xl text-slate-600 font-semibold hover:bg-slate-50 text-sm transition-all duration-150 active:scale-95"
+            className="flex-1 py-2.5 border border-slate-200 dark:border-gray-600 rounded-xl text-slate-600 dark:text-gray-300 font-semibold hover:bg-slate-50 dark:hover:bg-gray-700/50 text-sm transition-all duration-150 active:scale-95"
           >
             Hủy
           </button>
@@ -115,26 +115,26 @@ export const UsersManager = ({ users, loading, onUpdate }) => {
         }
       `}</style>
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-slate-100 dark:border-gray-700 shadow-sm">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Thành viên hệ thống</h2>
-          <p className="text-sm text-slate-500 mt-0.5">{users.length} tài khoản</p>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white">Thành viên hệ thống</h2>
+          <p className="text-sm text-slate-500 dark:text-gray-400 mt-0.5">{users.length} tài khoản</p>
         </div>
         <div className="relative w-full sm:w-72">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500" />
           <input
             type="text"
             placeholder="Tìm tên hoặc email..."
             value={search}
             onChange={handleSearch}
-            className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#dc2626] focus:ring-4 focus:ring-red-50 font-medium transition-all duration-150"
+            className="w-full pl-9 pr-4 py-2.5 border border-slate-200 dark:border-gray-600 rounded-xl text-sm outline-none focus:border-[#dc2626] focus:ring-4 focus:ring-red-50 font-medium transition-all duration-150 bg-white dark:bg-gray-700 text-slate-900 dark:text-white"
           />
         </div>
       </div>
 
       {/* Bulk action bar — removed (no delete) */}
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-slate-100 dark:border-gray-700 overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-16">
             <div className="animate-spin rounded-full h-8 w-8 border-4 border-red-600 border-t-transparent" />
@@ -144,7 +144,7 @@ export const UsersManager = ({ users, loading, onUpdate }) => {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/80 text-xs uppercase tracking-wider text-slate-500 font-bold">
+                  <tr className="border-b border-slate-100 dark:border-gray-700 bg-slate-50/80 dark:bg-gray-700 text-xs uppercase tracking-wider text-slate-500 dark:text-gray-400 font-bold">
                     <th className="text-left px-6 py-3.5">Thành viên</th>
                     <th className="text-left px-6 py-3.5">Vai trò</th>
                     <th className="text-left px-6 py-3.5 hidden xl:table-cell">SĐT</th>
@@ -152,11 +152,11 @@ export const UsersManager = ({ users, loading, onUpdate }) => {
                     <th className="text-right px-6 py-3.5">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody key={currentPage} className="divide-y divide-slate-50">
+                <tbody key={currentPage} className="divide-y divide-slate-50 dark:divide-gray-700">
                   {pagedUsers.map((user, idx) => (
                     <tr
                       key={user._id}
-                      className="hover:bg-slate-50/80 transition-all duration-150"
+                      className="hover:bg-slate-50/80 dark:hover:bg-gray-700/50 transition-all duration-150"
                       style={{ animation: "rowIn 0.25s cubic-bezier(0.22,1,0.36,1) both", animationDelay: `${idx * 40}ms` }}
                     >
                       <td className="px-6 py-4">
@@ -165,8 +165,8 @@ export const UsersManager = ({ users, loading, onUpdate }) => {
                             {user.name?.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-bold text-slate-800">{user.name}</p>
-                            <p className="text-xs text-slate-400">{user.email}</p>
+                            <p className="font-bold text-slate-800 dark:text-white">{user.name}</p>
+                            <p className="text-xs text-slate-400 dark:text-gray-400">{user.email}</p>
                           </div>
                         </div>
                       </td>
@@ -176,22 +176,22 @@ export const UsersManager = ({ users, loading, onUpdate }) => {
                             <Shield size={11} /> Admin
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-gray-300 border border-slate-200 dark:border-gray-600">
                             <User size={11} /> Thành viên
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-slate-500 text-xs hidden xl:table-cell">
-                        {user.phone || <span className="text-slate-300">—</span>}
+                      <td className="px-6 py-4 text-slate-500 dark:text-gray-400 text-xs hidden xl:table-cell">
+                        {user.phone || <span className="text-slate-300 dark:text-gray-600">—</span>}
                       </td>
-                      <td className="px-6 py-4 text-slate-400 text-xs hidden lg:table-cell">
+                      <td className="px-6 py-4 text-slate-400 dark:text-gray-400 text-xs hidden lg:table-cell">
                         {formatDate(user.createdAt)}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => setEditUser(user)}
-                            className="p-2 rounded-lg hover:bg-red-50 text-slate-400 hover:text-[#dc2626] transition-all duration-150 active:scale-90"
+                            className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 dark:text-gray-400 hover:text-[#dc2626] transition-all duration-150 active:scale-90"
                             title="Chỉnh sửa"
                           >
                             <Edit size={15} />
@@ -202,7 +202,7 @@ export const UsersManager = ({ users, loading, onUpdate }) => {
                   ))}
                   {filtered.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="text-center py-12 text-slate-400 font-medium">
+                      <td colSpan={5} className="text-center py-12 text-slate-400 dark:text-gray-400 font-medium">
                         Không tìm thấy thành viên nào.
                       </td>
                     </tr>
@@ -211,15 +211,15 @@ export const UsersManager = ({ users, loading, onUpdate }) => {
               </table>
             </div>
 
-            <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100">
-              <p className="text-xs text-slate-400 font-medium">
-                Hiển thị <span className="font-bold text-slate-600">{filtered.length === 0 ? 0 : (currentPage - 1) * USERS_PAGE_SIZE + 1}–{Math.min(currentPage * USERS_PAGE_SIZE, filtered.length)}</span> / <span className="font-bold text-slate-600">{filtered.length}</span> thành viên
+            <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 dark:border-gray-700">
+              <p className="text-xs text-slate-400 dark:text-gray-400 font-medium">
+                Hiển thị <span className="font-bold text-slate-600 dark:text-gray-300">{filtered.length === 0 ? 0 : (currentPage - 1) * USERS_PAGE_SIZE + 1}–{Math.min(currentPage * USERS_PAGE_SIZE, filtered.length)}</span> / <span className="font-bold text-slate-600 dark:text-gray-300">{filtered.length}</span> thành viên
               </p>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="px-3 h-9 rounded-lg text-sm font-bold border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95"
+                  className="px-3 h-9 rounded-lg text-sm font-bold border border-slate-200 dark:border-gray-600 text-slate-500 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95"
                 >
                   ‹ Trước
                 </button>
@@ -232,12 +232,12 @@ export const UsersManager = ({ users, loading, onUpdate }) => {
                   }, [])
                   .map((p, i) =>
                     p === "..." ? (
-                      <span key={`e-${i}`} className="w-9 h-9 flex items-center justify-center text-slate-400 text-sm">…</span>
+                      <span key={`e-${i}`} className="w-9 h-9 flex items-center justify-center text-slate-400 dark:text-gray-600 text-sm">…</span>
                     ) : (
                       <button
                         key={p}
                         onClick={() => setCurrentPage(p)}
-                        className={`w-9 h-9 rounded-lg text-sm font-bold transition-all duration-150 active:scale-95 ${currentPage === p ? "bg-[#dc2626] text-white shadow-sm shadow-red-200" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                        className={`w-9 h-9 rounded-lg text-sm font-bold transition-all duration-150 active:scale-95 ${currentPage === p ? "bg-[#dc2626] text-white shadow-sm shadow-red-200" : "border border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700/50"}`}
                       >
                         {p}
                       </button>
@@ -246,7 +246,7 @@ export const UsersManager = ({ users, loading, onUpdate }) => {
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(Math.max(totalPages, 1), p + 1))}
                   disabled={currentPage >= totalPages}
-                  className="px-3 h-9 rounded-lg text-sm font-bold border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95"
+                  className="px-3 h-9 rounded-lg text-sm font-bold border border-slate-200 dark:border-gray-600 text-slate-500 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95"
                 >
                   Sau ›
                 </button>

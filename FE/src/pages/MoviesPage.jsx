@@ -82,7 +82,7 @@ const MoviesPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] font-sans text-gray-900">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-gray-950 font-sans text-gray-900 dark:text-white">
       <Navbar />
 
       {/* ── HERO ── */}
@@ -143,7 +143,7 @@ const MoviesPage = () => {
         {/* Tabs + counter */}
         {!searchQuery && (
           <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-            <div className="relative flex bg-white border border-gray-200 p-1.5 rounded-2xl shadow-sm">
+            <div className="relative flex bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-1.5 rounded-2xl shadow-sm">
               <div
                 className={`absolute top-1.5 bottom-1.5 left-1.5 w-[calc(50%-6px)] bg-[#dc2626] rounded-xl shadow-md shadow-red-200 transition-transform duration-300 ease-in-out ${activeTab === "soon" ? "translate-x-full" : "translate-x-0"}`}
               />
@@ -154,19 +154,19 @@ const MoviesPage = () => {
                 <button
                   key={key}
                   onClick={() => handleTabChange(key)}
-                  className={`relative z-10 flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-colors duration-200 ${activeTab === key ? "text-white" : "text-gray-500 hover:text-gray-800"}`}
+                  className={`relative z-10 flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-colors duration-200 ${activeTab === key ? "text-white" : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"}`}
                 >
                   {icon}
                   {label}
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-black transition-colors duration-200 ${activeTab === key ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"}`}>
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-black transition-colors duration-200 ${activeTab === key ? "bg-white/20 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"}`}>
                     {count}
                   </span>
                 </button>
               ))}
             </div>
-            <p className="text-sm text-gray-400 font-medium">
-              Hiển thị <span className="font-black text-gray-800">{Math.min(visibleCount, allDisplay.length)}</span>
-              /<span className="font-black text-gray-800">{allDisplay.length}</span> phim
+            <p className="text-sm text-gray-400 dark:text-gray-500 font-medium">
+              Hiển thị <span className="font-black text-gray-800 dark:text-gray-200">{Math.min(visibleCount, allDisplay.length)}</span>
+              /<span className="font-black text-gray-800 dark:text-gray-200">{allDisplay.length}</span> phim
             </p>
           </div>
         )}
@@ -176,7 +176,7 @@ const MoviesPage = () => {
           <div className="flex flex-wrap gap-2 mb-6">
             <button
               onClick={() => handleGenreFilter("")}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold border transition-all ${!selectedGenre ? "bg-red-600 text-white border-red-600" : "bg-white text-gray-500 border-gray-200 hover:border-red-300 hover:text-red-600"}`}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold border transition-all ${!selectedGenre ? "bg-red-600 text-white border-red-600" : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-red-300 hover:text-red-600"}`}
             >
               <Tag size={13} /> Tất cả
             </button>
@@ -184,7 +184,7 @@ const MoviesPage = () => {
               <button
                 key={g.id}
                 onClick={() => handleGenreFilter(g.id)}
-                className={`px-3.5 py-1.5 rounded-full text-sm font-bold border transition-all ${selectedGenre === g.id ? "bg-red-600 text-white border-red-600" : "bg-white text-gray-500 border-gray-200 hover:border-red-300 hover:text-red-600"}`}
+                className={`px-3.5 py-1.5 rounded-full text-sm font-bold border transition-all ${selectedGenre === g.id ? "bg-red-600 text-white border-red-600" : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-red-300 hover:text-red-600"}`}
               >
                 {g.name}
               </button>
@@ -197,9 +197,9 @@ const MoviesPage = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
             {Array.from({ length: 10 }).map((_, i) => (
               <div key={i} className="animate-pulse">
-                <div className="aspect-[2/3] rounded-2xl bg-gray-200" />
-                <div className="mt-3 h-4 bg-gray-200 rounded w-3/4" />
-                <div className="mt-2 h-3 bg-gray-200 rounded w-1/2" />
+                <div className="aspect-[2/3] rounded-2xl bg-gray-200 dark:bg-gray-700" />
+                <div className="mt-3 h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                <div className="mt-2 h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
               </div>
             ))}
           </div>
@@ -216,11 +216,11 @@ const MoviesPage = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-24 bg-white rounded-3xl border border-dashed border-gray-200">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search size={28} className="text-gray-300" />
+          <div className="text-center py-24 bg-white dark:bg-gray-800 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search size={28} className="text-gray-300 dark:text-gray-600" />
             </div>
-            <p className="text-gray-600 font-bold text-lg">
+            <p className="text-gray-600 dark:text-gray-400 font-bold text-lg">
               {searchQuery ? `Không tìm thấy phim nào với từ khóa "${searchQuery}".` : "Hiện chưa có phim trong mục này."}
             </p>
             {searchQuery && (
@@ -238,7 +238,7 @@ const MoviesPage = () => {
           <div className="mt-10 flex justify-center">
             <button
               onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-              className="group flex items-center gap-2 px-8 py-3.5 bg-white border-2 border-[#dc2626] text-[#dc2626] font-bold rounded-2xl hover:bg-[#dc2626] hover:text-white transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-red-100"
+              className="group flex items-center gap-2 px-8 py-3.5 bg-white dark:bg-gray-800 border-2 border-[#dc2626] text-[#dc2626] font-bold rounded-2xl hover:bg-[#dc2626] hover:text-white transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-red-100"
             >
               <ChevronDown size={18} className="group-hover:translate-y-0.5 transition-transform" />
               Xem thêm ({allDisplay.length - visibleCount} phim còn lại)

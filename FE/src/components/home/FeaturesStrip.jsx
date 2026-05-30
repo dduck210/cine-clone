@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Film, MapPin, Tag, Zap } from "lucide-react";
-import useInView from "../../hooks/use-in-view";
+import useInView from "../../shared/hooks/use-in-view";
 
 const FEATURES = [
   { icon: <Film size={22} />, label: "50+ Phim mới", sub: "Cập nhật mỗi tuần", to: "/movies" },

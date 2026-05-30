@@ -1,0 +1,16 @@
+import axiosInstance from "../axiosConfig";
+
+export const getMyTickets = (params) =>
+  axiosInstance.get("/tickets/my", { params }).then((r) => r.data);
+
+export const getTicket = (id) =>
+  axiosInstance.get(`/tickets/${id}`).then((r) => r.data);
+
+export const getTicketByCode = (code) =>
+  axiosInstance.get(`/tickets/code/${code}`).then((r) => r.data);
+
+export const scanTicket = (bookingCode) =>
+  axiosInstance.post("/tickets/scan", { bookingCode }).then((r) => r.data);
+
+export const hardCopyTicket = (ticketId) =>
+  axiosInstance.post(`/tickets/${ticketId}/hard-copy`).then((r) => r.data);

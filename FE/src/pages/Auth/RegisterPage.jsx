@@ -2,9 +2,8 @@ import React, { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, User, ArrowLeft, ShieldCheck, CheckCircle, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
-import axiosInstance from "../../api/axiosConfig";
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { authService } from "../../api/services";
+import { validateEmail, validatePassword } from "../../shared/utils";
 
 const validateField = (name, value, allValues = {}) => {
   if (name === "name") {
@@ -12,16 +11,8 @@ const validateField = (name, value, allValues = {}) => {
     if (value.trim().length < 2) return "Họ tên phải có ít nhất 2 ký tự";
     return "";
   }
-  if (name === "email") {
-    if (!value.trim()) return "Email không được để trống";
-    if (!EMAIL_RE.test(value)) return "Email không đúng định dạng";
-    return "";
-  }
-  if (name === "password") {
-    if (!value) return "Mật khẩu không được để trống";
-    if (value.length < 6) return "Mật khẩu phải có ít nhất 6 ký tự";
-    return "";
-  }
+  if (name === "email") return validateEmail(value);
+  if (name === "password") return validatePassword(value);
   if (name === "confirmPassword") {
     if (!value) return "Vui lòng nhập lại mật khẩu";
     if (value !== allValues.password) return "Mật khẩu không khớp";
@@ -92,16 +83,12 @@ const RegisterPage = () => {
     setLoading(true);
     setServerError("");
     try {
-      const res = await axiosInstance.post("/auth/register", {
-        name: fields.name,
-        email: fields.email,
-        password: fields.password,
-      });
+      const data = await authService.register(fields.name, fields.email, fields.password);
       localStorage.removeItem("token");
       localStorage.removeItem("currentUser");
-      toast.success(res.data.message || "Vui lòng kiểm tra email để xác thực tài khoản.");
+      toast.success(data.message || "Vui lòng kiểm tra email để xác thực tài khoản.");
       navigate("/verify-email", {
-        state: { email: res.data.email || fields.email, emailFailed: !!res.data.emailFailed },
+        state: { email: data.email || fields.email, emailFailed: !!data.emailFailed },
       });
     } catch (err) {
       setServerError(err.response?.data?.message || "Đăng ký thất bại, vui lòng thử lại");
@@ -116,11 +103,11 @@ const RegisterPage = () => {
   };
 
   const inputClass = (name, extraRight = "pr-10") => {
-    const base = `w-full bg-gray-50 border rounded-xl pl-11 ${extraRight} py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 outline-none transition-all duration-200 font-medium`;
+    const base = `w-full bg-gray-50 dark:bg-gray-700 border rounded-xl pl-11 ${extraRight} py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 outline-none transition-all duration-200 font-medium`;
     const state = fieldState(name);
-    if (state === "error") return `${base} border-red-400 focus:ring-red-100 focus:border-red-500`;
-    if (state === "success") return `${base} border-green-400 focus:ring-green-100 focus:border-green-500 bg-green-50/30`;
-    return `${base} border-gray-200 focus:ring-red-100 focus:border-[#dc2626]`;
+    if (state === "error") return `${base} border-red-400 focus:ring-red-100 dark:focus:ring-red-900/20 focus:border-red-500`;
+    if (state === "success") return `${base} border-green-400 focus:ring-green-100 dark:focus:ring-green-900/20 focus:border-green-500 bg-green-50/30 dark:bg-green-900/10`;
+    return `${base} border-gray-200 dark:border-gray-600 focus:ring-red-100 dark:focus:ring-red-900/20 focus:border-[#dc2626]`;
   };
 
   const leadIconColor = (name) => {
@@ -141,14 +128,14 @@ const RegisterPage = () => {
   const PasswordTrail = ({ name, show, onToggle }) => (
     <div className="absolute right-3.5 top-3 flex items-center gap-1.5">
       <TrailIcon name={name} />
-      <button type="button" onClick={onToggle} className="text-gray-400 hover:text-gray-600 p-0.5" tabIndex={-1}>
+      <button type="button" onClick={onToggle} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 p-0.5" tabIndex={-1}>
         {show ? <EyeOff size={18} /> : <Eye size={18} />}
       </button>
     </div>
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 px-4 py-8">
       <style>{`
         @keyframes fadeDown {
           from { opacity: 0; transform: translateY(-4px); }
@@ -156,7 +143,7 @@ const RegisterPage = () => {
         }
       `}</style>
 
-      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row">
+      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row">
         {/* Left panel */}
         <div className="hidden md:block md:w-1/2 bg-gray-900 relative min-h-[680px]">
           <img
@@ -176,19 +163,19 @@ const RegisterPage = () => {
         {/* Right panel — form */}
         <div className="w-full md:w-1/2 flex flex-col justify-center px-6 py-10 sm:px-10 sm:py-12">
           <div className="max-w-md mx-auto w-full">
-            <Link to="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors text-sm font-medium mb-8">
+            <Link to="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors text-sm font-medium mb-8">
               <ArrowLeft size={16} /> Về trang chủ
             </Link>
 
             <div className="mb-6 text-center md:text-left">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">Tạo tài khoản</h1>
-              <p className="text-gray-500 text-sm sm:text-base">Hoàn toàn miễn phí và chỉ mất 1 phút.</p>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white mb-2">Tạo tài khoản</h1>
+              <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">Hoàn toàn miễn phí và chỉ mất 1 phút.</p>
             </div>
 
             <form onSubmit={handleRegister} className="space-y-4">
               {/* Họ tên */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Họ và tên</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Họ và tên</label>
                 <div className="relative">
                   <User className={`absolute left-4 top-3.5 ${leadIconColor("name")}`} size={18} />
                   <input
@@ -207,7 +194,7 @@ const RegisterPage = () => {
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
                 <div className="relative">
                   <Mail className={`absolute left-4 top-3.5 ${leadIconColor("email")}`} size={18} />
                   <input
@@ -226,7 +213,7 @@ const RegisterPage = () => {
 
               {/* Mật khẩu */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Mật khẩu</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mật khẩu</label>
                 <div className="relative">
                   <Lock className={`absolute left-4 top-3.5 ${leadIconColor("password")}`} size={18} />
                   <input
@@ -248,7 +235,7 @@ const RegisterPage = () => {
 
               {/* Nhập lại mật khẩu */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nhập lại mật khẩu</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nhập lại mật khẩu</label>
                 <div className="relative">
                   <ShieldCheck className={`absolute left-4 top-3.5 ${leadIconColor("confirmPassword")}`} size={18} />
                   <input
@@ -273,7 +260,7 @@ const RegisterPage = () => {
                   className="w-4 h-4 accent-[#dc2626] rounded border-gray-300 focus:ring-[#dc2626] shrink-0"
                   required
                 />
-                <label htmlFor="terms" className="text-sm text-gray-500 leading-snug">
+                <label htmlFor="terms" className="text-sm text-gray-500 dark:text-gray-400 leading-snug">
                   Tôi đồng ý với{" "}
                   <Link to="/terms" target="_blank" className="text-[#dc2626] font-semibold hover:underline">
                     Điều khoản sử dụng
@@ -283,7 +270,7 @@ const RegisterPage = () => {
 
               {/* Server error */}
               {serverError && (
-                <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 animate-[fadeDown_0.2s_ease]">
+                <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm rounded-xl px-4 py-3 animate-[fadeDown_0.2s_ease]">
                   <AlertCircle size={16} className="shrink-0 mt-0.5" />
                   <span>{serverError}</span>
                 </div>
@@ -305,7 +292,7 @@ const RegisterPage = () => {
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-gray-500 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Đã có tài khoản?{" "}
                 <Link to="/login" className="font-bold text-[#dc2626] hover:underline">
                   Đăng nhập ngay

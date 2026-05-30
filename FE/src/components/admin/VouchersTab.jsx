@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import usePagination from "../../shared/hooks/use-pagination";
 import { createPortal } from "react-dom";
 import { Plus, Tag, Users, Clock, Ticket } from "lucide-react";
 import toast from "react-hot-toast";
@@ -13,10 +14,10 @@ const EMPTY_FORM = {
 };
 
 const STATUS_COLORS = {
-  emerald: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  red:     "bg-red-50 text-red-600 border-red-200",
-  amber:   "bg-amber-50 text-amber-700 border-amber-200",
-  slate:   "bg-slate-100 text-slate-600 border-slate-200",
+  emerald: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800",
+  red:     "bg-red-50 text-red-600 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800",
+  amber:   "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800",
+  slate:   "bg-slate-100 text-slate-600 border-slate-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600",
 };
 
 const normalizeVoucher = (raw) => {
@@ -79,17 +80,17 @@ const VoucherModal = ({ onClose, onSaved }) => {
     }
   };
 
-  const inp = "w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all";
-  const lbl = "block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5";
+  const inp = "w-full border border-slate-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white";
+  const lbl = "block text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-1.5";
 
   return createPortal(
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto animate-[scaleIn_0.2s_ease_forwards]" onClick={(e) => e.stopPropagation()}>
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
-          <h2 className="font-black text-lg text-slate-800 flex items-center gap-2">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto animate-[scaleIn_0.2s_ease_forwards]" onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10">
+          <h2 className="font-black text-lg text-slate-800 dark:text-white flex items-center gap-2">
             <Tag size={18} className="text-red-600" /> Tạo Voucher mới
           </h2>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors text-lg font-bold">&times;</button>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-gray-700 rounded-full text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300 transition-colors text-lg font-bold">&times;</button>
         </div>
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -123,7 +124,7 @@ const VoucherModal = ({ onClose, onSaved }) => {
             <div>
               <label className={lbl}>Ngày bắt đầu</label>
               <input type="datetime-local" value={form.startsAt} onChange={(e) => set("startsAt", e.target.value)} className={inp} />
-              <p className="text-[11px] text-slate-400 mt-1 ml-1">Để trống = có hiệu lực ngay</p>
+              <p className="text-[11px] text-slate-400 dark:text-gray-500 mt-1 ml-1">Để trống = có hiệu lực ngay</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -133,8 +134,8 @@ const VoucherModal = ({ onClose, onSaved }) => {
             </div>
           </div>
 
-          <div className="pt-2 border-t border-slate-100">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <div className="pt-2 border-t border-slate-100 dark:border-gray-700">
+            <p className="text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
               <Users size={13} /> Giới hạn sử dụng
             </p>
             <div className="grid grid-cols-2 gap-4">
@@ -158,8 +159,8 @@ const VoucherModal = ({ onClose, onSaved }) => {
             <input value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="Nhập mô tả ngắn..." className={inp} />
           </div>
 
-          <div className="flex gap-3 pt-3 border-t border-slate-100">
-            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors">Huỷ</button>
+          <div className="flex gap-3 pt-3 border-t border-slate-100 dark:border-gray-700">
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors">Huỷ</button>
             <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl bg-[#dc2626] hover:bg-red-700 text-white font-bold text-sm transition-colors disabled:opacity-50 shadow-sm shadow-red-200">
               {saving ? "Đang lưu..." : "Tạo voucher"}
             </button>
@@ -187,7 +188,7 @@ export const VouchersManager = () => {
   const [loading, setLoading]     = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
+  const { currentPage, totalPages, setTotalPages, paginationItems, goToPage, reset: resetPage } = usePagination();
 
   const load = async () => {
     setLoading(true);
@@ -222,28 +223,22 @@ export const VouchersManager = () => {
     return vouchers.filter((v) => v.computedStatus === activeTab);
   }, [vouchers, activeTab]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredVouchers.length / PAGE_SIZE));
+  const computedTotalPages = Math.max(1, Math.ceil(filteredVouchers.length / PAGE_SIZE));
   const pagedVouchers = filteredVouchers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  const handleTabChange = (val) => { setActiveTab(val); setCurrentPage(1); };
+  useEffect(() => { setTotalPages(computedTotalPages); }, [computedTotalPages]);
 
-  const paginationItems = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("…");
-      acc.push(p);
-      return acc;
-    }, []);
+  const handleTabChange = (val) => { setActiveTab(val); resetPage(); };
 
   return (
     <div className="space-y-6">
       {showModal && <VoucherModal onClose={() => setShowModal(false)} onSaved={() => { setShowModal(false); load(); }} />}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-slate-100 dark:border-gray-700 shadow-sm">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Quản Lý Voucher</h2>
-          <p className="text-sm text-slate-500">{vouchers.length} voucher trong hệ thống</p>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white">Quản Lý Voucher</h2>
+          <p className="text-sm text-slate-500 dark:text-gray-400">{vouchers.length} voucher trong hệ thống</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
@@ -261,11 +256,11 @@ export const VouchersManager = () => {
             onClick={() => handleTabChange(f.value)}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all duration-150 active:scale-95 ${
               activeTab === f.value
-                ? f.value === "active" ? "bg-emerald-50 text-emerald-600 border-emerald-200"
-                : f.value === "upcoming" ? "bg-amber-50 text-amber-600 border-amber-200"
-                : f.value === "ended" ? "bg-slate-100 text-slate-600 border-slate-200"
-                : "bg-slate-100 text-slate-600 border-slate-200"
-                : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                ? f.value === "active" ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800"
+                : f.value === "upcoming" ? "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800"
+                : f.value === "ended" ? "bg-slate-100 text-slate-600 border-slate-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"
+                : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"
+                : "bg-white dark:bg-gray-800 text-slate-400 dark:text-gray-500 border-slate-200 dark:border-gray-600 hover:border-slate-300 dark:hover:border-gray-500"
             }`}
           >
             {f.label}
@@ -274,21 +269,21 @@ export const VouchersManager = () => {
       </div>
 
       {/* Table card */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-slate-200 dark:border-gray-700 overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-16">
             <div className="animate-spin rounded-full h-8 w-8 border-4 border-red-600 border-t-transparent" />
           </div>
         ) : filteredVouchers.length === 0 ? (
           <div className="text-center py-16">
-            <Tag size={32} className="text-slate-200 mx-auto mb-2" />
-            <p className="text-slate-400 text-sm font-medium">Không tìm thấy voucher nào.</p>
+            <Tag size={32} className="text-slate-200 dark:text-gray-600 mx-auto mb-2" />
+            <p className="text-slate-400 dark:text-gray-500 text-sm font-medium">Không tìm thấy voucher nào.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-[13px] uppercase tracking-wider text-slate-500 font-bold">
+                <tr className="bg-slate-50/80 dark:bg-gray-700 border-b border-slate-200 dark:border-gray-700 text-[13px] uppercase tracking-wider text-slate-500 dark:text-gray-400 font-bold">
                   <th className="p-5 pl-6">Mã Voucher</th>
                   <th className="p-5">Chiết khấu</th>
                   <th className="p-5">Giới hạn</th>
@@ -297,37 +292,37 @@ export const VouchersManager = () => {
                   <th className="p-5 text-center">Trạng thái</th>
                 </tr>
               </thead>
-              <tbody key={currentPage} className="divide-y divide-slate-100">
+              <tbody key={currentPage} className="divide-y divide-slate-100 dark:divide-gray-700">
                 {pagedVouchers.map((v, i) => {
                   const display = v.displayStatus;
                   const cd = v.expiryCountdown;
                   return (
                     <tr
                       key={v.id}
-                      className="hover:bg-slate-50/80 transition-all duration-150 group"
+                      className="hover:bg-slate-50/80 dark:hover:bg-gray-700/50 transition-all duration-150 group"
                       style={{ animation: "rowIn 0.25s cubic-bezier(0.22,1,0.36,1) both", animationDelay: `${i * 40}ms` }}
                     >
                       {/* Code */}
                       <td className="p-5 pl-6">
                         <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0 ${v.computedStatus === "active" ? "bg-red-50 text-red-600" : "bg-slate-100 text-slate-400"}`}>
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0 ${v.computedStatus === "active" ? "bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400" : "bg-slate-100 text-slate-400 dark:bg-gray-700 dark:text-gray-500"}`}>
                             {v.discountType === "percent" ? "%" : "đ"}
                           </div>
                           <div>
-                            <p className="font-bold text-slate-800 tracking-widest text-[16px] leading-none mb-1">{v.code}</p>
-                            <p className="text-[13px] text-slate-400 truncate max-w-[160px]">{v.description || "Không có mô tả"}</p>
+                            <p className="font-bold text-slate-800 dark:text-white tracking-widest text-[16px] leading-none mb-1">{v.code}</p>
+                            <p className="text-[13px] text-slate-400 dark:text-gray-500 truncate max-w-[160px]">{v.description || "Không có mô tả"}</p>
                           </div>
                         </div>
                       </td>
 
                       {/* Discount */}
                       <td className="p-5">
-                        <p className="font-bold text-slate-800 text-[16px]">
+                        <p className="font-bold text-slate-800 dark:text-white text-[16px]">
                           {v.discountType === "percent" ? `−${v.discountValue}%` : `−${v.discountValue.toLocaleString()}đ`}
                         </p>
-                        {v.maxDiscount && <p className="text-[13px] text-slate-400 mt-0.5">Tối đa {v.maxDiscount.toLocaleString()}đ</p>}
+                        {v.maxDiscount && <p className="text-[13px] text-slate-400 dark:text-gray-500 mt-0.5">Tối đa {v.maxDiscount.toLocaleString()}đ</p>}
                         {v.minOrderAmount > 0 && (
-                          <span className="inline-block mt-1 px-1.5 py-0.5 bg-red-50 text-red-600 rounded text-[10px] font-bold">
+                          <span className="inline-block mt-1 px-1.5 py-0.5 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded text-[10px] font-bold">
                             Từ {v.minOrderAmount.toLocaleString()}đ
                           </span>
                         )}
@@ -335,19 +330,19 @@ export const VouchersManager = () => {
 
                       {/* Limits */}
                       <td className="p-5">
-                        <div className="space-y-1.5 text-sm text-slate-500">
+                        <div className="space-y-1.5 text-sm text-slate-500 dark:text-gray-400">
                           <div className="flex items-center gap-1.5">
-                            <Ticket size={13} className="text-slate-400 shrink-0" />
+                            <Ticket size={13} className="text-slate-400 dark:text-gray-500 shrink-0" />
                             {v.usageLimit !== -1 ? `${v.usageLimit} lượt` : "Không giới hạn"}
                           </div>
                           {v.maxUsagePerUser != null && (
                             <div className="flex items-center gap-1.5">
-                              <Ticket size={13} className="text-slate-400 shrink-0 opacity-60" />
+                              <Ticket size={13} className="text-slate-400 dark:text-gray-500 shrink-0 opacity-60" />
                               <span className="text-xs">{v.maxUsagePerUser} lần / user</span>
                             </div>
                           )}
                           <div className="flex items-center gap-1.5">
-                            <Users size={13} className="text-slate-400 shrink-0" />
+                            <Users size={13} className="text-slate-400 dark:text-gray-500 shrink-0" />
                             {v.maxUsers != null ? `${v.maxUsers} users` : "Không giới hạn"}
                           </div>
                         </div>
@@ -356,11 +351,11 @@ export const VouchersManager = () => {
                       {/* Dates */}
                       <td className="p-5">
                         <div className="space-y-1 text-[15px]">
-                          <p className="text-slate-600">Từ: <span className="font-medium text-slate-700">{formatDate(v.startDate)}</span></p>
-                          <p className="text-slate-600">Đến: <span className="font-medium text-slate-700">{formatDate(v.endDate)}</span></p>
+                          <p className="text-slate-600 dark:text-gray-400">Từ: <span className="font-medium text-slate-700 dark:text-gray-300">{formatDate(v.startDate)}</span></p>
+                          <p className="text-slate-600 dark:text-gray-400">Đến: <span className="font-medium text-slate-700 dark:text-gray-300">{formatDate(v.endDate)}</span></p>
                           {cd && cd.urgency !== "expired" && (
                             <p className={`flex items-center gap-1 font-bold text-[13px] mt-1 ${
-                              cd.urgency === "critical" ? "text-red-500" : cd.urgency === "warning" ? "text-amber-500" : "text-slate-400"
+                              cd.urgency === "critical" ? "text-red-500" : cd.urgency === "warning" ? "text-amber-500" : "text-slate-400 dark:text-gray-500"
                             }`}>
                               <Clock size={12} /> {cd.days > 0 ? `Còn ${cd.days} ngày` : `Còn ${cd.hours} giờ`}
                             </p>
@@ -371,22 +366,22 @@ export const VouchersManager = () => {
                       {/* Usage */}
                       <td className="p-5">
                         <div className="min-w-[140px]">
-                          <p className="text-[15px] font-medium text-slate-600">
+                          <p className="text-[15px] font-medium text-slate-600 dark:text-gray-400">
                             {v.usedCount ?? 0}{v.usageLimit !== -1 ? ` / ${v.usageLimit}` : ""} lượt
                           </p>
                           {v.maxUsers != null && (
-                            <p className="text-[13px] text-slate-500 mt-0.5">
-                              <Users size={11} className="inline text-slate-400 mr-1" />
+                            <p className="text-[13px] text-slate-500 dark:text-gray-400 mt-0.5">
+                              <Users size={11} className="inline text-slate-400 dark:text-gray-500 mr-1" />
                               {v.uniqueUserCount ?? 0} / {v.maxUsers} users
                             </p>
                           )}
                           {v.usageLimit === -1 && v.maxUsers == null && (
-                            <p className="text-[13px] text-slate-400">Không giới hạn</p>
+                            <p className="text-[13px] text-slate-400 dark:text-gray-500">Không giới hạn</p>
                           )}
                           {v.usageLimit !== -1 && (
                             <>
-                              <p className="text-[13px] text-slate-400">{v.usagePercent}%</p>
-                              <div className="mt-1.5 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                              <p className="text-[13px] text-slate-400 dark:text-gray-500">{v.usagePercent}%</p>
+                              <div className="mt-1.5 w-full bg-slate-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
                                 <div
                                   className={`h-full rounded-full transition-all duration-700 ${
                                     v.computedStatus === "used-up" ? "bg-red-400" : v.usagePercent > 80 ? "bg-amber-400" : "bg-emerald-400"
@@ -416,25 +411,25 @@ export const VouchersManager = () => {
 
         {/* Pagination */}
         {!loading && totalPages > 1 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 bg-slate-50/40">
-            <p className="text-xs text-slate-400">
+          <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 dark:border-gray-700 bg-slate-50/40 dark:bg-gray-800">
+            <p className="text-xs text-slate-400 dark:text-gray-500">
               {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredVouchers.length)} / {filteredVouchers.length}
             </p>
             <div className="flex items-center gap-1">
-              <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}
-                className="px-2.5 h-8 rounded-lg text-xs font-bold border border-slate-200 text-slate-500 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors">‹</button>
+              <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}
+                className="px-2.5 h-8 rounded-lg text-xs font-bold border border-slate-200 dark:border-gray-600 text-slate-500 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">‹</button>
               {paginationItems.map((p, i) =>
-                p === "…" ? (
-                  <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-slate-400 text-xs">…</span>
+                p === null ? (
+                  <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-slate-400 dark:text-gray-600 text-xs">…</span>
                 ) : (
-                  <button key={p} onClick={() => setCurrentPage(p)}
-                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${currentPage === p ? "bg-[#dc2626] text-white shadow-sm shadow-red-200" : "border border-slate-200 text-slate-600 hover:bg-white"}`}>
+                  <button key={p} onClick={() => goToPage(p)}
+                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${currentPage === p ? "bg-[#dc2626] text-white shadow-sm shadow-red-200" : "border border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700"}`}>
                     {p}
                   </button>
                 )
               )}
-              <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}
-                className="px-2.5 h-8 rounded-lg text-xs font-bold border border-slate-200 text-slate-500 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors">›</button>
+              <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= totalPages}
+                className="px-2.5 h-8 rounded-lg text-xs font-bold border border-slate-200 dark:border-gray-600 text-slate-500 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">›</button>
             </div>
           </div>
         )}

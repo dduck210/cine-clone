@@ -119,7 +119,7 @@ const PaymentPage = () => {
   const selectedMethod = PAYMENT_METHODS.find((m) => m.id === paymentMethod);
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 relative">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-950 font-sans text-slate-900 dark:text-white relative">
       <Navbar />
 
       {/* ── Success overlay ── */}
@@ -166,23 +166,23 @@ const PaymentPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-7 flex flex-col gap-8">
             {/* Thông tin nhận vé */}
-            <section className="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200">
-              <h3 className="font-bold text-xl text-slate-800 mb-8 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-[#dc2626] shadow-sm"><User size={22} strokeWidth={2.5} /></div>
+            <section className="bg-white dark:bg-gray-800 p-8 rounded-[32px] shadow-sm border border-slate-200 dark:border-gray-700">
+              <h3 className="font-bold text-xl text-slate-800 dark:text-white mb-8 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-red-50 dark:bg-gray-700 flex items-center justify-center text-[#dc2626] shadow-sm"><User size={22} strokeWidth={2.5} /></div>
                 Thông tin nhận vé
               </h3>
               <div className="space-y-5">
                 <div className="relative">
                   <User className={`absolute left-4 top-4 ${errors.name ? "text-red-500" : "text-slate-400"}`} size={20} />
                   <input type="text" placeholder="Họ và tên khách hàng" value={customerInfo.name}
-                    className={`w-full bg-slate-50 border rounded-xl pl-12 pr-4 py-4 outline-none transition-all font-semibold ${errors.name ? "border-red-500 ring-4 ring-red-50" : "border-slate-200 focus:border-[#dc2626] focus:ring-4 focus:ring-red-50"}`}
+                    className={`w-full bg-slate-50 dark:bg-gray-700 border rounded-xl pl-12 pr-4 py-4 outline-none transition-all font-semibold dark:text-white dark:placeholder-gray-400 ${errors.name ? "border-red-500 ring-4 ring-red-50" : "border-slate-200 dark:border-gray-600 focus:border-[#dc2626] focus:ring-4 focus:ring-red-50"}`}
                     onChange={(e) => { setCustomerInfo({ ...customerInfo, name: e.target.value }); if (errors.name) setErrors({ ...errors, name: "" }); }} />
                   {errors.name && <p className="text-red-500 text-xs mt-1.5 font-bold ml-1">{errors.name}</p>}
                 </div>
                 <div className="relative">
                   <Mail className={`absolute left-4 top-4 ${errors.email ? "text-red-500" : "text-slate-400"}`} size={20} />
                   <input type="email" placeholder="Email nhận vé" value={customerInfo.email}
-                    className={`w-full bg-slate-50 border rounded-xl pl-12 pr-4 py-4 outline-none transition-all font-semibold ${errors.email ? "border-red-500 ring-4 ring-red-50" : "border-slate-200 focus:border-[#dc2626] focus:ring-4 focus:ring-red-50"}`}
+                    className={`w-full bg-slate-50 dark:bg-gray-700 border rounded-xl pl-12 pr-4 py-4 outline-none transition-all font-semibold dark:text-white dark:placeholder-gray-400 ${errors.email ? "border-red-500 ring-4 ring-red-50" : "border-slate-200 dark:border-gray-600 focus:border-[#dc2626] focus:ring-4 focus:ring-red-50"}`}
                     onChange={(e) => { setCustomerInfo({ ...customerInfo, email: e.target.value }); if (errors.email) setErrors({ ...errors, email: "" }); }} />
                   {errors.email && <p className="text-red-500 text-xs mt-1.5 font-bold ml-1">{errors.email}</p>}
                 </div>
@@ -190,8 +190,8 @@ const PaymentPage = () => {
             </section>
 
             {/* Phương thức thanh toán */}
-            <section className="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200">
-              <h3 className="font-bold text-xl text-slate-800 mb-6 flex items-center gap-4">
+            <section className="bg-white dark:bg-gray-800 p-8 rounded-[32px] shadow-sm border border-slate-200 dark:border-gray-700">
+              <h3 className="font-bold text-xl text-slate-800 dark:text-white mb-6 flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-[#dc2626] shadow-sm">
                   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>
                 </div>
@@ -200,9 +200,9 @@ const PaymentPage = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {PAYMENT_METHODS.map((m) => (
                   <button key={m.id} onClick={() => setPaymentMethod(m.id)}
-                    className={`w-full flex items-center gap-4 p-5 rounded-2xl border-2 transition-all duration-200 text-left ${paymentMethod === m.id ? m.color + " shadow-md" : "border-slate-200 hover:border-slate-300 bg-white"}`}>
+                    className={`w-full flex items-center gap-4 p-5 rounded-2xl border-2 transition-all duration-200 text-left ${paymentMethod === m.id ? m.color + " shadow-md" : "border-slate-200 dark:border-gray-700 hover:border-slate-300 bg-white dark:bg-gray-800"}`}>
                     <div className="shrink-0">{m.icon}</div>
-                    <div className="flex-1 min-w-0"><p className="font-bold text-slate-800 text-sm">{m.label}</p><p className="text-slate-400 text-xs mt-0.5">{m.desc}</p></div>
+                    <div className="flex-1 min-w-0"><p className="font-bold text-slate-800 dark:text-white text-sm">{m.label}</p><p className="text-slate-400 dark:text-gray-400 text-xs mt-0.5">{m.desc}</p></div>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${paymentMethod === m.id ? "border-transparent " + m.dot : "border-slate-300"}`}>
                       {paymentMethod === m.id && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
                     </div>
@@ -214,7 +214,7 @@ const PaymentPage = () => {
 
           {/* Cột phải: tóm tắt đơn */}
           <div className="lg:col-span-5 sticky top-28">
-            <div className="bg-white rounded-[32px] shadow-xl border border-slate-200 overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-[32px] shadow-xl border border-slate-200 dark:border-gray-700 overflow-hidden">
               {/* Poster */}
               <div className="relative h-48 bg-slate-900 flex items-center p-6 overflow-hidden rounded-t-[32px]">
                 {poster && <img src={poster} className="absolute inset-0 w-full h-full object-cover opacity-30 blur-sm scale-110" alt="bg" />}
@@ -229,25 +229,25 @@ const PaymentPage = () => {
               </div>
 
               {/* Booking details */}
-              <div className="p-8 pb-4 bg-white">
+              <div className="p-8 pb-4 bg-white dark:bg-gray-800">
                 <div className="space-y-5">
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-[#dc2626] shrink-0 border border-red-100"><MapPin size={20} strokeWidth={2.5} /></div>
-                    <div className="flex-1"><p className="text-slate-400 font-bold uppercase tracking-wider text-[9px] mb-0.5">Rạp chiếu</p><p className="font-bold text-slate-800 text-[16px] leading-tight">{cinemaName}</p></div>
+                    <div className="flex-1"><p className="text-slate-400 dark:text-gray-400 font-bold uppercase tracking-wider text-[9px] mb-0.5">Rạp chiếu</p><p className="font-bold text-slate-800 dark:text-white text-[16px] leading-tight">{cinemaName}</p></div>
                   </div>
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-[#dc2626] shrink-0 border border-red-100"><Calendar size={20} strokeWidth={2.5} /></div>
-                    <div className="flex-1"><p className="text-slate-400 font-bold uppercase tracking-wider text-[9px] mb-0.5">Suất chiếu</p><p className="font-bold text-slate-800 text-[16px] leading-tight">{showTime} - {showDate}</p></div>
+                    <div className="flex-1"><p className="text-slate-400 dark:text-gray-400 font-bold uppercase tracking-wider text-[9px] mb-0.5">Suất chiếu</p><p className="font-bold text-slate-800 dark:text-white text-[16px] leading-tight">{showTime} - {showDate}</p></div>
                   </div>
                   {(roomName || duration > 0) && (
                     <div className="grid grid-cols-2 gap-3">
-                      {roomName && <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100"><p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Phòng chiếu</p><p className="font-bold text-slate-800 text-[13px]">{roomName}</p></div>}
-                      {duration > 0 && <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100 flex items-center gap-2"><Clock size={14} className="text-[#dc2626] shrink-0" /><div><p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Thời lượng</p><p className="font-bold text-slate-800 text-[13px]">{duration} phút</p></div></div>}
+                      {roomName && <div className="bg-slate-50 dark:bg-gray-700 rounded-2xl p-3 border border-slate-100 dark:border-gray-700"><p className="text-[9px] text-slate-400 dark:text-gray-400 font-bold uppercase tracking-wider mb-0.5">Phòng chiếu</p><p className="font-bold text-slate-800 dark:text-white text-[13px]">{roomName}</p></div>}
+                      {duration > 0 && <div className="bg-slate-50 dark:bg-gray-700 rounded-2xl p-3 border border-slate-100 dark:border-gray-700 flex items-center gap-2"><Clock size={14} className="text-[#dc2626] shrink-0" /><div><p className="text-[9px] text-slate-400 dark:text-gray-400 font-bold uppercase tracking-wider mb-0.5">Thời lượng</p><p className="font-bold text-slate-800 dark:text-white text-[13px]">{duration} phút</p></div></div>}
                     </div>
                   )}
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[#dc2626] shrink-0 shadow-sm border border-slate-100"><Armchair size={20} strokeWidth={2.5} /></div>
-                    <div className="flex-1"><p className="text-slate-400 font-bold uppercase tracking-wider text-[9px] mb-0.5">Vị trí ghế</p><p className="font-black text-[#dc2626] text-xl tracking-widest">{selectedSeats?.join(", ")}</p></div>
+                  <div className="bg-slate-50 dark:bg-gray-700 p-4 rounded-2xl border border-slate-100 dark:border-gray-700 flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-white dark:bg-gray-800 flex items-center justify-center text-[#dc2626] shrink-0 shadow-sm border border-slate-100 dark:border-gray-600"><Armchair size={20} strokeWidth={2.5} /></div>
+                    <div className="flex-1"><p className="text-slate-400 dark:text-gray-400 font-bold uppercase tracking-wider text-[9px] mb-0.5">Vị trí ghế</p><p className="font-black text-[#dc2626] text-xl tracking-widest">{selectedSeats?.join(", ")}</p></div>
                   </div>
                   {combos?.some((c) => c.quantity > 0) && (
                     <div className="bg-red-50/50 p-4 rounded-2xl border border-red-100/50 flex items-start gap-4">
@@ -256,7 +256,7 @@ const PaymentPage = () => {
                         <p className="text-[#dc2626] text-[10px] font-black uppercase tracking-wider mb-2">Bắp & Nước</p>
                         <ul className="space-y-1.5">
                           {combos.filter((c) => c.quantity > 0).map((c) => (
-                            <li key={c.id} className="flex justify-between text-[13px] text-slate-700 font-bold"><span>{c.quantity}x {c.name}</span><span className="text-slate-400">{(c.price * c.quantity).toLocaleString()}đ</span></li>
+                            <li key={c.id} className="flex justify-between text-[13px] text-slate-700 dark:text-gray-300 font-bold"><span>{c.quantity}x {c.name}</span><span className="text-slate-400 dark:text-gray-500">{(c.price * c.quantity).toLocaleString()}đ</span></li>
                           ))}
                         </ul>
                       </div>
@@ -266,10 +266,10 @@ const PaymentPage = () => {
               </div>
 
               {/* Discount + tổng cộng + nút - luôn hiển thị ở dưới */}
-              <div className="px-8 pt-5 pb-7 bg-white border-t-2 border-slate-100 shrink-0">
+              <div className="px-8 pt-5 pb-7 bg-white dark:bg-gray-800 border-t-2 border-slate-100 dark:border-gray-700 shrink-0">
                 {(mondayDiscount > 0 || voucherDiscount > 0) ? (
                   <div className="space-y-2 mb-4">
-                    <div className="flex justify-between items-center text-sm text-slate-400">
+                    <div className="flex justify-between items-center text-sm text-slate-400 dark:text-gray-400">
                       <span>Tạm tính</span>
                       <span>{originalPrice?.toLocaleString("vi-VN")}đ</span>
                     </div>
@@ -289,15 +289,15 @@ const PaymentPage = () => {
                         <span className="text-violet-600 font-bold">−{voucherDiscount?.toLocaleString("vi-VN")}đ</span>
                       </div>
                     )}
-                    <div className="border-t border-dashed border-slate-200 pt-3 flex justify-between items-end">
-                      <span className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Tổng cộng</span>
-                      <span className="text-3xl font-black text-slate-900 leading-none">{finalTotalPrice?.toLocaleString("vi-VN")} <span className="text-lg text-slate-300 font-normal">₫</span></span>
+                    <div className="border-t border-dashed border-slate-200 dark:border-gray-600 pt-3 flex justify-between items-end">
+                      <span className="text-slate-400 dark:text-gray-400 font-black uppercase tracking-widest text-[10px]">Tổng cộng</span>
+                      <span className="text-3xl font-black text-slate-900 dark:text-white leading-none">{finalTotalPrice?.toLocaleString("vi-VN")} <span className="text-lg text-slate-300 dark:text-gray-500 font-normal">₫</span></span>
                     </div>
                   </div>
                 ) : (
                   <div className="flex justify-between items-end mb-4">
-                    <span className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Tổng cộng</span>
-                    <span className="text-3xl font-black text-slate-900 leading-none">{finalTotalPrice?.toLocaleString("vi-VN")} <span className="text-lg text-slate-300 font-normal">₫</span></span>
+                    <span className="text-slate-400 dark:text-gray-400 font-black uppercase tracking-widest text-[10px]">Tổng cộng</span>
+                    <span className="text-3xl font-black text-slate-900 dark:text-white leading-none">{finalTotalPrice?.toLocaleString("vi-VN")} <span className="text-lg text-slate-300 dark:text-gray-500 font-normal">₫</span></span>
                   </div>
                 )}
 
@@ -306,7 +306,7 @@ const PaymentPage = () => {
                   {isProcessing ? (<><svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>ĐANG XỬ LÝ...</>) : "THANH TOÁN NGAY"}
                 </button>
 
-                <p className="text-center text-slate-400 text-xs mt-3 font-medium">
+                <p className="text-center text-slate-400 dark:text-gray-400 text-xs mt-3 font-medium">
                   {paymentMethod === "bank" ? "Chuyển khoản MB Bank — hệ thống tự động xác nhận" : "Quét mã QR bằng app MoMo để thanh toán"}
                 </p>
               </div>

@@ -39,9 +39,9 @@ export const SeatStatusViewer = ({ roomId, seatMatrix }) => {
   };
 
   const cellClass = (cell) => {
-    if (!seats) return "bg-white border-slate-200 text-slate-500";
+    if (!seats) return "bg-white dark:bg-gray-600 border-slate-200 dark:border-gray-500 text-slate-500 dark:text-gray-300";
     const s = seats[cell.label];
-    if (!s) return "bg-white border-slate-200 text-slate-400";
+    if (!s) return "bg-white dark:bg-gray-600 border-slate-200 dark:border-gray-500 text-slate-400 dark:text-gray-400";
     if (s.isLocked) return STATUS.locked.cls;
     return STATUS[s.status]?.cls || STATUS.available.cls;
   };
@@ -64,7 +64,7 @@ export const SeatStatusViewer = ({ roomId, seatMatrix }) => {
           <select
             value={selectedId}
             onChange={(e) => handleSelect(e.target.value)}
-            className="w-full bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-sm font-medium text-slate-700 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-50 appearance-none cursor-pointer"
+            className="w-full bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-xl pl-4 pr-10 py-2.5 text-sm font-medium text-slate-700 dark:text-white outline-none focus:border-red-500 focus:ring-2 focus:ring-red-50 appearance-none cursor-pointer"
           >
             <option value="">-- Chọn suất chiếu --</option>
             {showtimes.map((st) => (
@@ -73,10 +73,10 @@ export const SeatStatusViewer = ({ roomId, seatMatrix }) => {
               </option>
             ))}
           </select>
-          <ChevronDown size={14} className="absolute right-3 top-3.5 text-slate-400 pointer-events-none" />
+          <ChevronDown size={14} className="absolute right-3 top-3.5 text-slate-400 dark:text-gray-500 pointer-events-none" />
         </div>
         {showtimes.length === 0 && (
-          <span className="text-xs text-slate-400">Không có suất chiếu nào sắp tới</span>
+          <span className="text-xs text-slate-400 dark:text-gray-400">Không có suất chiếu nào sắp tới</span>
         )}
       </div>
 
@@ -84,11 +84,11 @@ export const SeatStatusViewer = ({ roomId, seatMatrix }) => {
       {seats && (
         <div className="flex flex-wrap gap-3">
           {Object.entries(STATUS).map(([key, val]) => (
-            <div key={key} className="flex items-center gap-1.5 text-xs text-slate-600">
+            <div key={key} className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-gray-400">
               <div className={`w-5 h-5 rounded border ${val.cls}`} />
               <span>{val.label}</span>
               {counts?.[key] !== undefined && (
-                <span className="font-bold text-slate-800">({counts[key]})</span>
+                <span className="font-bold text-slate-800 dark:text-gray-200">({counts[key]})</span>
               )}
             </div>
           ))}
@@ -101,14 +101,14 @@ export const SeatStatusViewer = ({ roomId, seatMatrix }) => {
           <div className="animate-spin rounded-full h-6 w-6 border-4 border-red-600 border-t-transparent" />
         </div>
       ) : (
-        <div className="overflow-auto border border-slate-200 rounded-xl p-4 bg-slate-50">
+        <div className="overflow-auto border border-slate-200 dark:border-gray-700 rounded-xl p-4 bg-slate-50 dark:bg-gray-800">
           <div className="inline-block min-w-full">
-            <div className="h-5 bg-slate-200 rounded mb-3 flex items-center justify-center text-slate-400 text-[10px] font-bold tracking-widest uppercase">
+            <div className="h-5 bg-slate-200 dark:bg-gray-600 rounded mb-3 flex items-center justify-center text-slate-400 dark:text-gray-400 text-[10px] font-bold tracking-widest uppercase">
               Màn hình
             </div>
             {seatMatrix.map((row, ri) => (
               <div key={ri} className="flex gap-1 mb-1 items-center">
-                <span className="w-5 text-xs text-slate-400 font-bold text-center shrink-0">
+                <span className="w-5 text-xs text-slate-400 dark:text-gray-400 font-bold text-center shrink-0">
                   {row[0]?.label?.[0] || ""}
                 </span>
                 {row.map((cell, ci) => (

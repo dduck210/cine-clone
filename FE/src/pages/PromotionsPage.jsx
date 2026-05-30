@@ -29,7 +29,7 @@ const PromotionsPage = () => {
   }, [searchTerm, selectedCategory]);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] font-sans text-gray-900">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-gray-950 font-sans text-gray-900 dark:text-white">
       <Navbar />
 
       {/* ── HERO — matches CinemasPage exactly ── */}
@@ -93,11 +93,11 @@ const PromotionsPage = () => {
       <main className="container mx-auto px-4 sm:px-6 pt-8 pb-20">
         {/* Grid */}
         {filteredPromos.length === 0 ? (
-          <div className="text-center py-24 bg-white rounded-3xl border border-dashed border-gray-200">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search size={28} className="text-gray-300" />
+          <div className="text-center py-24 bg-white dark:bg-gray-800 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search size={28} className="text-gray-300 dark:text-gray-600" />
             </div>
-            <p className="text-gray-600 font-bold text-lg">
+            <p className="text-gray-600 dark:text-gray-400 font-bold text-lg">
               {searchTerm
                 ? `Không tìm thấy khuyến mãi nào với từ khóa "${searchTerm}".`
                 : selectedCategory !== "Tất cả"
@@ -116,9 +116,9 @@ const PromotionsPage = () => {
         ) : (
           <>
             <div className="flex items-center justify-between mb-6">
-              <p className="text-sm text-gray-400 font-medium">
-                Hiển thị <span className="font-black text-gray-800">{filteredPromos.length}</span>
-                /<span className="font-black text-gray-800">{PROMOTIONS_LIST.length}</span> khuyến mãi
+              <p className="text-sm text-gray-400 dark:text-gray-500 font-medium">
+                Hiển thị <span className="font-black text-gray-800 dark:text-gray-200">{filteredPromos.length}</span>
+                /<span className="font-black text-gray-800 dark:text-gray-200">{PROMOTIONS_LIST.length}</span> khuyến mãi
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -130,7 +130,7 @@ const PromotionsPage = () => {
                 >
                   <Link
                     to={`/promotions/${promo.id}`}
-                    className="group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 border border-gray-100 flex flex-col h-full"
+                    className="group bg-white dark:bg-gray-800 rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 border border-gray-100 dark:border-gray-700 flex flex-col h-full"
                   >
                     {/* Image Section — matches cinema card */}
                     <div className="relative h-56 overflow-hidden">
@@ -162,8 +162,8 @@ const PromotionsPage = () => {
                     {/* Content Section — matches cinema card */}
                     <div className="p-6 flex flex-col flex-1">
                       <div className="space-y-4 mb-6 flex-1">
-                        <div className="flex items-start gap-3 text-gray-600">
-                          <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <div className="flex items-start gap-3 text-gray-600 dark:text-gray-400">
+                          <div className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0 mt-0.5">
                             <Tag size={16} className="text-red-600" />
                           </div>
                           <p className="text-sm font-medium leading-relaxed line-clamp-2">{promo.desc}</p>

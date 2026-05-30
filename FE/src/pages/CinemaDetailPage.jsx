@@ -116,27 +116,27 @@ const CinemaDetailPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 font-sans text-gray-900 dark:text-white">
       <Navbar />
 
       {loading ? (
         <div className="pt-24 pb-16 max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
-          <div className="h-64 bg-gray-200 rounded-2xl animate-pulse" />
+          <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse" />
           <div className="flex gap-4 items-start">
-            <div className="w-20 h-20 bg-gray-200 rounded-2xl animate-pulse shrink-0" />
+            <div className="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse shrink-0" />
             <div className="flex-1 space-y-3 pt-2">
-              <div className="h-6 bg-gray-200 rounded w-1/2 animate-pulse" />
-              <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
-              <div className="h-4 bg-gray-200 rounded w-1/3 animate-pulse" />
+              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2 animate-pulse" />
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 animate-pulse" />
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 animate-pulse" />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[1,2,3].map(i => <div key={i} className="h-32 bg-gray-200 rounded-2xl animate-pulse" />)}
+            {[1,2,3].map(i => <div key={i} className="h-32 bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse" />)}
           </div>
         </div>
       ) : !cinema ? (
         <div className="pt-24 text-center py-24 max-w-6xl mx-auto px-4">
-          <p className="text-gray-400 font-bold text-lg">Không tìm thấy rạp chiếu này.</p>
+          <p className="text-gray-400 dark:text-gray-500 font-bold text-lg">Không tìm thấy rạp chiếu này.</p>
           <Link to="/cinemas" className="mt-4 inline-block text-red-600 font-bold hover:underline">Xem tất cả rạp</Link>
         </div>
       ) : (
@@ -176,7 +176,7 @@ const CinemaDetailPage = () => {
           {/* ── CONTENT ── */}
           <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-12">
             {/* Underline tabs */}
-            <div className="flex border-b border-gray-200 mb-5 sticky top-16 md:top-20 bg-gray-50 z-10">
+            <div className="flex border-b border-gray-200 dark:border-gray-700 mb-5 sticky top-16 md:top-20 bg-gray-50 dark:bg-gray-950 z-10">
               {[
                 { key: "showtimes", icon: <Calendar size={15} />, label: "Lịch Chiếu" },
                 { key: "info",      icon: <Info size={15} />,     label: "Thông Tin Rạp" },
@@ -185,7 +185,7 @@ const CinemaDetailPage = () => {
                   key={key}
                   onClick={() => setActiveTab(key)}
                   className={`flex items-center gap-2 px-5 py-4 text-sm font-bold border-b-2 -mb-px transition-colors ${
-                    activeTab === key ? "border-red-600 text-red-600" : "border-transparent text-gray-500 hover:text-gray-800"
+                    activeTab === key ? "border-red-600 text-red-600" : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
                   }`}
                 >
                   {icon}{label}
@@ -204,7 +204,7 @@ const CinemaDetailPage = () => {
                       className={`flex-shrink-0 px-3 py-2.5 rounded-xl border font-bold text-xs transition-all flex flex-col items-center gap-0.5 min-w-[68px] ${
                         selectedDate === d.value
                           ? "bg-red-600 border-red-600 text-white shadow-lg shadow-red-100"
-                          : "bg-white border-gray-200 text-gray-600 hover:border-red-400 hover:text-red-600"
+                          : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-red-400 hover:text-red-600"
                       }`}
                     >
                       <span className="text-[10px] uppercase tracking-wide font-black">{d.label}</span>
@@ -215,14 +215,14 @@ const CinemaDetailPage = () => {
                 </div>
 
                 {filteredGroups.length === 0 ? (
-                  <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
-                    <Film size={40} className="text-gray-200 mx-auto mb-3" />
-                    <p className="text-gray-400 font-semibold">Không có suất chiếu nào cho ngày này.</p>
+                  <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
+                    <Film size={40} className="text-gray-200 dark:text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-400 dark:text-gray-500 font-semibold">Không có suất chiếu nào cho ngày này.</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {filteredGroups.map(({ movie, showtimes }) => (
-                      <div key={movie._id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                      <div key={movie._id} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex">
                           <div className="w-[90px] sm:w-[110px] shrink-0 bg-gray-900">
                             <img
@@ -238,21 +238,21 @@ const CinemaDetailPage = () => {
                               {movie.ageRestriction && (
                                 <span className="bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded font-black">{movie.ageRestriction}</span>
                               )}
-                              <span className="text-gray-400 text-xs flex items-center gap-1"><Clock size={11} /> {movie.duration} phút</span>
+                              <span className="text-gray-400 dark:text-gray-500 text-xs flex items-center gap-1"><Clock size={11} /> {movie.duration} phút</span>
                               <span className="text-yellow-500 text-xs flex items-center gap-1 font-bold"><Star size={11} fill="currentColor" /> {movie.rating || "8.5"}</span>
                             </div>
                             <Link to={`/movie/${movie._id}`}>
-                              <h3 className="font-black text-gray-900 mb-3 hover:text-red-600 transition-colors text-sm sm:text-base leading-snug">{movie.title}</h3>
+                              <h3 className="font-black text-gray-900 dark:text-white mb-3 hover:text-red-600 transition-colors text-sm sm:text-base leading-snug">{movie.title}</h3>
                             </Link>
                             <div className="flex flex-wrap gap-2">
                               {showtimes.map((st) => (
                                 <button
                                   key={st._id}
                                   onClick={() => handleBooking(st, movie)}
-                                  className="flex flex-col items-center min-w-[90px] px-4 py-3 rounded-xl font-bold text-sm border-2 transition-all hover:scale-[1.04] active:scale-[0.97] bg-slate-50 text-slate-700 border-slate-200 hover:border-[#dc2626] hover:text-[#dc2626] hover:bg-red-50"
+                                  className="flex flex-col items-center min-w-[90px] px-4 py-3 rounded-xl font-bold text-sm border-2 transition-all hover:scale-[1.04] active:scale-[0.97] bg-slate-50 dark:bg-gray-700 text-slate-700 dark:text-gray-300 border-slate-200 dark:border-gray-600 hover:border-[#dc2626] hover:text-[#dc2626] hover:bg-red-50 dark:hover:bg-red-900/20"
                                 >
                                   <span className="font-black text-base">{st.startTime}</span>
-                                  <span className="text-[10px] font-medium mt-0.5 text-slate-400">{st.availableSeats ?? "—"} ghế trống</span>
+                                  <span className="text-[10px] font-medium mt-0.5 text-slate-400 dark:text-gray-500">{st.availableSeats ?? "—"} ghế trống</span>
                                 </button>
                               ))}
                             </div>
@@ -272,10 +272,10 @@ const CinemaDetailPage = () => {
                     { value: "1.200+",  label: "Chỗ ngồi",    icon: <Ticket size={18} /> },
                     { value: "Premium", label: "Hạng rạp",    icon: <Star size={18} /> },
                   ].map((s, i) => (
-                    <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col items-center text-center gap-1">
-                      <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center text-red-600 mb-1">{s.icon}</div>
-                      <p className="font-black text-gray-900 text-lg leading-none">{s.value}</p>
-                      <p className="text-[11px] text-gray-400 font-semibold">{s.label}</p>
+                    <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-4 flex flex-col items-center text-center gap-1">
+                      <div className="w-9 h-9 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-600 mb-1">{s.icon}</div>
+                      <p className="font-black text-gray-900 dark:text-white text-lg leading-none">{s.value}</p>
+                      <p className="text-[11px] text-gray-400 dark:text-gray-500 font-semibold">{s.label}</p>
                     </div>
                   ))}
                 </div>
@@ -284,27 +284,27 @@ const CinemaDetailPage = () => {
                   {/* Left */}
                   <div className="md:col-span-2 space-y-5">
                     {/* About */}
-                    <section className="bg-white rounded-2xl border border-gray-100 border-l-4 border-l-red-600 shadow-sm px-6 py-5">
-                      <h3 className="font-black text-gray-900 mb-3">Giới Thiệu</h3>
-                      <p className="text-gray-500 leading-relaxed text-sm">
-                        Chào mừng bạn đến với <span className="font-bold text-gray-800">{cinema.name}</span> — một trong những rạp chiếu phim hiện đại bậc nhất trong hệ thống 5Cine. Được đầu tư kỹ lưỡng về trang thiết bị và không gian kiến trúc, chúng tôi mang đến trải nghiệm điện ảnh chuẩn quốc tế với âm thanh vòm sống động và đội ngũ nhân viên phục vụ tận tâm.
+                    <section className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 border-l-4 border-l-red-600 shadow-sm px-6 py-5">
+                      <h3 className="font-black text-gray-900 dark:text-white mb-3">Giới Thiệu</h3>
+                      <p className="text-gray-500 dark:text-gray-400 leading-relaxed text-sm">
+                        Chào mừng bạn đến với <span className="font-bold text-gray-800 dark:text-gray-200">{cinema.name}</span> — một trong những rạp chiếu phim hiện đại bậc nhất trong hệ thống 5Cine. Được đầu tư kỹ lưỡng về trang thiết bị và không gian kiến trúc, chúng tôi mang đến trải nghiệm điện ảnh chuẩn quốc tế với âm thanh vòm sống động và đội ngũ nhân viên phục vụ tận tâm.
                       </p>
                     </section>
 
                     {/* Amenities — horizontal list */}
-                    <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
-                      <h3 className="font-black text-gray-900 mb-4 flex items-center gap-2">
+                    <section className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-5 sm:p-6">
+                      <h3 className="font-black text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                         <span className="w-1 h-5 bg-red-600 rounded-full" />Tiện Ích Tại Rạp
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                         {amenities.map((item, idx) => (
-                          <div key={idx} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group">
-                            <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center text-red-500 shrink-0 group-hover:bg-red-100 transition-colors">
+                          <div key={idx} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group">
+                            <div className="w-9 h-9 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-500 shrink-0 group-hover:bg-red-100 dark:group-hover:bg-red-900/30 transition-colors">
                               {item.icon}
                             </div>
                             <div>
-                              <p className="font-bold text-gray-800 text-sm leading-tight">{item.label}</p>
-                              <p className="text-[11px] text-gray-400 mt-0.5">{item.desc}</p>
+                              <p className="font-bold text-gray-800 dark:text-gray-200 text-sm leading-tight">{item.label}</p>
+                              <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{item.desc}</p>
                             </div>
                           </div>
                         ))}
@@ -315,7 +315,7 @@ const CinemaDetailPage = () => {
                   {/* Right */}
                   <div className="space-y-5">
                     {/* Map */}
-                    <section className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <section className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
                       <div
                         className="h-48 relative cursor-pointer group"
                         onClick={handleOpenMap}
@@ -335,11 +335,11 @@ const CinemaDetailPage = () => {
                       <div className="p-4 space-y-3">
                         <div className="flex items-start gap-2">
                           <MapPin size={14} className="text-red-500 shrink-0 mt-0.5" />
-                          <p className="text-xs text-gray-600 leading-relaxed">{cinema.address}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{cinema.address}</p>
                         </div>
                         <button
                           onClick={handleOpenMap}
-                          className="w-full py-2.5 bg-gray-900 text-white rounded-xl font-bold text-xs hover:bg-red-600 transition-all flex items-center justify-center gap-1.5"
+                          className="w-full py-2.5 bg-gray-900 dark:bg-gray-700 text-white rounded-xl font-bold text-xs hover:bg-red-600 dark:hover:bg-red-600 transition-all flex items-center justify-center gap-1.5"
                         >
                           <Navigation size={13} /> Chỉ Đường
                         </button>
@@ -347,7 +347,7 @@ const CinemaDetailPage = () => {
                     </section>
 
                     {/* Contact + Hours */}
-                    <section className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <section className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
                       <div className="bg-gray-900 px-5 py-4">
                         <p className="text-gray-400 text-xs font-semibold mb-1">Hotline đặt vé</p>
                         <div className="flex items-center gap-2 text-white font-black text-xl">
@@ -355,15 +355,15 @@ const CinemaDetailPage = () => {
                           {cinema.phone || "1900 6606"}
                         </div>
                       </div>
-                      <div className="p-4 space-y-2 border-b border-gray-100">
-                        <p className="text-xs font-black text-gray-500 uppercase tracking-wider mb-3">Giờ hoạt động</p>
+                      <div className="p-4 space-y-2 border-b border-gray-100 dark:border-gray-700">
+                        <p className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Giờ hoạt động</p>
                         {[
                           { day: "Thứ 2 — Thứ 6", hours: "09:00 – 23:00" },
                           { day: "Thứ 7 — Chủ nhật", hours: "08:00 – 24:00" },
                         ].map((h, i) => (
                           <div key={i} className="flex justify-between items-center text-xs">
-                            <span className="text-gray-500">{h.day}</span>
-                            <span className="font-bold text-gray-800">{h.hours}</span>
+                            <span className="text-gray-500 dark:text-gray-400">{h.day}</span>
+                            <span className="font-bold text-gray-800 dark:text-gray-200">{h.hours}</span>
                           </div>
                         ))}
                       </div>

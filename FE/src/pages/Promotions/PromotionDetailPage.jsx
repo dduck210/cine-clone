@@ -18,10 +18,10 @@ const PromotionDetailPage = () => {
 
   if (!promo) {
     return (
-      <div className="min-h-screen bg-white font-bromega font-bold">
+      <div className="min-h-screen bg-white dark:bg-gray-950 font-bromega font-bold">
         <Navbar />
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-          <p className="text-2xl font-bold text-gray-400">Không tìm thấy khuyến mãi</p>
+          <p className="text-2xl font-bold text-gray-400 dark:text-gray-500">Không tìm thấy khuyến mãi</p>
           <Link to="/promotions" className="text-red-600 font-bold hover:underline">Về trang khuyến mãi</Link>
         </div>
         <Footer />
@@ -30,7 +30,7 @@ const PromotionDetailPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white font-bromega font-bold">
+    <div className="min-h-screen bg-white dark:bg-gray-950 font-bromega font-bold">
       <Navbar />
 
       <main className="pt-20">
@@ -50,21 +50,21 @@ const PromotionDetailPage = () => {
 
         <div className="max-w-4xl mx-auto px-4 md:px-6 py-10">
           {/* Back + meta */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-gray-100 dark:border-gray-700">
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-600 transition-colors font-medium"
+              className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors font-medium"
             >
               <ArrowLeft size={16} /> Quay lại
             </button>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               <Clock size={14} className="text-red-500" />
               <span className="font-semibold">{promo.date}</span>
             </div>
           </div>
 
           {/* Excerpt */}
-          <p className="text-lg text-gray-500 italic mb-8 leading-relaxed border-l-4 border-red-600 pl-4">
+          <p className="text-lg text-gray-500 dark:text-gray-400 italic mb-8 leading-relaxed border-l-4 border-red-600 pl-4">
             {promo.desc}
           </p>
 
@@ -73,7 +73,7 @@ const PromotionDetailPage = () => {
             {promo.content.map((block, i) => {
               if (block.type === "heading") {
                 return (
-                  <h2 key={i} className="text-xl md:text-2xl font-extrabold text-gray-900 mt-8 mb-2">
+                  <h2 key={i} className="text-xl md:text-2xl font-extrabold text-gray-900 dark:text-white mt-8 mb-2">
                     {block.text}
                   </h2>
                 );
@@ -82,7 +82,7 @@ const PromotionDetailPage = () => {
                 return (
                   <ul key={i} className="space-y-2">
                     {block.items.map((item, j) => (
-                      <li key={j} className="flex items-start gap-3 text-gray-700 text-base">
+                      <li key={j} className="flex items-start gap-3 text-gray-700 dark:text-gray-300 text-base">
                         <CheckCircle size={18} className="text-red-500 shrink-0 mt-0.5" />
                         <span>{item}</span>
                       </li>
@@ -92,14 +92,14 @@ const PromotionDetailPage = () => {
               }
               if (block.type === "note") {
                 return (
-                  <div key={i} className="mt-6 flex items-center gap-3 bg-red-50 border border-red-100 rounded-xl px-6 py-4">
-                    <Tag size={18} className="text-red-600 shrink-0" />
-                    <span className="font-bold text-red-700 text-sm">{block.text}</span>
+                  <div key={i} className="mt-6 flex items-center gap-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl px-6 py-4">
+                    <Tag size={18} className="text-red-600 dark:text-red-400 shrink-0" />
+                    <span className="font-bold text-red-700 dark:text-red-400 text-sm">{block.text}</span>
                   </div>
                 );
               }
               return (
-                <p key={i} className="text-gray-700 leading-relaxed text-base md:text-lg">
+                <p key={i} className="text-gray-700 dark:text-gray-300 leading-relaxed text-base md:text-lg">
                   {block.text}
                 </p>
               );
@@ -124,8 +124,8 @@ const PromotionDetailPage = () => {
 
           {/* Related */}
           {related.length > 0 && (
-            <div className="mt-16 pt-10 border-t border-gray-100">
-              <h3 className="text-xl font-extrabold text-gray-800 mb-6 border-l-4 border-red-600 pl-4 uppercase tracking-wide">
+            <div className="mt-16 pt-10 border-t border-gray-100 dark:border-gray-700">
+              <h3 className="text-xl font-extrabold text-gray-800 dark:text-white mb-6 border-l-4 border-red-600 pl-4 uppercase tracking-wide">
                 Ưu đãi khác
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -133,7 +133,7 @@ const PromotionDetailPage = () => {
                   <Link
                     key={item.id}
                     to={`/promotions/${item.id}`}
-                    className="group block rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
+                    className="group block rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow"
                   >
                     <div className="h-36 overflow-hidden relative">
                       <img
@@ -145,11 +145,11 @@ const PromotionDetailPage = () => {
                         {item.tag}
                       </span>
                     </div>
-                    <div className="p-4">
-                      <h4 className="font-bold text-gray-800 text-sm line-clamp-2 group-hover:text-red-600 transition-colors">
+                    <div className="p-4 bg-white dark:bg-gray-800">
+                      <h4 className="font-bold text-gray-800 dark:text-gray-200 text-sm line-clamp-2 group-hover:text-red-600 transition-colors">
                         {item.title}
                       </h4>
-                      <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 flex items-center gap-1">
                         <Clock size={11} /> {item.date}
                       </p>
                     </div>

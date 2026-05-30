@@ -16,10 +16,10 @@ const StaticPage = () => {
 
   if (!page) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white dark:bg-gray-950">
         <Navbar />
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-          <p className="text-2xl font-bold text-gray-400">Trang không tồn tại</p>
+          <p className="text-2xl font-bold text-gray-400 dark:text-gray-500">Trang không tồn tại</p>
           <Link to="/" className="text-red-600 font-bold hover:underline">Về trang chủ</Link>
         </div>
         <Footer />
@@ -28,7 +28,7 @@ const StaticPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-white dark:bg-gray-950 font-sans">
       <Navbar />
 
       {/* Header */}
@@ -44,7 +44,7 @@ const StaticPage = () => {
       <main className="max-w-3xl mx-auto px-4 md:px-6 py-12">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-red-600 transition-colors font-medium mb-10"
+          className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors font-medium mb-10"
         >
           <ArrowLeft size={16} /> Về trang chủ
         </Link>
@@ -53,7 +53,7 @@ const StaticPage = () => {
           {page.content.map((block, i) => {
             if (block.type === "heading") {
               return (
-                <h2 key={i} className="text-xl md:text-2xl font-extrabold text-gray-900 mt-10 mb-2 border-l-4 border-[#dc2626] pl-4">
+                <h2 key={i} className="text-xl md:text-2xl font-extrabold text-gray-900 dark:text-white mt-10 mb-2 border-l-4 border-[#dc2626] pl-4">
                   {block.text}
                 </h2>
               );
@@ -62,7 +62,7 @@ const StaticPage = () => {
               return (
                 <ul key={i} className="space-y-2">
                   {block.items.map((item, j) => (
-                    <li key={j} className="flex items-start gap-3 text-gray-700 text-base">
+                    <li key={j} className="flex items-start gap-3 text-gray-700 dark:text-gray-300 text-base">
                       <CheckCircle size={18} className="text-red-500 shrink-0 mt-0.5" />
                       <span>{item}</span>
                     </li>
@@ -72,14 +72,14 @@ const StaticPage = () => {
             }
             if (block.type === "note") {
               return (
-                <div key={i} className="mt-6 flex items-start gap-3 bg-red-50 border border-red-100 rounded-xl px-6 py-4">
+                <div key={i} className="mt-6 flex items-start gap-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/40 rounded-xl px-6 py-4">
                   <AlertCircle size={18} className="text-red-600 shrink-0 mt-0.5" />
-                  <span className="font-bold text-red-700 text-sm">{block.text}</span>
+                  <span className="font-bold text-red-700 dark:text-red-400 text-sm">{block.text}</span>
                 </div>
               );
             }
             return (
-              <p key={i} className="text-gray-700 leading-relaxed text-base md:text-lg">
+              <p key={i} className="text-gray-700 dark:text-gray-300 leading-relaxed text-base md:text-lg">
                 {block.text}
               </p>
             );

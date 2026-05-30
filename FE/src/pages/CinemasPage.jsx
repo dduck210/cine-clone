@@ -86,7 +86,7 @@ const CinemasPage = () => {
   const hasMore = visibleCount < filteredCinemas.length;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] font-sans text-gray-900">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-gray-950 font-sans text-gray-900 dark:text-white">
       <Navbar />
 
       {/* ── HERO ── */}
@@ -152,15 +152,15 @@ const CinemasPage = () => {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-3xl h-[420px] animate-pulse shadow-sm" />
+              <div key={i} className="bg-white dark:bg-gray-700 rounded-3xl h-[420px] animate-pulse shadow-sm" />
             ))}
           </div>
         ) : filteredCinemas.length === 0 ? (
-          <div className="text-center py-24 bg-white rounded-3xl border border-dashed border-gray-200">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search size={28} className="text-gray-300" />
+          <div className="text-center py-24 bg-white dark:bg-gray-800 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search size={28} className="text-gray-300 dark:text-gray-600" />
             </div>
-            <p className="text-gray-600 font-bold text-lg">
+            <p className="text-gray-600 dark:text-gray-400 font-bold text-lg">
               {searchTerm
                 ? `Không tìm thấy rạp nào với từ khóa "${searchTerm}".`
                 : selectedCity !== "Tất cả"
@@ -179,9 +179,9 @@ const CinemasPage = () => {
         ) : (
           <>
             <div className="flex items-center justify-between mb-6">
-              <p className="text-sm text-gray-400 font-medium">
-                Hiển thị <span className="font-black text-gray-800">{Math.min(visibleCount, filteredCinemas.length)}</span>
-                /<span className="font-black text-gray-800">{filteredCinemas.length}</span> rạp
+              <p className="text-sm text-gray-400 dark:text-gray-500 font-medium">
+                Hiển thị <span className="font-black text-gray-800 dark:text-gray-200">{Math.min(visibleCount, filteredCinemas.length)}</span>
+                /<span className="font-black text-gray-800 dark:text-gray-200">{filteredCinemas.length}</span> rạp
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -191,7 +191,7 @@ const CinemasPage = () => {
                   className="opacity-0 animate-[fadeUp_0.5s_ease_forwards]"
                   style={{ animationDelay: `${Math.min(i * 60, 300)}ms` }}
                 >
-                  <div className="group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 border border-gray-100 flex flex-col h-full">
+                  <div className="group bg-white dark:bg-gray-800 rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 border border-gray-100 dark:border-gray-700 flex flex-col h-full">
                     {/* Image Section */}
                     <div className="relative h-52 overflow-hidden bg-gray-900">
                       <img
@@ -228,16 +228,16 @@ const CinemasPage = () => {
                     {/* Content Section */}
                     <div className="p-6 flex flex-col flex-1">
                       <div className="space-y-4 mb-6 flex-1">
-                        <div className="flex items-start gap-3 text-gray-600">
-                          <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <div className="flex items-start gap-3 text-gray-600 dark:text-gray-400">
+                          <div className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0 mt-0.5">
                             <MapPin size={16} className="text-red-600" />
                           </div>
                           <p className="text-sm font-medium leading-relaxed line-clamp-2">{cinema.address}</p>
                         </div>
 
                         {cinema.phone && (
-                          <div className="flex items-center gap-3 text-gray-600">
-                            <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
+                          <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+                            <div className="w-8 h-8 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center flex-shrink-0">
                               <Phone size={16} className="text-green-600" />
                             </div>
                             <p className="text-sm font-bold tracking-wider">{cinema.phone}</p>
@@ -264,7 +264,7 @@ const CinemasPage = () => {
           <div className="mt-10 flex justify-center">
             <button
               onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-              className="group flex items-center gap-2 px-8 py-3.5 bg-white border-2 border-[#dc2626] text-[#dc2626] font-bold rounded-2xl hover:bg-[#dc2626] hover:text-white transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-red-100"
+              className="group flex items-center gap-2 px-8 py-3.5 bg-white dark:bg-gray-800 border-2 border-[#dc2626] text-[#dc2626] font-bold rounded-2xl hover:bg-[#dc2626] hover:text-white transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-red-100"
             >
               <ChevronDown size={18} className="group-hover:translate-y-0.5 transition-transform" />
               Xem thêm ({filteredCinemas.length - visibleCount} rạp còn lại)

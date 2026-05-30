@@ -9,7 +9,7 @@ import FeaturesStrip from "../../components/home/FeaturesStrip";
 import MovieCard from "../../components/movie/MovieCard";
 import axiosInstance from "../../api/axiosConfig";
 import { NEWS_LIST } from "../../data/newsData";
-import useInView from "../../hooks/use-in-view";
+import useInView from "../../shared/hooks/use-in-view";
 
 const SectionHeading = ({ children, action }) => {
   const [ref, visible] = useInView();

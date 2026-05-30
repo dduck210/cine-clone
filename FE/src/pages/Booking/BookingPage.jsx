@@ -5,31 +5,11 @@ import Footer from "../../components/common/Footer";
 import axiosInstance from "../../api/axiosConfig";
 import {
   Minus, Plus, Calendar, MapPin, Ticket, Popcorn,
-  CreditCard, Clock, AlertTriangle, ChevronRight, ChevronLeft, Tag, X, Info
+  CreditCard, Clock, ChevronRight, ChevronLeft, Tag, X,
 } from "lucide-react";
+import SeatSelector from "./SeatSelector";
 
 const HOLD_SECONDS = 5 * 60;
-
-const SEAT_COLORS = {
-  normal: {
-    available: "bg-white text-slate-700 border-2 border-slate-300 hover:border-[#dc2626] hover:text-[#dc2626] hover:bg-red-50 active:scale-95",
-    selected: "bg-[#dc2626] text-white shadow-lg shadow-red-200 scale-110 ring-2 ring-red-300 ring-offset-1",
-    locked: "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300 opacity-50",
-    label: "Thường", dot: "bg-white border-2 border-slate-300",
-  },
-  vip: {
-    available: "bg-amber-50 text-amber-700 border-2 border-amber-400 hover:border-amber-600 hover:bg-amber-100 active:scale-95",
-    selected: "bg-amber-500 text-white shadow-lg shadow-amber-200 scale-110 ring-2 ring-amber-300 ring-offset-1",
-    locked: "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300 opacity-50",
-    label: "VIP", dot: "bg-amber-400",
-  },
-  couple: {
-    available: "bg-pink-50 text-pink-700 border-2 border-pink-400 hover:border-pink-600 hover:bg-pink-100 active:scale-95",
-    selected: "bg-pink-500 text-white shadow-lg shadow-pink-200 scale-110 ring-2 ring-pink-300 ring-offset-1",
-    locked: "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300 opacity-50",
-    label: "Đôi", dot: "bg-pink-400",
-  },
-};
 
 function checkGapViolation(seatMap, seats, currentSelected, toggleSeatNum) {
   const tempSelected = currentSelected.includes(toggleSeatNum)
@@ -300,12 +280,12 @@ const BookingPage = () => {
         return (
           <React.Fragment key={s}>
             <div className="flex items-center gap-2">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black transition-all ${active ? "bg-[#dc2626] text-white" : done ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-500"}`}>
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black transition-all ${active ? "bg-[#dc2626] text-white" : done ? "bg-emerald-500 text-white" : "bg-slate-200 dark:bg-gray-700 text-slate-500 dark:text-gray-500"}`}>
                 {done ? "✓" : s}
               </div>
-              <span className={`text-sm font-bold hidden sm:inline ${active ? "text-slate-900" : "text-slate-400"}`}>{label}</span>
+              <span className={`text-sm font-bold hidden sm:inline ${active ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-gray-500"}`}>{label}</span>
             </div>
-            {i < 1 && <div className={`flex-1 h-0.5 max-w-[60px] transition-all ${done ? "bg-emerald-500" : "bg-slate-200"}`} />}
+            {i < 1 && <div className={`flex-1 h-0.5 max-w-[60px] transition-all ${done ? "bg-emerald-500" : "bg-slate-200 dark:bg-gray-700"}`} />}
           </React.Fragment>
         );
       })}
@@ -314,7 +294,7 @@ const BookingPage = () => {
 
   // Right summary panel (both steps)
   const renderSummaryPanel = () => (
-    <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-slate-200 dark:border-gray-700 overflow-hidden flex flex-col">
       <div className="bg-slate-900 p-6 text-white relative overflow-hidden shrink-0">
         <div className="relative z-10">
           <h3 className="font-extrabold text-xl mb-2 line-clamp-2 pr-10">{title}</h3>
@@ -326,45 +306,45 @@ const BookingPage = () => {
         <Ticket className="absolute -bottom-6 -right-6 w-32 h-32 text-white/5 rotate-12" />
       </div>
 
-      <div className="p-5 flex-1 flex flex-col bg-[#fafafa] space-y-4">
+      <div className="p-5 flex-1 flex flex-col bg-[#fafafa] dark:bg-gray-800 space-y-4">
         <div className="flex items-start gap-2 text-sm">
           <MapPin className="w-4 h-4 text-[#dc2626] mt-0.5 shrink-0" />
-          <div><p className="font-bold text-slate-800">{cinemaName}</p><p className="text-xs text-slate-500">{showAddress}</p></div>
+          <div><p className="font-bold text-slate-800 dark:text-white">{cinemaName}</p><p className="text-xs text-slate-500 dark:text-gray-400">{showAddress}</p></div>
         </div>
         <div className="flex items-start gap-2 text-sm">
           <Calendar className="w-4 h-4 text-[#dc2626] mt-0.5 shrink-0" />
-          <div><p className="font-bold text-slate-800">{showDate}</p><p className="text-xs text-slate-500">{showTime}</p></div>
+          <div><p className="font-bold text-slate-800 dark:text-white">{showDate}</p><p className="text-xs text-slate-500 dark:text-gray-400">{showTime}</p></div>
         </div>
 
-        <div className="border-t border-dashed border-slate-200 pt-3 space-y-2">
+        <div className="border-t border-dashed border-slate-200 dark:border-gray-700 pt-3 space-y-2">
           <div className="flex justify-between items-start">
-            <span className="text-xs text-slate-500 font-bold uppercase tracking-wide">Ghế</span>
-            <span className="font-black text-slate-900 text-right max-w-[160px] break-words">
+            <span className="text-xs text-slate-500 dark:text-gray-400 font-bold uppercase tracking-wide">Ghế</span>
+            <span className="font-black text-slate-900 dark:text-white text-right max-w-[160px] break-words">
               {selectedSeats.length > 0 ? selectedSeats.join(", ") : "—"}
             </span>
           </div>
           {selectedSeats.length > 0 && (
             <div className="text-right">
-              <span className="text-xs text-slate-500">{selectedSeats.length} ghế · {totalTicketPrice.toLocaleString()}đ</span>
+              <span className="text-xs text-slate-500 dark:text-gray-400">{selectedSeats.length} ghế · {totalTicketPrice.toLocaleString()}đ</span>
             </div>
           )}
         </div>
 
         {activeCombos.length > 0 && (
-          <div className="border-t border-dashed border-slate-200 pt-3 space-y-1">
-            <span className="text-xs text-slate-500 font-bold uppercase tracking-wide">Combo</span>
+          <div className="border-t border-dashed border-slate-200 dark:border-gray-700 pt-3 space-y-1">
+            <span className="text-xs text-slate-500 dark:text-gray-400 font-bold uppercase tracking-wide">Combo</span>
             {activeCombos.map((c) => (
               <div key={c.id} className="flex justify-between text-sm">
-                <span className="text-slate-600">{c.name} ×{c.quantity}</span>
-                <span className="font-bold text-slate-800">{(c.price * c.quantity).toLocaleString()}đ</span>
+                <span className="text-slate-600 dark:text-gray-300">{c.name} ×{c.quantity}</span>
+                <span className="font-bold text-slate-800 dark:text-white">{(c.price * c.quantity).toLocaleString()}đ</span>
               </div>
             ))}
           </div>
         )}
 
-        <div className="border-t-2 border-dashed border-slate-300 pt-3 mt-auto space-y-1">
+        <div className="border-t-2 border-dashed border-slate-300 dark:border-gray-700 pt-3 mt-auto space-y-1">
           {(isMonday || voucherDiscount > 0) && (
-            <div className="flex justify-between text-xs text-slate-500">
+            <div className="flex justify-between text-xs text-slate-500 dark:text-gray-400">
               <span>Gốc</span>
               <span className="line-through">{finalTotalPrice.toLocaleString()}đ</span>
             </div>
@@ -382,7 +362,7 @@ const BookingPage = () => {
             </div>
           )}
           <div className="flex justify-between items-center pt-1">
-            <span className="font-bold text-slate-700 text-sm">Tổng cộng</span>
+            <span className="font-bold text-slate-700 dark:text-gray-300 text-sm">Tổng cộng</span>
             <span className="font-black text-[#dc2626] text-2xl">{priceAfterVoucher.toLocaleString()}<span className="text-sm"> ₫</span></span>
           </div>
         </div>
@@ -391,7 +371,7 @@ const BookingPage = () => {
           <button
             disabled={selectedSeats.length === 0}
             onClick={() => setStep(2)}
-            className={`w-full font-black py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm ${selectedSeats.length === 0 ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-[#dc2626] hover:bg-red-700 text-white shadow-lg shadow-red-200"}`}
+            className={`w-full font-black py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm ${selectedSeats.length === 0 ? "bg-slate-200 dark:bg-gray-700 text-slate-400 dark:text-gray-500 cursor-not-allowed" : "bg-[#dc2626] hover:bg-red-700 text-white shadow-lg shadow-red-200"}`}
           >
             Tiếp tục <ChevronRight size={18} />
           </button>
@@ -413,56 +393,56 @@ const BookingPage = () => {
   const RING_C = 2 * Math.PI * RING_R;
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-950 font-sans text-slate-900 dark:text-white">
       <Navbar />
 
       {/* Seat Info Modal */}
       {showSeatInfo && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white rounded-[32px] shadow-2xl max-w-md w-full overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-[32px] shadow-2xl max-w-md w-full overflow-hidden border border-slate-100 dark:border-gray-700 animate-in zoom-in-95 duration-300">
             <div className="p-8">
               <div className="flex justify-between items-center mb-8">
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Định nghĩa phòng</h3>
-                <button onClick={() => setShowSeatInfo(false)} className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all">
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Định nghĩa phòng</h3>
+                <button onClick={() => setShowSeatInfo(false)} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-gray-700 flex items-center justify-center text-slate-500 dark:text-gray-400 hover:bg-red-50 hover:text-red-600 transition-all">
                   <X size={20} />
                 </button>
               </div>
 
               <div className="space-y-6">
-                <div className="flex gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                  <div className="w-12 h-12 rounded-xl bg-white border-2 border-slate-300 shrink-0 flex items-center justify-center shadow-sm">
-                    <span className="text-[10px] font-black text-slate-400">12</span>
+                <div className="flex gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-gray-700 border border-slate-100 dark:border-gray-600">
+                  <div className="w-12 h-12 rounded-xl bg-white dark:bg-gray-600 border-2 border-slate-300 dark:border-gray-500 shrink-0 flex items-center justify-center shadow-sm">
+                    <span className="text-[10px] font-black text-slate-400 dark:text-gray-300">12</span>
                   </div>
                   <div>
-                    <h4 className="font-bold text-slate-800 mb-0.5">Ghế Thường</h4>
-                    <p className="text-sm text-slate-500 leading-relaxed">Ghế tiêu chuẩn, mang lại sự thoải mái tối ưu cho trải nghiệm xem phim cơ bản.</p>
+                    <h4 className="font-bold text-slate-800 dark:text-white mb-0.5">Ghế Thường</h4>
+                    <p className="text-sm text-slate-500 dark:text-gray-400 leading-relaxed">Ghế tiêu chuẩn, mang lại sự thoải mái tối ưu cho trải nghiệm xem phim cơ bản.</p>
                   </div>
                 </div>
 
-                <div className="flex gap-4 p-4 rounded-2xl bg-amber-50 border border-amber-100">
-                  <div className="w-12 h-12 rounded-xl bg-amber-100 border-2 border-amber-400 shrink-0 flex items-center justify-center shadow-sm">
-                    <span className="text-[10px] font-black text-amber-600">12</span>
+                <div className="flex gap-4 p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30">
+                  <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/40 border-2 border-amber-400 shrink-0 flex items-center justify-center shadow-sm">
+                    <span className="text-[10px] font-black text-amber-600 dark:text-amber-400">12</span>
                   </div>
                   <div>
-                    <h4 className="font-bold text-amber-900 mb-0.5">Ghế VIP</h4>
-                    <p className="text-sm text-amber-700/70 leading-relaxed">Vị trí trung tâm, tầm nhìn tốt nhất và không gian ngồi rộng rãi hơn.</p>
+                    <h4 className="font-bold text-amber-900 dark:text-amber-400 mb-0.5">Ghế VIP</h4>
+                    <p className="text-sm text-amber-700/70 dark:text-amber-400/70 leading-relaxed">Vị trí trung tâm, tầm nhìn tốt nhất và không gian ngồi rộng rãi hơn.</p>
                   </div>
                 </div>
 
-                <div className="flex gap-4 p-4 rounded-2xl bg-pink-50 border border-pink-100">
-                  <div className="w-12 h-12 rounded-xl bg-pink-100 border-2 border-pink-400 shrink-0 flex items-center justify-center shadow-sm">
-                    <span className="text-[10px] font-black text-pink-600">♥</span>
+                <div className="flex gap-4 p-4 rounded-2xl bg-pink-50 dark:bg-pink-900/20 border border-pink-100 dark:border-pink-800/30">
+                  <div className="w-12 h-12 rounded-xl bg-pink-100 dark:bg-pink-900/40 border-2 border-pink-400 shrink-0 flex items-center justify-center shadow-sm">
+                    <span className="text-[10px] font-black text-pink-600 dark:text-pink-400">♥</span>
                   </div>
                   <div>
-                    <h4 className="font-bold text-pink-900 mb-0.5">Ghế Đôi (Sweetbox)</h4>
-                    <p className="text-sm text-pink-700/70 leading-relaxed">Không gian riêng tư, lãng mạn dành cho cặp đôi với thiết kế vách ngăn tinh tế.</p>
+                    <h4 className="font-bold text-pink-900 dark:text-pink-400 mb-0.5">Ghế Đôi (Sweetbox)</h4>
+                    <p className="text-sm text-pink-700/70 dark:text-pink-400/70 leading-relaxed">Không gian riêng tư, lãng mạn dành cho cặp đôi với thiết kế vách ngăn tinh tế.</p>
                   </div>
                 </div>
               </div>
 
               <button
                 onClick={() => setShowSeatInfo(false)}
-                className="w-full mt-8 bg-slate-900 hover:bg-[#dc2626] text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-slate-200 hover:shadow-red-200 uppercase tracking-widest text-sm"
+                className="w-full mt-8 bg-slate-900 dark:bg-gray-700 hover:bg-[#dc2626] text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-slate-200 hover:shadow-red-200 uppercase tracking-widest text-sm"
               >
                 Đã hiểu
               </button>
@@ -474,7 +454,7 @@ const BookingPage = () => {
       {/* Timer expired modal */}
       {timerExpired && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
-          <div className="bg-white rounded-[28px] shadow-2xl max-w-xs w-full overflow-hidden border border-slate-100 text-center">
+          <div className="bg-white dark:bg-gray-800 rounded-[28px] shadow-2xl max-w-xs w-full overflow-hidden border border-slate-100 dark:border-gray-700 text-center">
             <div className="bg-gradient-to-br from-red-500 to-rose-600 px-6 pt-8 pb-6">
               <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 ring-4 ring-white/30">
                 <Clock className="w-9 h-9 text-white" strokeWidth={2.5} />
@@ -491,7 +471,7 @@ const BookingPage = () => {
               </button>
               <button
                 onClick={() => navigate(-1)}
-                className="w-full text-slate-400 hover:text-slate-600 font-medium text-sm py-2 transition-colors"
+                className="w-full text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300 font-medium text-sm py-2 transition-colors"
               >
                 Quay lại trang trước
               </button>
@@ -502,13 +482,13 @@ const BookingPage = () => {
 
       <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-28 pb-28 md:pb-16 animate-pageEnter">
         {/* Mobile-only movie info card */}
-        <div className="md:hidden mb-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex gap-3">
+        <div className="md:hidden mb-4 bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-4 flex gap-3">
           {poster && <img src={poster} alt={title} className="w-14 h-20 object-cover rounded-lg shrink-0" />}
           <div className="min-w-0">
-            <p className="font-black text-slate-900 text-sm line-clamp-2">{title}</p>
-            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1"><MapPin size={10} className="shrink-0" />{cinemaName}</p>
-            <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1"><Calendar size={10} className="shrink-0" />{showDate}</p>
-            <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1"><Clock size={10} className="shrink-0" />{showTime}</p>
+            <p className="font-black text-slate-900 dark:text-white text-sm line-clamp-2">{title}</p>
+            <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 flex items-center gap-1"><MapPin size={10} className="shrink-0" />{cinemaName}</p>
+            <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5 flex items-center gap-1"><Calendar size={10} className="shrink-0" />{showDate}</p>
+            <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5 flex items-center gap-1"><Clock size={10} className="shrink-0" />{showTime}</p>
           </div>
         </div>
 
@@ -517,13 +497,13 @@ const BookingPage = () => {
           {timerStarted && (
             <div className={`flex items-center gap-2.5 pl-3 pr-4 py-2 rounded-2xl font-bold text-sm transition-all ${
               isUrgent ? "bg-red-600 text-white shadow-lg shadow-red-200 animate-pulse" :
-              isWarning ? "bg-amber-50 text-amber-700 border-2 border-amber-300" :
-              "bg-slate-100 text-slate-600"
+              isWarning ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-2 border-amber-300" :
+              "bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-300"
             }`}>
               {/* SVG circular progress ring */}
               <svg width="40" height="40" viewBox="0 0 48 48" className="shrink-0 -rotate-90">
                 <circle cx="24" cy="24" r={RING_R} fill="none" strokeWidth="4"
-                  className={isUrgent ? "stroke-red-300/50" : isWarning ? "stroke-amber-200" : "stroke-slate-200"} />
+                  className={isUrgent ? "stroke-red-300/50" : isWarning ? "stroke-amber-200" : "stroke-slate-200 dark:stroke-gray-600"} />
                 <circle cx="24" cy="24" r={RING_R} fill="none" strokeWidth="4"
                   strokeDasharray={RING_C}
                   strokeDashoffset={RING_C * (1 - timerProgress)}
@@ -531,7 +511,7 @@ const BookingPage = () => {
                   className={isUrgent ? "stroke-white transition-all duration-1000" : isWarning ? "stroke-amber-500 transition-all duration-1000" : "stroke-[#dc2626] transition-all duration-1000"} />
               </svg>
               <div>
-                <p className={`text-[10px] font-bold uppercase tracking-wider leading-none mb-0.5 ${isUrgent ? "text-red-100" : "text-slate-400"}`}>Giữ ghế</p>
+                <p className={`text-[10px] font-bold uppercase tracking-wider leading-none mb-0.5 ${isUrgent ? "text-red-100" : "text-slate-400 dark:text-gray-400"}`}>Giữ ghế</p>
                 <span className="font-black text-base leading-none">{formatTime(secondsLeft)}</span>
               </div>
             </div>
@@ -545,151 +525,49 @@ const BookingPage = () => {
 
             {/* ── STEP 1: Seat map ── */}
             {step === 1 && (
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-8">
-                {gapError && (
-                  <div className="mb-4 flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium">
-                    <AlertTriangle size={16} />{gapError}
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-base font-bold text-slate-700">Sơ đồ ghế</h2>
-                  <button
-                    onClick={() => setShowSeatInfo(true)}
-                    className="flex items-center gap-1.5 text-[#dc2626] hover:text-red-700 font-bold text-xs transition-colors bg-red-50 px-3 py-1.5 rounded-lg border border-red-100"
-                  >
-                    <Info size={14} /> Định nghĩa phòng
-                  </button>
-                </div>
-
-                {/* Seat grid — auto-scale to fit, pinch-zoom to enlarge */}
-                <div ref={seatOuterRef} className="overflow-hidden w-full">
-                  <div ref={seatInnerRef} style={{ zoom: seatScale, transformOrigin: "top left" }}>
-                    <div className="w-full h-10 bg-slate-100 rounded-xl flex items-center justify-center mb-12 shadow-inner border border-slate-200 relative overflow-hidden min-w-[520px]">
-                      <div className="absolute top-0 w-full h-2 bg-gradient-to-b from-slate-300 to-transparent opacity-50" />
-                      <span className="text-slate-400 font-bold tracking-[0.5em] text-xs uppercase">Màn hình chiếu</span>
-                    </div>
-
-                    {loadingSeats ? (
-                      <div className="flex justify-center py-16"><div className="animate-spin rounded-full h-10 w-10 border-4 border-red-600 border-t-transparent" /></div>
-                    ) : seats.length === 0 ? (
-                      <div className="text-center py-16">
-                        <p className="text-gray-400 font-bold mb-3">Không tải được sơ đồ ghế.</p>
-                        {seatLoadError && (
-                          <button
-                            onClick={loadSeats}
-                            className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-xl transition-all active:scale-95"
-                          >
-                            Thử lại
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex justify-center pb-4">
-                        <div className="flex flex-col gap-2.5 min-w-max px-2">
-                          {rows.map((row) => {
-                            const elements = [];
-                            let i = 0;
-                            while (i < maxCol) {
-                              const col = i + 1;
-                              const seatNum = `${row}${col}`;
-                              const seat = seatMap[seatNum];
-                              const isMiddle = col === Math.floor(maxCol / 2);
-                              if (!seat) {
-                                elements.push(<div key={seatNum} className={`w-9 h-9 ${isMiddle ? "mr-8" : ""}`} />);
-                                i++; continue;
-                              }
-                              const seatType = seat.type || "normal";
-                              if (seatType === "couple") {
-                                const nextSeatNum = `${row}${col + 1}`;
-                                const nextSeat = seatMap[nextSeatNum];
-                                if (nextSeat?.type === "couple") {
-                                  const colors = SEAT_COLORS.couple;
-                                  const isSelected = selectedSeats.includes(seatNum) || selectedSeats.includes(nextSeatNum);
-                                  const isUnavailable = seat.status === "reserved" || seat.status === "booked" || seat.isLocked || nextSeat.status === "reserved" || nextSeat.status === "booked" || nextSeat.isLocked;
-                                  elements.push(
-                                    <button key={`${seatNum}-couple`} disabled={isUnavailable}
-                                      onClick={() => handleCoupleSeatClick(seatNum, nextSeatNum)}
-                                      title={`${seatNum} & ${nextSeatNum} - Đôi`}
-                                      className={`h-9 rounded-lg text-xs font-bold transition-all duration-150 flex items-center justify-center gap-1 ${isMiddle ? "mr-8" : ""} ${isUnavailable ? colors.locked : isSelected ? `${colors.selected}${justSelected.has(seatNum) ? " animate-seatPop" : ""}` : colors.available}`}
-                                      style={{ width: "calc(2 * 2.25rem + 0.5rem)" }}>
-                                      <span>{col}</span><span className="opacity-40 text-[10px]">♥</span><span>{col + 1}</span>
-                                    </button>
-                                  );
-                                  i += 2; continue;
-                                }
-                              }
-                              const colors = SEAT_COLORS[seatType] || SEAT_COLORS.normal;
-                              const isSelected = selectedSeats.includes(seatNum);
-                              const isUnavailable = seat.status === "reserved" || seat.status === "booked" || seat.isLocked;
-                              elements.push(
-                                <button key={seatNum} disabled={isUnavailable} onClick={() => handleSeatClick(seatNum)}
-                                  title={`${seatNum} - ${colors.label} - ${(seat.price || 0).toLocaleString()}đ`}
-                                  className={`w-9 h-9 rounded-lg text-xs font-bold transition-all duration-150 flex items-center justify-center ${isMiddle ? "mr-8" : ""} ${isUnavailable ? colors.locked : isSelected ? `${colors.selected}${justSelected.has(seatNum) ? " animate-seatPop" : ""}` : colors.available}`}>
-                                  {col}
-                                </button>
-                              );
-                              i++;
-                            }
-                            return (
-                              <div key={row} className="flex gap-2 items-center justify-center">
-                                <span className="w-5 text-slate-400 font-bold text-xs text-center">{row}</span>
-                                {elements}
-                                <span className="w-5 text-slate-400 font-bold text-xs text-center">{row}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Legend */}
-                <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-8 border-t border-slate-100 pt-6">
-                  {Object.entries(SEAT_COLORS).map(([type, c]) => (
-                    <div key={type} className="flex items-center gap-2">
-                      <div className={`w-5 h-5 rounded-md ${c.dot}`} />
-                      <div>
-                        <span className="text-slate-600 text-xs font-medium">{c.label}</span>
-                        {priceConfig[type] && <span className="block text-[10px] text-slate-400">{priceConfig[type].toLocaleString()}đ</span>}
-                      </div>
-                    </div>
-                  ))}
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-md bg-slate-200 border border-slate-300 flex items-center justify-center"><span className="text-slate-400 text-[10px] font-bold">X</span></div>
-                    <span className="text-slate-600 text-xs font-medium">Đã đặt</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-md bg-[#dc2626]" />
-                    <span className="text-slate-600 text-xs font-medium">Đang chọn</span>
-                  </div>
-                </div>
-              </div>
+              <SeatSelector
+                rows={rows}
+                maxCol={maxCol}
+                seatMap={seatMap}
+                selectedSeats={selectedSeats}
+                justSelected={justSelected}
+                onSeatClick={handleSeatClick}
+                onCoupleSeatClick={handleCoupleSeatClick}
+                loadingSeats={loadingSeats}
+                seatLoadError={seatLoadError}
+                onRetryLoad={loadSeats}
+                gapError={gapError}
+                showSeatInfo={showSeatInfo}
+                onToggleSeatInfo={() => setShowSeatInfo(true)}
+                priceConfig={priceConfig}
+                seatOuterRef={seatOuterRef}
+                seatInnerRef={seatInnerRef}
+                seatScale={seatScale}
+              />
             )}
 
             {/* ── STEP 2: Combo selection ── */}
             {step === 2 && (
               <div className="space-y-4">
-                <button onClick={() => setStep(1)} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-bold text-sm transition-colors">
+                <button onClick={() => setStep(1)} className="flex items-center gap-2 text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-white font-bold text-sm transition-colors">
                   <ChevronLeft size={18} /> Quay lại chọn ghế
                 </button>
 
-                <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
-                  <h2 className="font-extrabold text-lg text-slate-800 mb-1 flex items-center gap-2">
+                <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-2xl shadow-sm p-6">
+                  <h2 className="font-extrabold text-lg text-slate-800 dark:text-white mb-1 flex items-center gap-2">
                     <Popcorn size={20} className="text-[#dc2626]" /> Thêm combo bắp nước
                   </h2>
-                  <p className="text-sm text-slate-400 mb-6">Không bắt buộc — bỏ qua để thanh toán ngay</p>
+                  <p className="text-sm text-slate-400 dark:text-gray-500 mb-6">Không bắt buộc — bỏ qua để thanh toán ngay</p>
 
                   {/* Voucher input */}
-                  <div className="mb-6 p-4 bg-violet-50 border border-violet-200 rounded-2xl">
-                    <p className="text-sm font-bold text-violet-800 mb-3 flex items-center gap-2">
+                  <div className="mb-6 p-4 bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-700/30 rounded-2xl">
+                    <p className="text-sm font-bold text-violet-800 dark:text-violet-400 mb-3 flex items-center gap-2">
                       <Tag size={15} /> Mã giảm giá
                     </p>
                     {appliedVoucher ? (
-                      <div className="flex items-center justify-between bg-white rounded-xl px-4 py-3 border border-violet-300">
+                      <div className="flex items-center justify-between bg-white dark:bg-gray-700 rounded-xl px-4 py-3 border border-violet-300 dark:border-violet-600">
                         <div>
-                          <span className="font-black text-violet-700 text-sm">{appliedVoucher.code}</span>
+                          <span className="font-black text-violet-700 dark:text-violet-400 text-sm">{appliedVoucher.code}</span>
                           <span className="ml-2 text-xs text-emerald-600 font-bold">−{appliedVoucher.discountAmount.toLocaleString()}đ</span>
                         </div>
                         <button onClick={() => setAppliedVoucher(null)} className="text-slate-400 hover:text-red-500 transition-colors">
@@ -703,12 +581,12 @@ const BookingPage = () => {
                           onChange={(e) => { setVoucherInput(e.target.value.toUpperCase()); setVoucherError(""); }}
                           onKeyDown={(e) => e.key === "Enter" && handleApplyVoucher()}
                           placeholder="Nhập mã voucher..."
-                          className="flex-1 min-w-0 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold uppercase tracking-widest outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 placeholder-slate-300 placeholder-normal"
+                          className="flex-1 min-w-0 bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm font-bold uppercase tracking-widest outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 placeholder-slate-300 placeholder-normal text-slate-900 dark:text-white"
                         />
                         <button
                           onClick={handleApplyVoucher}
                           disabled={voucherLoading || !voucherInput.trim()}
-                          className="px-4 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-300 text-white font-bold rounded-xl text-sm transition-colors shrink-0"
+                          className="px-4 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-300 dark:disabled:bg-gray-600 text-white font-bold rounded-xl text-sm transition-colors shrink-0"
                         >
                           {voucherLoading ? "..." : "Áp dụng"}
                         </button>
@@ -719,20 +597,20 @@ const BookingPage = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                     {combos.map((combo) => (
-                      <div key={combo.id} className={`rounded-2xl border-2 p-5 flex flex-col gap-3 transition-all ${combo.quantity > 0 ? "border-[#dc2626] bg-red-50" : "border-slate-200 bg-white hover:border-slate-300"}`}>
+                      <div key={combo.id} className={`rounded-2xl border-2 p-5 flex flex-col gap-3 transition-all ${combo.quantity > 0 ? "border-[#dc2626] bg-red-50 dark:bg-red-900/20" : "border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-700 hover:border-slate-300 dark:hover:border-gray-600"}`}>
                         <div className="text-3xl">{combo.emoji}</div>
                         <div className="flex-1">
-                          <p className="font-extrabold text-slate-900">{combo.name}</p>
-                          <p className="text-xs text-slate-500 mt-0.5">{combo.detail}</p>
+                          <p className="font-extrabold text-slate-900 dark:text-white">{combo.name}</p>
+                          <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">{combo.detail}</p>
                           <p className="font-black text-[#dc2626] text-lg mt-2">{combo.price.toLocaleString()}<span className="text-sm">đ</span></p>
                         </div>
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3 bg-slate-100 px-3 py-2 rounded-xl">
-                            <button onClick={() => updateCombo(combo.id, -1)} className="text-slate-500 hover:text-[#dc2626] transition-colors">
+                          <div className="flex items-center gap-3 bg-slate-100 dark:bg-gray-600 px-3 py-2 rounded-xl">
+                            <button onClick={() => updateCombo(combo.id, -1)} className="text-slate-500 dark:text-gray-300 hover:text-[#dc2626] transition-colors">
                               <Minus size={14} strokeWidth={3} />
                             </button>
-                            <span className="font-black text-sm w-5 text-center">{combo.quantity}</span>
-                            <button onClick={() => updateCombo(combo.id, 1)} className="text-slate-500 hover:text-[#dc2626] transition-colors">
+                            <span className="font-black text-sm w-5 text-center text-slate-900 dark:text-white">{combo.quantity}</span>
+                            <button onClick={() => updateCombo(combo.id, 1)} className="text-slate-500 dark:text-gray-300 hover:text-[#dc2626] transition-colors">
                               <Plus size={14} strokeWidth={3} />
                             </button>
                           </div>

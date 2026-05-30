@@ -24,7 +24,7 @@ import {
 import axiosInstance from "../../api/axiosConfig";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import toast, { Toaster } from "react-hot-toast";
-import { usePushSubscription } from "../../hooks/usePushSubscription";
+import { usePushSubscription } from "../../shared/hooks/use-push-subscription";
 import TicketCard from "../../components/ticket/TicketCard";
 
 const PaymentSuccessPage = () => {
@@ -127,7 +127,7 @@ const PaymentSuccessPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 gap-4">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#AE2070] border-t-transparent" />
         <p className="text-slate-500 font-medium">Đang xác nhận thanh toán MoMo...</p>
       </div>
@@ -136,14 +136,14 @@ const PaymentSuccessPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 font-sans">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 font-sans">
         <Navbar />
         <main className="max-w-lg mx-auto px-4 pt-28 pb-12 text-center">
-          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-200">
+          <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-200 dark:border-red-800">
             <XCircle className="w-10 h-10 text-red-600" strokeWidth={2.5} />
           </div>
-          <h1 className="text-2xl font-black text-gray-900 mb-2 uppercase">Thanh toán thất bại</h1>
-          <p className="text-gray-500 mb-8">{error}</p>
+          <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-2 uppercase">Thanh toán thất bại</h1>
+          <p className="text-gray-500 dark:text-gray-400 mb-8">{error}</p>
           <button
             onClick={() => navigate("/")}
             className="px-8 py-3 bg-[#dc2626] text-white font-bold rounded-xl hover:bg-red-700 transition-all"
@@ -171,7 +171,7 @@ const PaymentSuccessPage = () => {
   } = ticketData;
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 font-sans text-gray-900 dark:text-white">
       <Navbar />
 
       <main className="max-w-3xl mx-auto px-4 pt-28 pb-12">
@@ -179,10 +179,10 @@ const PaymentSuccessPage = () => {
         <div className="text-center mb-10">
           {isHistoryMode ? (
             <>
-              <h1 className="text-3xl font-extrabold text-gray-900 mb-2 uppercase tracking-tight">
+              <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2 uppercase tracking-tight">
                 {isTicketIssued ? "Chi tiết vé điện tử" : "Chi tiết đơn đặt vé"}
               </h1>
-              <p className="text-gray-500 font-medium">
+              <p className="text-gray-500 dark:text-gray-400 font-medium">
                 Mã đơn hàng:{" "}
                 <span className="font-mono font-black text-red-600 bg-red-50 px-2 py-0.5 rounded">
                   {bookingCode}
@@ -191,30 +191,30 @@ const PaymentSuccessPage = () => {
             </>
           ) : isCash ? (
             <>
-              <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6 border border-amber-200">
+              <div className="w-20 h-20 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-6 border border-amber-200 dark:border-amber-800">
                 <Clock className="w-10 h-10 text-amber-600" strokeWidth={2.5} />
               </div>
-              <h1 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">
+              <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-2 uppercase tracking-tight">
                 Đặt vé thành công!
               </h1>
-              <p className="text-gray-500 font-medium">
+              <p className="text-gray-500 dark:text-gray-400 font-medium">
                 Mã đơn hàng:{" "}
-                <span className="font-mono font-black text-red-600 bg-red-50 px-2 py-0.5 rounded">
+                <span className="font-mono font-black text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded">
                   {bookingCode || "—"}
                 </span>
               </p>
             </>
           ) : (
             <>
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-200">
+              <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-200 dark:border-green-800">
                 <CheckCircle className="w-10 h-10 text-green-600" strokeWidth={2.5} />
               </div>
-              <h1 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">
+              <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-2 uppercase tracking-tight">
                 Thanh toán thành công!
               </h1>
-              <p className="text-gray-500 font-medium">
+              <p className="text-gray-500 dark:text-gray-400 font-medium">
                 Mã đơn hàng:{" "}
-                <span className="font-mono font-black text-red-600 bg-red-50 px-2 py-0.5 rounded">
+                <span className="font-mono font-black text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded">
                   {bookingCode || "—"}
                 </span>
               </p>
@@ -236,9 +236,9 @@ const PaymentSuccessPage = () => {
             combos={combos}
           />
         ) : isPendingCash ? (
-          <div className="mx-auto w-full max-w-sm bg-white rounded-3xl shadow-2xl p-8 flex flex-col items-center gap-4">
+          <div className="mx-auto w-full max-w-sm bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 flex flex-col items-center gap-4">
             <Clock className="w-12 h-12 text-amber-400" />
-            <p className="font-mono font-bold text-gray-700 text-sm tracking-[0.15em] uppercase text-center">
+            <p className="font-mono font-bold text-gray-700 dark:text-gray-300 text-sm tracking-[0.15em] uppercase text-center">
               {bookingCode || "—"}
             </p>
             <p className="text-sm text-amber-600 font-bold text-center">
@@ -246,8 +246,8 @@ const PaymentSuccessPage = () => {
             </p>
           </div>
         ) : bookingCode ? (
-          <div className="mx-auto w-full max-w-sm bg-white rounded-3xl shadow-2xl p-8 flex flex-col items-center gap-5">
-            <p className="text-xs text-gray-400 uppercase tracking-widest font-black text-center">
+          <div className="mx-auto w-full max-w-sm bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 flex flex-col items-center gap-5">
+            <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-widest font-black text-center">
               Vui lòng đưa mã này cho nhân viên rạp để xác nhận vé
             </p>
             <QRCodeSVG
@@ -257,7 +257,7 @@ const PaymentSuccessPage = () => {
               fgColor="#111827"
               level="M"
             />
-            <p className="font-mono font-bold text-gray-700 text-sm tracking-[0.2em] uppercase">{bookingCode}</p>
+            <p className="font-mono font-bold text-gray-700 dark:text-gray-300 text-sm tracking-[0.2em] uppercase">{bookingCode}</p>
           </div>
         ) : null)}
 
@@ -266,7 +266,7 @@ const PaymentSuccessPage = () => {
           {isHistoryMode ? (
             <button
               onClick={() => navigate("/my-tickets")}
-              className="w-full sm:w-auto px-10 py-3.5 bg-white border-2 border-slate-200 rounded-2xl font-black text-slate-700 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 uppercase text-sm tracking-widest"
+              className="w-full sm:w-auto px-10 py-3.5 bg-white dark:bg-gray-800 border-2 border-slate-200 dark:border-gray-600 rounded-2xl font-black text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700 transition-all flex items-center justify-center gap-2 uppercase text-sm tracking-widest"
             >
               <ArrowLeft size={18} strokeWidth={3} /> Quay lại danh sách
             </button>
@@ -274,7 +274,7 @@ const PaymentSuccessPage = () => {
             <>
               <button
                 onClick={() => navigate("/")}
-                className="w-full sm:w-auto px-10 py-3.5 bg-white border-2 border-slate-200 rounded-2xl font-black text-slate-700 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 uppercase text-sm tracking-widest"
+                className="w-full sm:w-auto px-10 py-3.5 bg-white dark:bg-gray-800 border-2 border-slate-200 dark:border-gray-600 rounded-2xl font-black text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700 transition-all flex items-center justify-center gap-2 uppercase text-sm tracking-widest"
               >
                 <Home size={18} strokeWidth={3} /> Về trang chủ
               </button>

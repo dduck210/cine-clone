@@ -210,11 +210,11 @@ const ScanPage = () => {
 
         {/* Camera area */}
         {cameraError && (
-          <div className="p-6 text-center border-b border-gray-100">
+          <div className="p-6 text-center border-b border-gray-100 dark:border-gray-700">
             <div className="w-14 h-14 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-3">
               <CameraOff className="w-7 h-7 text-amber-500" />
             </div>
-            <p className="text-sm font-bold text-gray-700 mb-1">Camera không khả dụng</p>
+            <p className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Camera không khả dụng</p>
             <p className="text-xs text-gray-400 mb-4">
               {cameraError.includes("in use") || cameraError.includes("NotReadable")
                 ? "Camera đang bị ứng dụng khác sử dụng"
@@ -242,7 +242,7 @@ const ScanPage = () => {
         </div>
 
         {/* Upload QR image */}
-        <div className="px-4 py-3 border-t border-gray-100">
+        <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700">
           <input
             ref={fileInputRef}
             type="file"
@@ -252,7 +252,7 @@ const ScanPage = () => {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="w-full flex items-center justify-center gap-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-bold py-3 rounded-xl text-sm transition-colors"
+            className="w-full flex items-center justify-center gap-2 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-bold py-3 rounded-xl text-sm transition-colors"
           >
             <ImagePlus size={16} className="text-[#dc2626]" />
             Tải ảnh chụp mã QR
@@ -263,7 +263,7 @@ const ScanPage = () => {
         </div>
 
         {/* Manual input */}
-        <div className="px-4 pb-4 border-t border-gray-100 pt-3">
+        <div className="px-4 pb-4 border-t border-gray-100 dark:border-gray-700 pt-3">
           <p className="text-xs text-gray-400 text-center mb-2 flex items-center justify-center gap-1">
             <Keyboard size={11} /> Hoặc nhập mã vé thủ công
           </p>
@@ -273,7 +273,7 @@ const ScanPage = () => {
               value={manualCode}
               onChange={(e) => setManualCode(e.target.value.toUpperCase())}
               placeholder="VD: BK1234567890"
-              className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#dc2626]/30 focus:border-[#dc2626] uppercase"
+              className="flex-1 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#dc2626]/30 focus:border-[#dc2626] uppercase bg-white dark:bg-gray-700 text-gray-900 dark:text-white dark:placeholder-gray-400"
             />
             <button
               type="submit"

@@ -2,21 +2,12 @@ import React, { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
-import axiosInstance from "../../api/axiosConfig";
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { authService } from "../../api/services";
+import { validateEmail, validatePassword } from "../../shared/utils";
 
 const validateField = (name, value) => {
-  if (name === "email") {
-    if (!value.trim()) return "Email không được để trống";
-    if (!EMAIL_RE.test(value)) return "Email không đúng định dạng";
-    return "";
-  }
-  if (name === "password") {
-    if (!value) return "Mật khẩu không được để trống";
-    if (value.length < 6) return "Mật khẩu phải có ít nhất 6 ký tự";
-    return "";
-  }
+  if (name === "email") return validateEmail(value);
+  if (name === "password") return validatePassword(value);
   return "";
 };
 
@@ -74,10 +65,7 @@ const LoginPage = () => {
     setIsLoading(true);
     setServerError("");
     try {
-      const { data } = await axiosInstance.post("/auth/login", {
-        email: fields.email,
-        password: fields.password,
-      });
+      const data = await authService.login(fields.email, fields.password);
       localStorage.setItem("token", data.token);
       if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
       localStorage.setItem(
@@ -101,11 +89,11 @@ const LoginPage = () => {
   };
 
   const inputClass = (name, extraRight = "pr-10") => {
-    const base = `w-full bg-gray-50 border rounded-xl pl-11 ${extraRight} py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 outline-none transition-all duration-200 font-medium`;
+    const base = `w-full bg-gray-50 dark:bg-gray-700 border rounded-xl pl-11 ${extraRight} py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 outline-none transition-all duration-200 font-medium`;
     const state = fieldState(name);
-    if (state === "error") return `${base} border-red-400 focus:ring-red-100 focus:border-red-500`;
-    if (state === "success") return `${base} border-green-400 focus:ring-green-100 focus:border-green-500 bg-green-50/30`;
-    return `${base} border-gray-200 focus:ring-red-100 focus:border-[#dc2626]`;
+    if (state === "error") return `${base} border-red-400 focus:ring-red-100 dark:focus:ring-red-900/20 focus:border-red-500`;
+    if (state === "success") return `${base} border-green-400 focus:ring-green-100 dark:focus:ring-green-900/20 focus:border-green-500 bg-green-50/30 dark:bg-green-900/10`;
+    return `${base} border-gray-200 dark:border-gray-600 focus:ring-red-100 dark:focus:ring-red-900/20 focus:border-[#dc2626]`;
   };
 
   const leadIconColor = (name) => {
@@ -125,7 +113,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 px-4 py-8">
       <style>{`
         @keyframes fadeDown {
           from { opacity: 0; transform: translateY(-4px); }
@@ -133,7 +121,7 @@ const LoginPage = () => {
         }
       `}</style>
 
-      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row">
+      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row">
         {/* Left panel */}
         <div className="hidden md:block md:w-1/2 bg-gray-900 relative min-h-[600px]">
           <img
@@ -155,20 +143,20 @@ const LoginPage = () => {
           <div className="max-w-md mx-auto w-full">
             <Link
               to="/"
-              className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors text-sm font-medium mb-8"
+              className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors text-sm font-medium mb-8"
             >
               <ArrowLeft size={16} /> Về trang chủ
             </Link>
 
             <div className="mb-8 text-center md:text-left">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">Đăng nhập</h1>
-              <p className="text-gray-500 text-sm sm:text-base">Nhập thông tin của bạn để tiếp tục.</p>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white mb-2">Đăng nhập</h1>
+              <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">Nhập thông tin của bạn để tiếp tục.</p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-5">
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
                 <div className="relative">
                   <Mail className={`absolute left-4 top-3.5 ${leadIconColor("email")}`} size={18} />
                   <input
@@ -188,7 +176,7 @@ const LoginPage = () => {
 
               {/* Password */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Mật khẩu</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mật khẩu</label>
                 <div className="relative">
                   <Lock className={`absolute left-4 top-3.5 ${leadIconColor("password")}`} size={18} />
                   <input
@@ -212,7 +200,7 @@ const LoginPage = () => {
                     <button
                       type="button"
                       onClick={() => setShowPassword((p) => !p)}
-                      className="text-gray-400 hover:text-gray-600 p-0.5"
+                      className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 p-0.5"
                       tabIndex={-1}
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -232,7 +220,7 @@ const LoginPage = () => {
 
               {/* Server error */}
               {serverError && (
-                <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 animate-[fadeDown_0.2s_ease]">
+                <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm rounded-xl px-4 py-3 animate-[fadeDown_0.2s_ease]">
                   <AlertCircle size={16} className="shrink-0 mt-0.5" />
                   <span>{serverError}</span>
                 </div>
@@ -252,7 +240,7 @@ const LoginPage = () => {
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-gray-500 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Chưa có tài khoản?{" "}
                 <Link to="/register" className="font-bold text-[#dc2626] hover:underline">
                   Đăng ký ngay

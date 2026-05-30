@@ -4,7 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import axiosInstance from "../api/axiosConfig";
 import toast, { Toaster } from "react-hot-toast";
-import { usePushSubscription } from "../hooks/usePushSubscription";
+import { usePushSubscription } from "../shared/hooks/use-push-subscription";
 import TicketCard from "../components/ticket/TicketCard";
 
 const TicketPage = () => {
@@ -63,7 +63,7 @@ const TicketPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="animate-spin rounded-full h-10 w-10 border-4 border-[#dc2626] border-t-transparent" />
       </div>
     );
@@ -71,12 +71,12 @@ const TicketPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 text-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-4 text-center">
         <div>
           <p className="text-red-600 font-bold text-lg mb-2">
             Không tìm thấy vé
           </p>
-          <p className="text-gray-500 text-sm">{error}</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">{error}</p>
         </div>
       </div>
     );

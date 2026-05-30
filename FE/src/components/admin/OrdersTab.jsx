@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import usePagination from "../../shared/hooks/use-pagination";
 import { QRCodeSVG } from "qrcode.react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import toast from "react-hot-toast";
@@ -43,18 +44,18 @@ const QrScannerModal = ({ onScanned, onClose }) => {
   return (
     <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" style={{ animation: "modalIn 0.25s cubic-bezier(0.22,1,0.36,1) both" }}>
-        <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" style={{ animation: "modalIn 0.25s cubic-bezier(0.22,1,0.36,1) both" }}>
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-gray-700 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Camera size={18} className="text-[#dc2626]" />
-            <h3 className="font-bold text-slate-800">Quét mã QR vé</h3>
+            <h3 className="font-bold text-slate-800 dark:text-white">Quét mã QR vé</h3>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 transition-all duration-150 active:scale-90">
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-full text-slate-400 dark:text-gray-400 transition-all duration-150 active:scale-90">
             <X size={18} />
           </button>
         </div>
         <div className="p-4">
-          <p className="text-xs text-slate-500 text-center mb-3">Hướng camera vào mã QR trên điện thoại khách</p>
+          <p className="text-xs text-slate-500 dark:text-gray-400 text-center mb-3">Hướng camera vào mã QR trên điện thoại khách</p>
           <div id="qr-scanner-container" className="w-full rounded-xl overflow-hidden" />
         </div>
       </div>
@@ -89,54 +90,54 @@ export const OrderDetailModal = ({ order, onClose, onPrint }) => {
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity print:hidden"
         onClick={onClose}
       ></div>
-      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden" style={{ animation: "modalIn 0.28s cubic-bezier(0.22,1,0.36,1) both" }}>
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 shrink-0 print:hidden">
+      <div className="relative bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden" style={{ animation: "modalIn 0.28s cubic-bezier(0.22,1,0.36,1) both" }}>
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-gray-700 flex justify-between items-center bg-white/80 dark:bg-gray-800/80 backdrop-blur-md sticky top-0 z-10 shrink-0 print:hidden">
           <div>
-            <h3 className="font-bold text-lg text-slate-800 tracking-tight flex items-center gap-2">
+            <h3 className="font-bold text-lg text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
               <Ticket className="text-[#dc2626]" size={20} />
               Chi tiết vé - {order.orderId}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-all duration-150 active:scale-90"
+            className="p-2 bg-slate-50 dark:bg-gray-700 hover:bg-slate-100 dark:hover:bg-gray-600 rounded-full text-slate-400 dark:text-gray-400 hover:text-slate-600 dark:hover:text-white transition-all duration-150 active:scale-90"
           >
             <X size={20} />
           </button>
         </div>
-        <div className="overflow-y-auto custom-scrollbar flex-1 bg-slate-50 p-6 print:p-0">
-          <div className="bg-white rounded-2xl p-5 mb-8 border border-slate-200 shadow-sm print:hidden">
-            <h4 className="font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2 flex items-center gap-2">
-              <User size={18} className="text-slate-400" /> Thông tin người đặt
+        <div className="overflow-y-auto custom-scrollbar flex-1 bg-slate-50 dark:bg-gray-900 p-6 print:p-0">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 mb-8 border border-slate-200 dark:border-gray-700 shadow-sm print:hidden">
+            <h4 className="font-bold text-slate-800 dark:text-white mb-3 border-b border-slate-100 dark:border-gray-700 pb-2 flex items-center gap-2">
+              <User size={18} className="text-slate-400 dark:text-gray-400" /> Thông tin người đặt
             </h4>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-slate-500">Khách hàng:</p>
-                <p className="font-bold text-slate-800">{order.customerName}</p>
+                <p className="text-slate-500 dark:text-gray-400">Khách hàng:</p>
+                <p className="font-bold text-slate-800 dark:text-white">{order.customerName}</p>
               </div>
               <div>
-                <p className="text-slate-500">Số điện thoại:</p>
-                <p className="font-bold text-slate-800">{order.phone}</p>
+                <p className="text-slate-500 dark:text-gray-400">Số điện thoại:</p>
+                <p className="font-bold text-slate-800 dark:text-white">{order.phone}</p>
               </div>
               <div>
-                <p className="text-slate-500">Email:</p>
-                <p className="font-bold text-slate-800 break-all">{order.customerEmail || "—"}</p>
+                <p className="text-slate-500 dark:text-gray-400">Email:</p>
+                <p className="font-bold text-slate-800 dark:text-white break-all">{order.customerEmail || "—"}</p>
               </div>
               <div>
-                <p className="text-slate-500">Thời gian giao dịch:</p>
-                <p className="font-semibold text-slate-700">
+                <p className="text-slate-500 dark:text-gray-400">Thời gian giao dịch:</p>
+                <p className="font-semibold text-slate-700 dark:text-gray-300">
                   {order.bookingTime}
                 </p>
               </div>
               <div>
-                <p className="text-slate-500">Trạng thái đơn:</p>
+                <p className="text-slate-500 dark:text-gray-400">Trạng thái đơn:</p>
                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${isPaid ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-amber-50 text-amber-600 border-amber-100"} border`}>
                   {order.status}
                 </span>
               </div>
               {isPaid && (
                 <div>
-                  <p className="text-slate-500">Trạng thái vé:</p>
+                  <p className="text-slate-500 dark:text-gray-400">Trạng thái vé:</p>
                   <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${ticketBadge.color}`}>
                     {ticketBadge.label}
                   </span>
@@ -237,8 +238,8 @@ export const OrderDetailModal = ({ order, onClose, onPrint }) => {
           </div>
         </div>
 
-        <div className="p-4 border-t border-slate-100 bg-white flex justify-end gap-3 shrink-0 print:hidden">
-          <button onClick={onClose} className="px-6 py-2.5 text-slate-600 border border-slate-200 hover:bg-slate-50 rounded-xl font-semibold transition-all duration-150 active:scale-95 text-sm">
+        <div className="p-4 border-t border-slate-100 dark:border-gray-700 bg-white dark:bg-gray-800 flex justify-end gap-3 shrink-0 print:hidden">
+          <button onClick={onClose} className="px-6 py-2.5 text-slate-600 dark:text-gray-300 border border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700/50 rounded-xl font-semibold transition-all duration-150 active:scale-95 text-sm">
             Đóng
           </button>
           {isPaid ? (
@@ -253,7 +254,7 @@ export const OrderDetailModal = ({ order, onClose, onPrint }) => {
               )}
             </>
           ) : (
-            <button disabled className="px-6 py-2.5 bg-gray-200 text-gray-500 rounded-xl font-bold cursor-not-allowed text-sm flex items-center gap-2">
+            <button disabled className="px-6 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-xl font-bold cursor-not-allowed text-sm flex items-center gap-2">
               <Printer size={18} /> Chưa thanh toán
             </button>
           )}
@@ -270,7 +271,7 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
   const [filterStatus, setFilterStatus] = useState("");
   const [scanning, setScanning] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const { currentPage, totalPages, setTotalPages, paginationItems, goToPage, reset: resetPage } = usePagination();
   const searchRef = useRef(null);
 
   const autoPrintByCode = (code) => {
@@ -332,12 +333,14 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
     return matchSearch && matchStatus;
   });
 
-  const totalPages = Math.ceil(filteredOrders.length / PAGE_SIZE);
+  const computedTotalPages = Math.ceil(filteredOrders.length / PAGE_SIZE);
   const pagedOrders = filteredOrders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
+  useEffect(() => { setTotalPages(computedTotalPages); }, [computedTotalPages]);
+
   // Reset to page 1 when filter/search changes
-  const handleSearch = (val) => { setSearch(val); setCurrentPage(1); };
-  const handleFilterStatus = (val) => { setFilterStatus(val); setCurrentPage(1); };
+  const handleSearch = (val) => { setSearch(val); resetPage(); };
+  const handleFilterStatus = (val) => { setFilterStatus(val); resetPage(); };
 
   return (
     <div className="space-y-6">
@@ -356,24 +359,24 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
         }
       `}</style>
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-slate-100 dark:border-gray-700 shadow-sm">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Quản lý Đơn hàng</h2>
-          <p className="text-sm text-slate-500">Kiểm tra và in vé cho khách</p>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white">Quản lý Đơn hàng</h2>
+          <p className="text-sm text-slate-500 dark:text-gray-400">Kiểm tra và in vé cho khách</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
           <a
             href="/scan"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all duration-150 active:scale-95 border shadow-sm shrink-0 bg-white border-slate-200 text-slate-600 hover:bg-red-50 hover:border-red-300 hover:text-[#dc2626]"
+            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all duration-150 active:scale-95 border shadow-sm shrink-0 bg-white dark:bg-gray-700 border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 hover:text-[#dc2626]"
             title="Mở trang quét vé ở tab mới"
           >
             <ScanLine size={16} />
             <span className="hidden sm:inline">Quét vé</span>
           </a>
           <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500" size={16} />
             <input
               ref={searchRef}
               type="text"
@@ -381,9 +384,9 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               onBlur={() => { if (scanning && !search) setScanning(false); }}
-              className={`w-full pl-9 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all ${scanning
-                ? "border-[#dc2626] focus:ring-red-200 bg-red-50"
-                : "border-slate-200 focus:border-[#dc2626] focus:ring-red-100"
+              className={`w-full pl-9 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all ${scanning
+                ? "border-[#dc2626] focus:ring-red-200 bg-red-50 dark:bg-red-900/20 dark:text-white"
+                : "bg-slate-50 dark:bg-gray-700 border-slate-200 dark:border-gray-600 focus:border-[#dc2626] focus:ring-red-100 dark:text-white"
                 }`}
             />
           </div>
@@ -397,23 +400,24 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
             key={opt.value}
             onClick={() => handleFilterStatus(opt.value)}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all duration-150 active:scale-95 ${filterStatus === opt.value
-              ? opt.cls || "bg-slate-100 text-slate-600 border-slate-200"
-              : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+              ? opt.cls || "bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-300 border-slate-200 dark:border-gray-600"
+              : "bg-white dark:bg-gray-800 text-slate-400 dark:text-gray-400 border-slate-200 dark:border-gray-600 hover:border-slate-300 dark:hover:border-gray-500"
               }`}
           >
             {opt.label}
           </button>
         ))}
       </div>
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-slate-200 dark:border-gray-700 overflow-hidden">
         {loading ? (
-          <div className="p-16 text-center text-slate-400">
+          <div className="p-16 text-center text-slate-400 dark:text-gray-400">
             <div className="animate-spin rounded-full h-8 w-8 border-4 border-red-600 border-t-transparent mx-auto"></div>
           </div>
         ) : (
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-bold">
+              <tr className="bg-slate-50/80 dark:bg-gray-700 border-b border-slate-200 dark:border-gray-600 text-xs uppercase tracking-wider text-slate-500 dark:text-gray-400 font-bold">
                 <th className="p-4 pl-6">Mã vé</th>
                 <th className="p-4">Khách hàng</th>
                 <th className="p-4">Phim / Suất chiếu</th>
@@ -423,35 +427,35 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
                 <th className="p-4 text-right pr-6">Thao tác</th>
               </tr>
             </thead>
-            <tbody key={currentPage} className="divide-y divide-slate-100">
+            <tbody key={currentPage} className="divide-y divide-slate-100 dark:divide-gray-700">
               {filteredOrders.length === 0 ? (
-                <tr><td colSpan="7" className="p-12 text-center text-slate-400 italic">
+                <tr><td colSpan="7" className="p-12 text-center text-slate-400 dark:text-gray-400 italic">
                   {search || filterStatus ? "Không tìm thấy đơn hàng phù hợp." : "Chưa có đơn hàng nào."}
                 </td></tr>
               ) : pagedOrders.map((order, index) => (
                 <tr
                   key={`${order.orderId}-${index}`}
-                  className="hover:bg-slate-50/80 transition-all duration-150"
+                  className="hover:bg-slate-50/80 dark:hover:bg-gray-700/50 transition-all duration-150"
                   style={{ animation: "rowIn 0.25s cubic-bezier(0.22,1,0.36,1) both", animationDelay: `${index * 40}ms` }}
                 >
-                  <td className="p-4 pl-6 font-mono font-bold text-slate-700">
+                  <td className="p-4 pl-6 font-mono font-bold text-slate-700 dark:text-white">
                     {order.orderId}
                   </td>
                   <td className="p-4">
-                    <div className="font-medium text-slate-800">
+                    <div className="font-medium text-slate-800 dark:text-white">
                       {order.customerName}
                     </div>
-                    <div className="text-xs text-slate-500 flex items-center gap-1.5">
-                      <Mail size={12} className="text-slate-400" />
+                    <div className="text-xs text-slate-500 dark:text-gray-400 flex items-center gap-1.5">
+                      <Mail size={12} className="text-slate-400 dark:text-gray-500" />
                       <span className="truncate">{order.customerEmail || "—"}</span>
                     </div>
-                    <div className="text-xs text-slate-500">{order.phone}</div>
+                    <div className="text-xs text-slate-500 dark:text-gray-400">{order.phone}</div>
                   </td>
                   <td className="p-4">
-                    <div className="font-bold text-slate-700">
+                    <div className="font-bold text-slate-700 dark:text-white">
                       {order.movieTitle}
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-slate-500 dark:text-gray-400">
                       {order.showDate} - {order.showTime}
                     </div>
                   </td>
@@ -459,11 +463,11 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
                     {order.finalTotalPrice?.toLocaleString()} đ
                   </td>
                   <td className="p-4 text-center">
-                    <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold border ${order.status === "Đã thanh toán" ? "bg-emerald-50 text-emerald-600 border-emerald-200" :
-                      order.status === "Đã hoàn tiền" ? "bg-blue-50 text-blue-600 border-blue-200" :
-                        order.status === "Đã hủy" ? "bg-red-50 text-red-500 border-red-200" :
-                          order.status === "Hết hạn" ? "bg-slate-100 text-slate-500 border-slate-200" :
-                          "bg-amber-50 text-amber-600 border-amber-200"
+                    <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold border ${order.status === "Đã thanh toán" ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800" :
+                      order.status === "Đã hoàn tiền" ? "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800" :
+                        order.status === "Đã hủy" ? "bg-red-50 text-red-500 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800" :
+                          order.status === "Hết hạn" ? "bg-slate-100 text-slate-500 border-slate-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600" :
+                          "bg-amber-50 text-amber-600 border-amber-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800"
                       }`}>
                       {order.status}
                     </span>
@@ -476,21 +480,21 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
                         }`}>
                         {order.ticketStatus === "printed" ? "ĐÃ IN" : "CHƯA IN"}
                       </span>
-                    ) : <span className="text-slate-300 text-xs">—</span>}
+                    ) : <span className="text-slate-300 dark:text-gray-600 text-xs">—</span>}
                   </td>
                   <td className="p-4 pr-6 text-right">
                     <div className="flex items-center justify-end gap-1.5">
                       {order.status === "Chờ thanh toán" && order.paymentMethod === "cash" && (
                         <button
                           onClick={() => onConfirm(order.bookingRawId)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold transition-all duration-150 active:scale-95 border border-emerald-200"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 rounded-lg text-xs font-bold transition-all duration-150 active:scale-95 border border-emerald-200 dark:border-emerald-800"
                         >
                           <CheckCircle size={14} /> Xác nhận
                         </button>
                       )}
                       <button
                         onClick={() => onViewTicket(order)}
-                        className="p-2 text-slate-400 hover:text-[#dc2626] hover:bg-red-50 rounded-lg transition-all duration-150 active:scale-90"
+                        className="p-2 text-slate-400 dark:text-gray-400 hover:text-[#dc2626] hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-150 active:scale-90"
                       >
                         <Eye size={18} />
                       </button>
@@ -505,44 +509,37 @@ export const OrdersManager = ({ orders = [], loading = false, onViewTicket, onCo
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-2">
-          <p className="text-sm text-slate-500">
-            Hiển thị <span className="font-bold text-slate-700">{(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredOrders.length)}</span> / <span className="font-bold text-slate-700">{filteredOrders.length}</span> đơn hàng
+          <p className="text-sm text-slate-500 dark:text-gray-400">
+            Hiển thị <span className="font-bold text-slate-700 dark:text-gray-300">{(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredOrders.length)}</span> / <span className="font-bold text-slate-700 dark:text-gray-300">{filteredOrders.length}</span> đơn hàng
           </p>
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              onClick={() => goToPage(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95"
+              className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95"
             >
               ‹ Trước
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
-              .reduce((acc, p, i, arr) => {
-                if (i > 0 && p - arr[i - 1] > 1) acc.push("...");
-                acc.push(p);
-                return acc;
-              }, [])
-              .map((p, i) =>
-                p === "..." ? (
-                  <span key={`dots-${i}`} className="px-2 text-slate-400 text-sm">…</span>
-                ) : (
-                  <button
-                    key={p}
-                    onClick={() => setCurrentPage(p)}
-                    className={`w-9 h-9 rounded-lg text-sm font-bold transition-all duration-150 active:scale-95 ${currentPage === p
-                      ? "bg-[#dc2626] text-white shadow-sm shadow-red-200"
-                      : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                      }`}
-                  >
-                    {p}
-                  </button>
-                )
-              )}
+            {paginationItems.map((p, i) =>
+              p === null ? (
+                <span key={`dots-${i}`} className="px-2 text-slate-400 dark:text-gray-600 text-sm">…</span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => goToPage(p)}
+                  className={`w-9 h-9 rounded-lg text-sm font-bold transition-all duration-150 active:scale-95 ${currentPage === p
+                    ? "bg-[#dc2626] text-white shadow-sm shadow-red-200"
+                    : "border border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700/50"
+                    }`}
+                >
+                  {p}
+                </button>
+              )
+            )}
             <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              onClick={() => goToPage(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95"
+              className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95"
             >
               Sau ›
             </button>

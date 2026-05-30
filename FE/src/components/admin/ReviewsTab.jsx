@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Star, Search, MessageSquare } from "lucide-react";
 import toast from "react-hot-toast";
-import axiosInstance from "../../api/axiosConfig";
+import { reviewService } from "../../api/services";
+import usePagination from "../../shared/hooks/use-pagination";
 
 const PAGE_SIZE = 6;
 
@@ -45,28 +46,27 @@ export const ReviewsManager = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterRating, setFilterRating] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const { currentPage, totalPages, setTotalPages, paginationItems, goToPage, reset: resetPage } = usePagination();
   const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => { fetchReviews(); }, [search, filterRating, currentPage]);
 
   const fetchReviews = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: currentPage, limit: PAGE_SIZE });
-      if (search) params.append("search", search);
-      if (filterRating) params.append("rating", filterRating);
-      const res = await axiosInstance.get(`/reviews/admin/all?${params}`);
+      const params = { page: currentPage, limit: PAGE_SIZE };
+      if (search) params.search = search;
+      if (filterRating) params.rating = filterRating;
+      const data = await reviewService.getAdminReviews(params);
       console.log("[ReviewsTab] LAYER 6 — API Response:", {
-        total: res.data.total,
-        totalPages: res.data.totalPages,
-        reviewsCount: res.data.reviews?.length,
-        firstReview: res.data.reviews?.[0],
+        total: data.total,
+        totalPages: data.totalPages,
+        reviewsCount: data.reviews?.length,
+        firstReview: data.reviews?.[0],
       });
-      setReviews(res.data.reviews);
-      setTotal(res.data.total);
-      setTotalPages(res.data.totalPages || 1);
+      setReviews(data.reviews);
+      setTotal(data.total);
+      setTotalPages(data.totalPages || 1);
     } catch (err) {
       console.error("[ReviewsTab] LAYER 6 — Fetch error:", err);
       toast.error("Không thể tải đánh giá");
@@ -74,14 +74,6 @@ export const ReviewsManager = () => {
       setLoading(false);
     }
   };
-
-  const paginationItems = Array.from({ length: totalPages || 1 }, (_, i) => i + 1)
-    .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
-    .reduce((acc, p, idx, arr) => {
-      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("…");
-      acc.push(p);
-      return acc;
-    }, []);
 
   return (
     <div className="space-y-5">
@@ -92,26 +84,26 @@ export const ReviewsManager = () => {
             <MessageSquare size={18} className="text-yellow-500" />
           </div>
           <div>
-            <h2 className="text-xl font-black text-slate-800 leading-tight">Đánh giá phim</h2>
-            <p className="text-xs text-slate-400 mt-0.5">{total} đánh giá từ người dùng</p>
+            <h2 className="text-xl font-black text-slate-800 dark:text-white leading-tight">Đánh giá phim</h2>
+            <p className="text-xs text-slate-400 dark:text-gray-400 mt-0.5">{total} đánh giá từ người dùng</p>
           </div>
         </div>
 
         <div className="flex gap-2 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-60">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500" />
             <input
               type="text"
               placeholder="Tìm phim, người dùng..."
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-              className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-50 transition-all"
+              onChange={(e) => { setSearch(e.target.value); resetPage(); }}
+              className="w-full pl-9 pr-3 py-2.5 border border-slate-200 dark:border-gray-600 rounded-xl text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-50 transition-all bg-white dark:bg-gray-700 text-slate-900 dark:text-white"
             />
           </div>
           <select
             value={filterRating}
-            onChange={(e) => { setFilterRating(e.target.value); setCurrentPage(1); }}
-            className="border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-50 bg-white transition-all cursor-pointer"
+            onChange={(e) => { setFilterRating(e.target.value); resetPage(); }}
+            className="border border-slate-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 dark:text-white outline-none focus:border-red-400 focus:ring-2 focus:ring-red-50 bg-white dark:bg-gray-700 transition-all cursor-pointer"
           >
             <option value="">Tất cả sao</option>
             {[5, 4, 3, 2, 1].map((r) => <option key={r} value={r}>{r} sao</option>)}
@@ -120,17 +112,17 @@ export const ReviewsManager = () => {
       </div>
 
       {/* Table card */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-100 dark:border-gray-700 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="space-y-0 divide-y divide-slate-50">
+          <div className="space-y-0 divide-y divide-slate-50 dark:divide-gray-700">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-4 px-5 py-5 animate-pulse">
-                <div className="w-11 h-16 bg-slate-100 rounded-lg shrink-0" />
+                <div className="w-11 h-16 bg-slate-100 dark:bg-gray-700 rounded-lg shrink-0" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3.5 bg-slate-100 rounded w-1/3" />
-                  <div className="h-3 bg-slate-100 rounded w-1/2" />
+                  <div className="h-3.5 bg-slate-100 dark:bg-gray-700 rounded w-1/3" />
+                  <div className="h-3 bg-slate-100 dark:bg-gray-700 rounded w-1/2" />
                 </div>
-                <div className="w-16 h-5 bg-slate-100 rounded-full" />
+                <div className="w-16 h-5 bg-slate-100 dark:bg-gray-700 rounded-full" />
               </div>
             ))}
           </div>
@@ -139,35 +131,35 @@ export const ReviewsManager = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Phim</th>
-                    <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Người dùng</th>
-                    <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Đánh giá</th>
-                    <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80">Nội dung</th>
-                    <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80 hidden md:table-cell">Ngày</th>
+                  <tr className="border-b border-slate-100 dark:border-gray-700">
+                    <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 dark:text-gray-400 uppercase tracking-widest bg-slate-50/80 dark:bg-gray-700">Phim</th>
+                    <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 dark:text-gray-400 uppercase tracking-widest bg-slate-50/80 dark:bg-gray-700">Người dùng</th>
+                    <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 dark:text-gray-400 uppercase tracking-widest bg-slate-50/80 dark:bg-gray-700">Đánh giá</th>
+                    <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 dark:text-gray-400 uppercase tracking-widest bg-slate-50/80 dark:bg-gray-700">Nội dung</th>
+                    <th className="text-left px-5 py-3.5 text-[11px] font-black text-slate-400 dark:text-gray-400 uppercase tracking-widest bg-slate-50/80 dark:bg-gray-700 hidden md:table-cell">Ngày</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="divide-y divide-slate-50 dark:divide-gray-700">
                   {(!reviews || reviews.length === 0) ? (
                     <tr>
                       <td colSpan={5} className="text-center py-16">
-                        <MessageSquare size={32} className="text-slate-200 mx-auto mb-2" />
-                        <p className="text-slate-400 text-sm font-medium">Không tìm thấy đánh giá nào.</p>
+                        <MessageSquare size={32} className="text-slate-200 dark:text-gray-600 mx-auto mb-2" />
+                        <p className="text-slate-400 dark:text-gray-400 text-sm font-medium">Không tìm thấy đánh giá nào.</p>
                       </td>
                     </tr>
                   ) : reviews.map((r, i) => (
                     <tr
                       key={r._id}
-                      className="group border-l-2 border-transparent hover:border-red-400 hover:bg-slate-50/60 transition-[border-color,background-color] duration-200"
+                      className="group border-l-2 border-transparent hover:border-red-400 hover:bg-slate-50/60 dark:hover:bg-gray-700/50 transition-[border-color,background-color] duration-200"
                     >
                       {/* Movie */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           {r.movie?.poster
                             ? <img src={r.movie.poster} alt="" className="w-10 h-14 object-cover rounded-lg shrink-0 shadow-sm" />
-                            : <div className="w-10 h-14 bg-slate-100 rounded-lg shrink-0" />
+                            : <div className="w-10 h-14 bg-slate-100 dark:bg-gray-700 rounded-lg shrink-0" />
                           }
-                          <span className="font-semibold text-slate-800 text-sm leading-snug line-clamp-2 max-w-[140px]">
+                          <span className="font-semibold text-slate-800 dark:text-white text-sm leading-snug line-clamp-2 max-w-[140px]">
                             {r.movie?.title || "Phim đã xóa"}
                           </span>
                         </div>
@@ -178,8 +170,8 @@ export const ReviewsManager = () => {
                         <div className="flex items-center gap-2.5">
                           <UserAvatar name={r.user?.name} />
                           <div className="min-w-0">
-                            <p className="font-semibold text-slate-800 text-sm truncate max-w-[130px]">{r.user?.name || "Người dùng đã xóa"}</p>
-                            <p className="text-xs text-slate-400 truncate max-w-[170px]">{r.user?.email || ""}</p>
+                            <p className="font-semibold text-slate-800 dark:text-white text-sm truncate max-w-[130px]">{r.user?.name || "Người dùng đã xóa"}</p>
+                            <p className="text-xs text-slate-400 dark:text-gray-400 truncate max-w-[170px]">{r.user?.email || ""}</p>
                           </div>
                         </div>
                       </td>
@@ -197,14 +189,14 @@ export const ReviewsManager = () => {
 
                       {/* Comment */}
                       <td className="px-5 py-4 max-w-[240px]">
-                        <p className="text-slate-500 text-sm leading-relaxed line-clamp-2 border-l-2 border-slate-200 pl-2.5">
-                          {r.comment || <span className="italic text-slate-300">Không có nội dung</span>}
+                        <p className="text-slate-500 dark:text-gray-400 text-sm leading-relaxed line-clamp-2 border-l-2 border-slate-200 dark:border-gray-600 pl-2.5">
+                          {r.comment || <span className="italic text-slate-300 dark:text-gray-600">Không có nội dung</span>}
                         </p>
                       </td>
 
                       {/* Date */}
                       <td className="px-5 py-4 hidden md:table-cell whitespace-nowrap">
-                        <span className="text-sm text-slate-400 font-medium">
+                        <span className="text-sm text-slate-400 dark:text-gray-400 font-medium">
                           {new Date(r.createdAt).toLocaleDateString("vi-VN")}
                         </span>
                       </td>
@@ -216,25 +208,25 @@ export const ReviewsManager = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 bg-slate-50/40">
-                <p className="text-xs text-slate-400">
+              <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 dark:border-gray-700 bg-slate-50/40 dark:bg-gray-700/30">
+                <p className="text-xs text-slate-400 dark:text-gray-400">
                   {total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, total)} / {total}
                 </p>
                 <div className="flex items-center gap-1">
-                  <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}
-                    className="px-2.5 h-8 rounded-lg text-xs font-bold border border-slate-200 text-slate-500 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors">‹</button>
+                  <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}
+                    className="px-2.5 h-8 rounded-lg text-xs font-bold border border-slate-200 dark:border-gray-600 text-slate-500 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">‹</button>
                   {paginationItems.map((p, i) =>
-                    p === "…" ? (
-                      <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-slate-400 text-xs">…</span>
+                    p === null ? (
+                      <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-slate-400 dark:text-gray-600 text-xs">…</span>
                     ) : (
-                      <button key={p} onClick={() => setCurrentPage(p)}
-                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${currentPage === p ? "bg-[#dc2626] text-white shadow-sm shadow-red-200" : "border border-slate-200 text-slate-600 hover:bg-white"}`}>
+                      <button key={p} onClick={() => goToPage(p)}
+                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${currentPage === p ? "bg-[#dc2626] text-white shadow-sm shadow-red-200" : "border border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700/50"}`}>
                         {p}
                       </button>
                     )
                   )}
-                  <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}
-                    className="px-2.5 h-8 rounded-lg text-xs font-bold border border-slate-200 text-slate-500 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors">›</button>
+                  <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= totalPages}
+                    className="px-2.5 h-8 rounded-lg text-xs font-bold border border-slate-200 dark:border-gray-600 text-slate-500 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">›</button>
                 </div>
               </div>
             )}

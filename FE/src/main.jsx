@@ -4,8 +4,8 @@ import App from "./App.jsx";
 import "./index.css";
 import { BrowserRouter } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
-import { WishlistProvider } from "./context/wishlist-context";
-import { ThemeProvider } from "./context/theme-context";
+import { WishlistProvider } from "@/shared/contexts/wishlist-context";
+import { ThemeProvider } from "@/shared/contexts/theme-context";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

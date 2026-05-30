@@ -72,7 +72,7 @@ const CinemaModal = ({ cinema, onClose, onSaved }) => {
 
   const Field = ({ label, k, placeholder, required }) => (
     <div>
-      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+      <label className="block text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
         {label}
         {required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
@@ -80,7 +80,7 @@ const CinemaModal = ({ cinema, onClose, onSaved }) => {
         value={form[k]}
         onChange={(e) => set(k, e.target.value)}
         placeholder={placeholder}
-        className={`w-full bg-slate-50 border rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-4 focus:ring-red-50 font-medium text-slate-700 transition-all duration-150 ${errors[k] ? "border-red-400" : "border-slate-200 focus:border-[#dc2626]"}`}
+        className={`w-full bg-slate-50 dark:bg-gray-700 border rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-4 focus:ring-red-50 font-medium text-slate-700 dark:text-white transition-all duration-150 ${errors[k] ? "border-red-400" : "border-slate-200 dark:border-gray-600 focus:border-[#dc2626]"}`}
       />
       {errors[k] && <p className="text-red-500 text-xs mt-1">{errors[k]}</p>}
     </div>
@@ -93,16 +93,16 @@ const CinemaModal = ({ cinema, onClose, onSaved }) => {
         onClick={onClose}
       />
       <div
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-slate-100"
+        className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 dark:border-gray-700"
         style={{ animation: "modalIn 0.25s cubic-bezier(0.22,1,0.36,1) both" }}
       >
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-          <h3 className="font-bold text-slate-800">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-gray-700 flex justify-between items-center">
+          <h3 className="font-bold text-slate-800 dark:text-white">
             {cinema ? "Chỉnh sửa rạp" : "Thêm rạp mới"}
           </h3>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-all duration-150 active:scale-90"
+            className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-full text-slate-400 dark:text-gray-400 transition-all duration-150 active:scale-90"
           >
             <X size={18} />
           </button>
@@ -112,7 +112,7 @@ const CinemaModal = ({ cinema, onClose, onSaved }) => {
             <img
               src={form.image}
               alt="preview"
-              className="w-full h-36 object-cover rounded-xl border border-slate-100 transition-opacity duration-300"
+              className="w-full h-36 object-cover rounded-xl border border-slate-100 dark:border-gray-700 transition-opacity duration-300"
               onError={(e) => {
                 e.target.style.display = "none";
               }}
@@ -139,27 +139,27 @@ const CinemaModal = ({ cinema, onClose, onSaved }) => {
           />
           <Field label="Email" k="email" placeholder="VD: cinema@example.com" />
           <div>
-            <label className="flex items-center gap-1 text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+            <label className="flex items-center gap-1 text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
               <ImageIcon size={12} /> URL ảnh rạp
             </label>
             <input
               value={form.image}
               onChange={(e) => set("image", e.target.value)}
               placeholder="https://..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] font-medium text-slate-700 transition-all duration-150"
+              className="w-full bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] font-medium text-slate-700 dark:text-white transition-all duration-150"
             />
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-slate-400 dark:text-gray-400 mt-1">
               Dán URL ảnh từ Unsplash, Google, hoặc bất kỳ nguồn nào
             </p>
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
               Trạng thái
             </label>
             <select
               value={form.status}
               onChange={(e) => set("status", e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] font-medium text-slate-700 transition-all duration-150"
+              className="w-full bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-4 focus:ring-red-50 focus:border-[#dc2626] font-medium text-slate-700 dark:text-white transition-all duration-150"
             >
               {Object.entries(STATUS_MAP).map(([v, { label }]) => (
                 <option key={v} value={v}>
@@ -169,10 +169,10 @@ const CinemaModal = ({ cinema, onClose, onSaved }) => {
             </select>
           </div>
         </div>
-        <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+        <div className="px-6 py-4 border-t border-slate-100 dark:border-gray-700 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-all duration-150 active:scale-95"
+            className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-gray-700/50 transition-all duration-150 active:scale-95"
           >
             Huỷ
           </button>
@@ -251,8 +251,8 @@ export const CinemasManager = () => {
 
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-black text-slate-800">Quản lý Rạp</h2>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <h2 className="text-2xl font-black text-slate-800 dark:text-white">Quản lý Rạp</h2>
+          <p className="text-sm text-slate-500 dark:text-gray-400 mt-0.5">
             {cinemas.length} rạp chiếu
           </p>
         </div>
@@ -269,7 +269,7 @@ export const CinemasManager = () => {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="bg-slate-100 rounded-2xl h-64 animate-pulse"
+              className="bg-slate-100 dark:bg-gray-700 rounded-2xl h-64 animate-pulse"
             />
           ))}
         </div>
@@ -280,7 +280,7 @@ export const CinemasManager = () => {
             return (
               <div
                 key={c._id}
-                className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-200 group"
+                className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-100 dark:border-gray-700 shadow-sm overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-200 group"
                 style={{
                   animation: "cardIn 0.4s cubic-bezier(0.22,1,0.36,1) both",
                   animationDelay: `${idx * 80}ms`,
@@ -303,10 +303,10 @@ export const CinemasManager = () => {
                   </span>
                 </div>
                 <div className="p-4">
-                  <h3 className="font-bold text-slate-800 text-base mb-2">
+                  <h3 className="font-bold text-slate-800 dark:text-white text-base mb-2">
                     {c.name}
                   </h3>
-                  <div className="flex items-start gap-2 text-slate-500 text-xs mb-1">
+                  <div className="flex items-start gap-2 text-slate-500 dark:text-gray-400 text-xs mb-1">
                     <MapPin
                       size={13}
                       className="text-[#dc2626] mt-0.5 flex-shrink-0"
@@ -314,14 +314,14 @@ export const CinemasManager = () => {
                     <span className="line-clamp-1">{c.address}</span>
                   </div>
                   {c.phone && (
-                    <div className="flex items-center gap-2 text-slate-500 text-xs mb-3">
+                    <div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 text-xs mb-3">
                       <Phone size={13} className="text-[#dc2626]" />
                       <span>{c.phone}</span>
                     </div>
                   )}
                   <button
                     onClick={() => setModal(c)}
-                    className="w-full py-2 rounded-xl bg-slate-50 hover:bg-red-50 hover:text-[#dc2626] text-slate-600 font-semibold text-sm flex items-center justify-center gap-1.5 transition-all duration-150 active:scale-95 border border-slate-100 hover:border-red-200"
+                    className="w-full py-2 rounded-xl bg-slate-50 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-[#dc2626] text-slate-600 dark:text-gray-300 font-semibold text-sm flex items-center justify-center gap-1.5 transition-all duration-150 active:scale-95 border border-slate-100 dark:border-gray-600 hover:border-red-200"
                   >
                     <Edit size={14} /> Chỉnh sửa
                   </button>

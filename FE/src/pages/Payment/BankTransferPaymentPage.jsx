@@ -82,13 +82,13 @@ const BankTransferPaymentPage = () => {
   if (!location.state) return null;
 
   const CopyRow = ({ label, value }) => (
-    <div className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
+    <div className="flex items-center justify-between bg-slate-50 dark:bg-gray-700 rounded-xl px-4 py-3 border border-slate-100 dark:border-gray-600">
       <div>
-        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">{label}</p>
-        <p className="font-black text-slate-800 text-sm">{value}</p>
+        <p className="text-[10px] text-slate-400 dark:text-gray-400 font-bold uppercase tracking-widest mb-0.5">{label}</p>
+        <p className="font-black text-slate-800 dark:text-white text-sm">{value}</p>
       </div>
       <button onClick={() => copyText(value, label)}
-        className="text-[#004C97] hover:text-[#003a75] transition-colors p-1 rounded-lg hover:bg-blue-50">
+        className="text-[#004C97] hover:text-[#003a75] transition-colors p-1 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-600">
         <Copy size={16} />
       </button>
     </div>
@@ -98,19 +98,19 @@ const BankTransferPaymentPage = () => {
     <div className={`space-y-${compact ? "2.5" : "4"}`}>
       <div className={`flex items-start gap-${compact ? "2.5" : "3"}`}>
         <MapPin size={compact ? 14 : 16} className="text-[#004C97] shrink-0 mt-0.5" />
-        <div><p className={`font-bold text-slate-800 text-${compact ? "sm" : "sm"}`}>{cinemaName}</p>
-          {showAddress && !compact && <p className="text-xs text-slate-400 mt-0.5">{showAddress}</p>}
+        <div><p className={`font-bold text-slate-800 dark:text-white text-${compact ? "sm" : "sm"}`}>{cinemaName}</p>
+          {showAddress && !compact && <p className="text-xs text-slate-400 dark:text-gray-400 mt-0.5">{showAddress}</p>}
         </div>
       </div>
       {roomName && (
         <div className={`flex items-center gap-${compact ? "2.5" : "3"}`}>
           <Monitor size={compact ? 14 : 16} className="text-[#004C97] shrink-0" />
-          <p className={`font-bold text-slate-800 text-sm`}>{roomName}</p>
+          <p className={`font-bold text-slate-800 dark:text-white text-sm`}>{roomName}</p>
         </div>
       )}
       <div className={`flex items-center gap-${compact ? "2.5" : "3"}`}>
         <Calendar size={compact ? 14 : 16} className="text-[#004C97] shrink-0" />
-        <p className="font-bold text-slate-800 text-sm">{showTime} • {showDate}</p>
+        <p className="font-bold text-slate-800 dark:text-white text-sm">{showTime} • {showDate}</p>
       </div>
       <div className={`flex items-center gap-${compact ? "2.5" : "3"}`}>
         <Armchair size={compact ? 14 : 16} className="text-[#004C97] shrink-0" />
@@ -120,7 +120,7 @@ const BankTransferPaymentPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-950 font-sans text-slate-900 dark:text-white">
       <Navbar />
       <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
 
@@ -151,7 +151,7 @@ const BankTransferPaymentPage = () => {
         <div className="flex flex-col lg:flex-row gap-8 items-stretch">
           {/* ── LEFT: Receipt (desktop) ── */}
           <div className="hidden lg:flex lg:w-[48%]">
-            <div className="bg-white w-full rounded-[2rem] shadow-2xl overflow-hidden border border-slate-100 flex flex-col">
+            <div className="bg-white dark:bg-gray-800 w-full rounded-[2rem] shadow-2xl overflow-hidden border border-slate-100 dark:border-gray-700 flex flex-col">
               <div className="bg-gradient-to-r from-[#004C97] to-[#0066CC] p-7 text-center text-white relative">
                 <div className="flex items-center justify-center gap-3 mb-2">
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md">
@@ -171,8 +171,8 @@ const BankTransferPaymentPage = () => {
                 <div className="flex gap-5 pb-5 border-b border-dashed border-slate-200">
                   {poster && <img src={poster} alt="" className="w-20 h-28 object-cover rounded-xl shadow-lg border-2 border-slate-50 shrink-0" />}
                   <div className="flex-1">
-                    <h3 className="font-black text-slate-900 text-xl leading-tight mb-1 uppercase tracking-tighter line-clamp-2">{movieTitle}</h3>
-                    <span className="inline-block bg-red-50 text-red-600 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest mb-2">2D Phụ đề</span>
+                    <h3 className="font-black text-slate-900 dark:text-white text-xl leading-tight mb-1 uppercase tracking-tighter line-clamp-2">{movieTitle}</h3>
+                    <span className="inline-block bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest mb-2">2D Phụ đề</span>
                     {duration > 0 && <p className="text-xs text-slate-400 font-bold flex items-center gap-1"><Clock size={12} /> {duration} phút</p>}
                   </div>
                 </div>
@@ -181,8 +181,8 @@ const BankTransferPaymentPage = () => {
                   <div className="pb-5 border-b border-dashed border-slate-200">
                     <div className="flex items-center gap-2 mb-3"><Popcorn size={16} className="text-[#dc2626]" /><span className="text-xs font-black text-slate-500 uppercase tracking-widest">Bắp & Nước</span></div>
                     {combos.filter((c) => c.quantity > 0).map((c) => (
-                      <div key={c.id || c.name} className="flex justify-between text-sm text-slate-700 font-bold">
-                        <span>{c.quantity}x {c.name}</span><span className="text-slate-400">{(c.price * c.quantity).toLocaleString()}đ</span>
+                      <div key={c.id || c.name} className="flex justify-between text-sm text-slate-700 dark:text-gray-300 font-bold">
+                        <span>{c.quantity}x {c.name}</span><span className="text-slate-400 dark:text-gray-500">{(c.price * c.quantity).toLocaleString()}đ</span>
                       </div>
                     ))}
                   </div>
@@ -195,9 +195,9 @@ const BankTransferPaymentPage = () => {
                       {voucherDiscount > 0 && voucherCode && <div className="flex justify-between text-sm"><span className="flex items-center gap-1.5 text-violet-600 font-semibold"><Tag size={12} /> {voucherCode} {voucherType === "percent" ? `−${voucherValue}%` : ""}</span><span className="text-violet-600 font-bold">−{voucherDiscount?.toLocaleString()}đ</span></div>}
                     </div>
                   )}
-                  <div className="flex justify-between items-center bg-slate-50 rounded-2xl p-5 border border-slate-100">
-                    <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Tổng cộng</span>
-                    <span className="text-4xl font-black text-slate-900 tracking-tighter">{amount?.toLocaleString()}đ</span>
+                  <div className="flex justify-between items-center bg-slate-50 dark:bg-gray-700 rounded-2xl p-5 border border-slate-100 dark:border-gray-600">
+                    <span className="text-[10px] text-slate-400 dark:text-gray-400 font-black uppercase tracking-widest">Tổng cộng</span>
+                    <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{amount?.toLocaleString()}đ</span>
                   </div>
                 </div>
                 <div className="flex justify-between items-center pt-1">
@@ -209,7 +209,7 @@ const BankTransferPaymentPage = () => {
           </div>
 
           {/* ── Mobile: Full card ── */}
-          <div className="lg:hidden w-full bg-white rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden">
+          <div className="lg:hidden w-full bg-white dark:bg-gray-800 rounded-[2rem] shadow-2xl border border-slate-100 dark:border-gray-700 overflow-hidden">
             <div className="bg-gradient-to-r from-[#004C97] to-[#0066CC] p-5 text-white relative">
               <div className="flex items-center gap-3 mb-1">
                 <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center"><Ticket size={18} className="text-white" /></div>
@@ -227,7 +227,7 @@ const BankTransferPaymentPage = () => {
             <div className="p-5 pt-8 space-y-4">
               <div className="flex flex-col items-center pb-4 border-b border-dashed border-slate-200">
                 <div className="bg-[#004C97] text-white px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 shadow-lg shadow-blue-200">Quét mã để thanh toán</div>
-                <div className="bg-slate-50 p-3 rounded-[2rem] border border-slate-100 shadow-inner flex items-center justify-center w-[186px] h-[186px]">
+                <div className="bg-slate-50 dark:bg-gray-700 p-3 rounded-[2rem] border border-slate-100 dark:border-gray-600 shadow-inner flex items-center justify-center w-[186px] h-[186px]">
                   {qrError ? (
                     <p className="text-[10px] text-slate-400 text-center px-2">Không tải được QR.<br/>Dùng thông tin bên dưới để chuyển khoản.</p>
                   ) : (

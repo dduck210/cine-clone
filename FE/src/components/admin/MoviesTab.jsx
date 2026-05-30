@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import usePagination from "../../shared/hooks/use-pagination";
 import { useForm, useWatch } from "react-hook-form";
 import {
   X,
@@ -33,19 +34,19 @@ export const MovieDetailModal = ({ movie, onClose, onEdit }) => {
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100"
+      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 dark:border-gray-700"
         style={{ animation: "modalIn 0.25s cubic-bezier(0.22,1,0.36,1) both" }}>
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-gray-700 flex justify-between items-center">
           <div>
-            <h3 className="font-bold text-lg text-slate-800 line-clamp-1">{movie.title}</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Chi tiết phim</p>
+            <h3 className="font-bold text-lg text-slate-800 dark:text-white line-clamp-1">{movie.title}</h3>
+            <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">Chi tiết phim</p>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={onEdit}
               className="flex items-center gap-1.5 px-4 py-2 bg-[#dc2626] hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-red-200">
               <Edit size={14} /> Chỉnh sửa
             </button>
-            <button onClick={onClose} className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-400 transition-all">
+            <button onClick={onClose} className="p-2 bg-slate-50 dark:bg-gray-700 hover:bg-slate-100 dark:hover:bg-gray-600 rounded-full text-slate-400 dark:text-gray-400 transition-all">
               <X size={20} />
             </button>
           </div>
@@ -56,7 +57,7 @@ export const MovieDetailModal = ({ movie, onClose, onEdit }) => {
             <img
               src={movie.poster}
               alt={movie.title}
-              className="w-28 shrink-0 rounded-xl shadow-md border border-slate-100 object-cover"
+              className="w-28 shrink-0 rounded-xl shadow-md border border-slate-100 dark:border-gray-700 object-cover"
               style={{ aspectRatio: "2/3" }}
               onError={(e) => { e.target.src = "https://via.placeholder.com/112x168?text=No+Image"; }}
             />
@@ -70,32 +71,32 @@ export const MovieDetailModal = ({ movie, onClose, onEdit }) => {
                 { label: "Ngày ra mắt", value: movie.releaseDate ? new Date(movie.releaseDate).toLocaleDateString("vi-VN") : "—" },
                 { label: "Kết thúc chiếu", value: movie.screeningEndDate ? new Date(movie.screeningEndDate).toLocaleDateString("vi-VN") : "—" },
               ].map((item) => (
-                <div key={item.label} className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">{item.label}</p>
-                  <p className="font-bold text-slate-800 text-sm">{item.value}</p>
+                <div key={item.label} className="bg-slate-50 dark:bg-gray-700 rounded-xl p-3 border border-slate-100 dark:border-gray-600">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-400 mb-1">{item.label}</p>
+                  <p className="font-bold text-slate-800 dark:text-white text-sm">{item.value}</p>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Trạng thái</p>
+            <div className="bg-slate-50 dark:bg-gray-700 rounded-xl p-3 border border-slate-100 dark:border-gray-600">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-400 mb-1.5">Trạng thái</p>
               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${sc.bg} ${sc.text} ${sc.border}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
                 {sc.label}
               </span>
             </div>
-            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Diễn viên</p>
-              <p className="font-medium text-slate-700 text-sm line-clamp-2">{movie.cast || "—"}</p>
+            <div className="bg-slate-50 dark:bg-gray-700 rounded-xl p-3 border border-slate-100 dark:border-gray-600">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-400 mb-1">Diễn viên</p>
+              <p className="font-medium text-slate-700 dark:text-gray-300 text-sm line-clamp-2">{movie.cast || "—"}</p>
             </div>
           </div>
 
           {movie.description && (
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Mô tả phim</p>
-              <p className="text-sm text-slate-700 leading-relaxed">{movie.description}</p>
+            <div className="bg-slate-50 dark:bg-gray-700 rounded-xl p-4 border border-slate-100 dark:border-gray-600">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-400 mb-2">Mô tả phim</p>
+              <p className="text-sm text-slate-700 dark:text-gray-300 leading-relaxed">{movie.description}</p>
             </div>
           )}
 
@@ -214,10 +215,10 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
   }, [currentMovie, reset]);
 
   const inputClass = (error) =>
-    `w-full bg-slate-50 border rounded-xl px-4 py-3 outline-none transition-all duration-300 font-medium text-slate-700 ${
+    `w-full bg-slate-50 dark:bg-gray-700 border rounded-xl px-4 py-3 outline-none transition-all duration-300 font-medium text-slate-700 dark:text-white ${
       error
         ? "border-red-500 bg-red-50 focus:ring-4 focus:ring-red-100 placeholder-red-300 animate-shake"
-        : "border-slate-200 focus:border-[#dc2626] focus:bg-white focus:ring-4 focus:ring-red-50 hover:border-slate-300"
+        : "border-slate-200 dark:border-gray-600 focus:border-[#dc2626] focus:bg-white dark:focus:bg-gray-600 focus:ring-4 focus:ring-red-50 hover:border-slate-300 dark:hover:border-gray-500"
     }`;
 
   return (
@@ -227,19 +228,19 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
         onClick={() => setIsModalOpen(false)}
       ></div>
       <div
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-slate-100"
+        className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 dark:border-gray-700"
         style={{ animation: "modalIn 0.25s cubic-bezier(0.22,1,0.36,1) both" }}
       >
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 shrink-0">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-gray-700 flex justify-between items-center bg-white/80 dark:bg-gray-800/80 backdrop-blur-md sticky top-0 z-10 shrink-0">
           <div>
-            <h3 className="font-bold text-lg text-slate-800 tracking-tight">
+            <h3 className="font-bold text-lg text-slate-800 dark:text-white tracking-tight">
               {currentMovie ? "Chỉnh sửa Phim" : "Thêm Phim Mới"}
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">Vui lòng nhập đầy đủ thông tin</p>
+            <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">Vui lòng nhập đầy đủ thông tin</p>
           </div>
           <button
             onClick={() => setIsModalOpen(false)}
-            className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-all"
+            className="p-2 bg-slate-50 dark:bg-gray-700 hover:bg-slate-100 dark:hover:bg-gray-600 rounded-full text-slate-400 dark:text-gray-400 hover:text-slate-600 dark:hover:text-gray-200 transition-all"
           >
             <X size={20} />
           </button>
@@ -255,7 +256,7 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
           className="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1"
         >
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+            <label className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">
               Tên phim <span className="text-red-500">*</span>
             </label>
             <input
@@ -270,15 +271,15 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div ref={genreDropdownRef} className="relative">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+              <label className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">
                 Thể loại <span className="text-red-500">*</span>
               </label>
               <button
                 type="button"
                 onClick={() => setGenreDropdownOpen((o) => !o)}
-                className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-left font-medium transition-all flex items-center justify-between ${
-                  selectedGenres.length === 0 ? "text-slate-400" : "text-slate-700"
-                } ${genreDropdownOpen ? "border-[#dc2626] ring-4 ring-red-50" : "border-slate-200 hover:border-slate-300"}`}
+                className={`w-full bg-slate-50 dark:bg-gray-700 border rounded-xl px-4 py-3 text-left font-medium transition-all flex items-center justify-between ${
+                  selectedGenres.length === 0 ? "text-slate-400 dark:text-gray-500" : "text-slate-700 dark:text-white"
+                } ${genreDropdownOpen ? "border-[#dc2626] ring-4 ring-red-50" : "border-slate-200 dark:border-gray-600 hover:border-slate-300 dark:hover:border-gray-500"}`}
               >
                 <span className="truncate text-sm">
                   {selectedGenreNames.length > 0 ? selectedGenreNames.join(", ") : "Chọn thể loại..."}
@@ -286,20 +287,20 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
                 <ChevronDown size={16} className={`shrink-0 ml-2 text-slate-400 transition-transform ${genreDropdownOpen ? "rotate-180" : ""}`} />
               </button>
               {genreDropdownOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto"
+                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-xl shadow-lg max-h-48 overflow-y-auto"
                   style={{ animation: "dropDown 0.18s ease-out both", transformOrigin: "top" }}>
                   {genreOptions.length === 0 ? (
-                    <p className="text-xs text-slate-400 text-center py-4">Không có thể loại nào</p>
+                    <p className="text-xs text-slate-400 dark:text-gray-500 text-center py-4">Không có thể loại nào</p>
                   ) : (
                     genreOptions.map((g) => (
-                      <label key={g._id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 cursor-pointer">
+                      <label key={g._id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-gray-600 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={selectedGenres.includes(g._id)}
                           onChange={() => toggleGenre(g._id)}
                           className="w-4 h-4 accent-[#dc2626] rounded"
                         />
-                        <span className="text-sm text-slate-700 font-medium">{g.name}</span>
+                        <span className="text-sm text-slate-700 dark:text-gray-300 font-medium">{g.name}</span>
                       </label>
                     ))
                   )}
@@ -310,7 +311,7 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
               )}
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+              <label className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">
                 Thời lượng (phút) <span className="text-red-500">*</span>
               </label>
               <input
@@ -328,7 +329,7 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
             </div>
           </div>
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+            <label className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">
               Poster URL
             </label>
             <div className="flex gap-4 items-start">
@@ -345,14 +346,14 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
                 />
                 {errors.poster && <ErrorMsg msg={errors.poster.message} />}
               </div>
-              <div className="hidden sm:flex w-12 h-12 rounded-lg bg-slate-100 border border-slate-200 flex-shrink-0 overflow-hidden items-center justify-center text-slate-300">
+              <div className="hidden sm:flex w-12 h-12 rounded-lg bg-slate-100 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 flex-shrink-0 overflow-hidden items-center justify-center text-slate-300">
                 <Eye size={20} />
               </div>
             </div>
           </div>
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-              Banner ngang URL <span className="font-normal text-slate-400 normal-case">(ảnh 16:9 cho slider trang chủ)</span>
+            <label className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">
+              Banner ngang URL <span className="font-normal text-slate-400 dark:text-gray-500 normal-case">(ảnh 16:9 cho slider trang chủ)</span>
             </label>
             <input
               {...register("backdrop", {
@@ -368,7 +369,7 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+              <label className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">
                 Đạo diễn
               </label>
               <input
@@ -378,7 +379,7 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+              <label className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">
                 Ngày ra mắt <span className="text-red-500">*</span>
               </label>
               <input
@@ -391,7 +392,7 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+              <label className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">
                 Ngày kết thúc chiếu <span className="text-red-500">*</span>
               </label>
               <input
@@ -400,24 +401,24 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
                 className={inputClass(errors.screeningEndDate)}
               />
               {errors.screeningEndDate && <ErrorMsg msg={errors.screeningEndDate.message} />}
-              <p className="text-[11px] text-slate-400 mt-1 ml-1">Sau ngày này phim tự động chuyển sang <span className="font-bold">Ngừng chiếu</span></p>
+              <p className="text-[11px] text-slate-400 dark:text-gray-500 mt-1 ml-1">Sau ngày này phim tự động chuyển sang <span className="font-bold">Ngừng chiếu</span></p>
             </div>
           </div>
           {preview && (
             <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+              <label className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">
                 Trạng thái
               </label>
               <div className={`rounded-xl p-3 border ${preview.bg} flex items-center gap-3 transition-all animate-in fade-in slide-in-from-top-2 duration-500`}>
                 <span className={`w-2.5 h-2.5 rounded-full ${preview.dot}`} />
                 <span className={`text-sm font-black ${preview.color}`}>{preview.label}</span>
-                <span className="text-[11px] text-slate-400 font-medium ml-auto">Tự động xác định theo ngày</span>
+                <span className="text-[11px] text-slate-400 dark:text-gray-500 font-medium ml-auto">Tự động xác định theo ngày</span>
               </div>
             </div>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+              <label className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">
                 Diễn viên chính
               </label>
               <input
@@ -427,7 +428,7 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+              <label className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">
                 Ngôn ngữ
               </label>
               <input
@@ -438,7 +439,7 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
             </div>
           </div>
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+            <label className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">
               Trailer YouTube URL
             </label>
             <input
@@ -446,10 +447,10 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
               className={inputClass(false)}
               placeholder="https://www.youtube.com/watch?v=..."
             />
-            <p className="text-[11px] text-slate-400 mt-1 ml-1">Dán link YouTube — trailer sẽ hiển thị trên trang chi tiết phim</p>
+            <p className="text-[11px] text-slate-400 dark:text-gray-500 mt-1 ml-1">Dán link YouTube — trailer sẽ hiển thị trên trang chi tiết phim</p>
           </div>
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+            <label className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">
               Mô tả phim
             </label>
             <textarea
@@ -461,13 +462,13 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+              <label className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">
                 Giới hạn tuổi
               </label>
               <div className="relative">
                 <select
                   {...register("ageRestriction")}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 appearance-none font-medium text-slate-700 cursor-pointer hover:bg-slate-100 transition-colors"
+                  className="w-full bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-red-50 appearance-none font-medium text-slate-700 dark:text-white cursor-pointer hover:bg-slate-100 dark:hover:bg-gray-600 transition-colors"
                 >
                   <option value="P">P — Mọi lứa tuổi</option>
                   <option value="T13">T13 — Từ 13 tuổi</option>
@@ -478,11 +479,11 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
               </div>
             </div>
           </div>
-          <div className="pt-4 flex justify-end gap-3 border-t border-slate-50 mt-2 shrink-0">
+          <div className="pt-4 flex justify-end gap-3 border-t border-slate-50 dark:border-gray-700 mt-2 shrink-0">
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
-              className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-semibold transition-all text-sm"
+              className="px-6 py-2.5 text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-xl font-semibold transition-all text-sm"
             >
               Hủy bỏ
             </button>
@@ -511,7 +512,7 @@ export const MoviesManager = ({
   const [filterStatus, setFilterStatus] = useState("");
   const [filterGenre, setFilterGenre] = useState("");
   const [detailMovie, setDetailMovie] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const { currentPage, totalPages, setTotalPages, paginationItems, goToPage, reset: resetPage } = usePagination();
 
   const genreOptions = Array.from(new Set(
     movies.flatMap((m) =>
@@ -533,12 +534,14 @@ export const MoviesManager = ({
   });
 
   const MOVIES_PAGE_SIZE = 6;
-  const totalPages = Math.ceil(filteredMovies.length / MOVIES_PAGE_SIZE);
+  const computedTotalPages = Math.ceil(filteredMovies.length / MOVIES_PAGE_SIZE);
   const pagedMovies = filteredMovies.slice((currentPage - 1) * MOVIES_PAGE_SIZE, currentPage * MOVIES_PAGE_SIZE);
 
-  const handleSearch = (val) => { setSearch(val); setCurrentPage(1); };
-  const handleFilterStatus = (val) => { setFilterStatus(val); setCurrentPage(1); };
-  const handleFilterGenre = (val) => { setFilterGenre(val); setCurrentPage(1); };
+  useEffect(() => { setTotalPages(computedTotalPages); }, [computedTotalPages]);
+
+  const handleSearch = (val) => { setSearch(val); resetPage(); };
+  const handleFilterStatus = (val) => { setFilterStatus(val); resetPage(); };
+  const handleFilterGenre = (val) => { setFilterGenre(val); resetPage(); };
 
   return (
   <>
@@ -558,10 +561,10 @@ export const MoviesManager = ({
   `}</style>
   <div className="space-y-4">
     {/* Header bar */}
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-slate-100 dark:border-gray-700 shadow-sm">
       <div>
-        <h2 className="text-xl font-bold text-slate-800">Quản lý Phim</h2>
-        <p className="text-sm text-slate-500">Quản lý toàn bộ danh sách phim</p>
+        <h2 className="text-xl font-bold text-slate-800 dark:text-white">Quản lý Phim</h2>
+        <p className="text-sm text-slate-500 dark:text-gray-400">Quản lý toàn bộ danh sách phim</p>
       </div>
       <button
         onClick={handleAddNew}
@@ -574,19 +577,19 @@ export const MoviesManager = ({
     {/* Search + Filter row */}
     <div className="flex gap-2 flex-wrap">
       <div className="relative flex-1 min-w-[200px]">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500" />
         <input
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="Tìm theo tên phim..."
-          className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#dc2626]"
+          className="w-full bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-xl pl-9 pr-4 py-2.5 text-sm text-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#dc2626]"
         />
       </div>
       <div className="relative">
         <select
           value={filterGenre}
           onChange={(e) => handleFilterGenre(e.target.value)}
-          className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-9 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#dc2626] appearance-none"
+          className="bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-xl px-4 py-2.5 pr-9 text-sm text-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#dc2626] appearance-none"
         >
           <option value="">Tất cả thể loại</option>
           {genreOptions.map((g) => <option key={g} value={g}>{g}</option>)}
@@ -597,7 +600,7 @@ export const MoviesManager = ({
         <select
           value={filterStatus}
           onChange={(e) => handleFilterStatus(e.target.value)}
-          className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-9 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#dc2626] appearance-none"
+          className="bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-xl px-4 py-2.5 pr-9 text-sm text-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#dc2626] appearance-none"
         >
           <option value="">Tất cả trạng thái</option>
           <option value="now_showing">Đang chiếu</option>
@@ -609,11 +612,11 @@ export const MoviesManager = ({
     </div>
 
     {/* Table */}
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-slate-200 dark:border-gray-700 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50/80 border-b border-slate-200 text-[13px] uppercase tracking-wider text-slate-500 font-bold">
+            <tr className="bg-slate-50/80 dark:bg-gray-700 border-b border-slate-200 dark:border-gray-600 text-[13px] uppercase tracking-wider text-slate-500 dark:text-gray-400 font-bold">
               <th className="p-5 pl-6">Tên phim</th>
               <th className="p-5">Thể loại</th>
               <th className="p-5">Thời lượng</th>
@@ -622,7 +625,7 @@ export const MoviesManager = ({
               <th className="p-5 pr-6 text-right">Thao tác</th>
             </tr>
           </thead>
-          <tbody key={currentPage} className="divide-y divide-slate-100">
+          <tbody key={currentPage} className="divide-y divide-slate-100 dark:divide-gray-700">
             {pagedMovies.length > 0 ? pagedMovies.map((movie, idx) => {
               const genreText = Array.isArray(movie.genre)
                 ? movie.genre.map((g) => (typeof g === "object" ? g.name : g)).join(", ")
@@ -637,7 +640,7 @@ export const MoviesManager = ({
                 <tr
                   key={movie._id}
                   onClick={() => setDetailMovie(movie)}
-                  className="hover:bg-slate-50/80 transition-all duration-150 cursor-pointer"
+                  className="hover:bg-slate-50/80 dark:hover:bg-gray-700/50 transition-all duration-150 cursor-pointer"
                   style={{ animation: "rowIn 0.25s cubic-bezier(0.22,1,0.36,1) both", animationDelay: `${idx * 40}ms` }}
                 >
                   <td className="p-5 pl-6">
@@ -645,19 +648,19 @@ export const MoviesManager = ({
                       <img
                         src={movie.poster}
                         alt=""
-                        className="w-14 h-[76px] object-cover rounded-xl border border-slate-100 shrink-0"
+                        className="w-14 h-[76px] object-cover rounded-xl border border-slate-100 dark:border-gray-700 shrink-0"
                         onError={(e) => { e.target.style.display = "none"; }}
                       />
                       <div>
-                        <p className="font-bold text-slate-800 text-[16px] line-clamp-1">{movie.title}</p>
-                        <p className="text-[13px] text-slate-400 font-mono mt-0.5">#{movie._id?.toString().slice(-6)}</p>
+                        <p className="font-bold text-slate-800 dark:text-white text-[16px] line-clamp-1">{movie.title}</p>
+                        <p className="text-[13px] text-slate-400 dark:text-gray-500 font-mono mt-0.5">#{movie._id?.toString().slice(-6)}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="p-5 text-[15px] text-slate-600">{genreText}</td>
+                  <td className="p-5 text-[15px] text-slate-600 dark:text-gray-400">{genreText}</td>
                   <td className="p-5">
-                    <div className="flex items-center gap-1.5 text-[15px] text-slate-500">
-                      <Clock size={14} className="text-slate-400" /> {movie.duration} phút
+                    <div className="flex items-center gap-1.5 text-[15px] text-slate-500 dark:text-gray-400">
+                      <Clock size={14} className="text-slate-400 dark:text-gray-500" /> {movie.duration} phút
                     </div>
                   </td>
                   <td className="p-5">
@@ -665,7 +668,7 @@ export const MoviesManager = ({
                       <div className="flex items-center gap-1 text-[15px] font-bold text-amber-500">
                         <Star size={14} fill="currentColor" /> {movie.rating}
                       </div>
-                    ) : <span className="text-slate-300 text-[15px]">—</span>}
+                    ) : <span className="text-slate-300 dark:text-gray-600 text-[15px]">—</span>}
                   </td>
                   <td className="p-5 text-center">
                     <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${sc.bg} ${sc.text} ${sc.border}`}>
@@ -675,14 +678,14 @@ export const MoviesManager = ({
                   </td>
                   <td className="p-5 pr-6 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-1">
-                      <button onClick={() => setDetailMovie(movie)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Xem"><Eye size={18} /></button>
-                      <button onClick={() => handleEdit(movie)} className="p-2 text-slate-400 hover:text-[#dc2626] hover:bg-red-50 rounded-xl transition-all" title="Sửa"><Edit size={18} /></button>
+                      <button onClick={() => setDetailMovie(movie)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-xl transition-all" title="Xem"><Eye size={18} /></button>
+                      <button onClick={() => handleEdit(movie)} className="p-2 text-slate-400 hover:text-[#dc2626] hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all" title="Sửa"><Edit size={18} /></button>
                     </div>
                   </td>
                 </tr>
               );
             }) : (
-              <tr><td colSpan="7" className="p-12 text-center text-slate-400 italic">
+              <tr><td colSpan="7" className="p-12 text-center text-slate-400 dark:text-gray-500 italic">
                 {search || filterStatus || filterGenre ? "Không có phim nào phù hợp." : "Chưa có dữ liệu phim nào."}
               </td></tr>
             )}
@@ -691,30 +694,27 @@ export const MoviesManager = ({
       </div>
 
       {/* Pagination — always visible */}
-      <div className="flex items-center justify-between px-5 py-4 border-t border-slate-100">
-        <p className="text-[15px] text-slate-500">
-          Hiển thị <span className="font-bold text-slate-700">
+      <div className="flex items-center justify-between px-5 py-4 border-t border-slate-100 dark:border-gray-700">
+        <p className="text-[15px] text-slate-500 dark:text-gray-400">
+          Hiển thị <span className="font-bold text-slate-700 dark:text-white">
             {filteredMovies.length === 0 ? 0 : (currentPage - 1) * MOVIES_PAGE_SIZE + 1}–{Math.min(currentPage * MOVIES_PAGE_SIZE, filteredMovies.length)}
-          </span> / <span className="font-bold text-slate-700">{filteredMovies.length}</span> phim
+          </span> / <span className="font-bold text-slate-700 dark:text-white">{filteredMovies.length}</span> phim
         </p>
         <div className="flex items-center gap-1.5">
-          <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}
-            className="px-4 py-2 rounded-lg text-[15px] font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95">
+          <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}
+            className="px-4 py-2 rounded-lg text-[15px] font-semibold border border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95">
             ‹ Trước
           </button>
-          {Array.from({ length: Math.max(totalPages, 1) }, (_, i) => i + 1)
-            .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
-            .reduce((acc, p, i, arr) => { if (i > 0 && p - arr[i - 1] > 1) acc.push("..."); acc.push(p); return acc; }, [])
-            .map((p, i) => p === "..." ? (
-              <span key={`d${i}`} className="px-2 text-slate-400 text-[15px]">…</span>
-            ) : (
-              <button key={p} onClick={() => setCurrentPage(p)}
-                className={`w-10 h-10 rounded-lg text-[15px] font-bold transition-all duration-150 active:scale-95 ${currentPage === p ? "bg-[#dc2626] text-white shadow-sm" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                {p}
-              </button>
-            ))}
-          <button onClick={() => setCurrentPage((p) => Math.min(Math.max(totalPages, 1), p + 1))} disabled={currentPage >= totalPages}
-            className="px-4 py-2 rounded-lg text-[15px] font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95">
+          {paginationItems.map((p, i) => p === null ? (
+            <span key={`d${i}`} className="px-2 text-slate-400 dark:text-gray-600 text-[15px]">…</span>
+          ) : (
+            <button key={p} onClick={() => goToPage(p)}
+              className={`w-10 h-10 rounded-lg text-[15px] font-bold transition-all duration-150 active:scale-95 ${currentPage === p ? "bg-[#dc2626] text-white shadow-sm" : "border border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700/50"}`}>
+              {p}
+            </button>
+          ))}
+          <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= totalPages}
+            className="px-4 py-2 rounded-lg text-[15px] font-semibold border border-slate-200 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-95">
             Sau ›
           </button>
         </div>

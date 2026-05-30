@@ -1,25 +1,16 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Mail, Lock, ArrowLeft, KeyRound, CheckCircle, AlertCircle } from "lucide-react";
-import axiosInstance from "../../api/axiosConfig";
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { authService } from "../../api/services";
+import { validateEmail, validatePassword } from "../../shared/utils";
 
 const validateField = (name, value, allValues = {}) => {
-  if (name === "email") {
-    if (!value.trim()) return "Email không được để trống";
-    if (!EMAIL_RE.test(value)) return "Email không đúng định dạng";
-    return "";
-  }
+  if (name === "email") return validateEmail(value);
   if (name === "otp") {
     if (!value.trim() || value.length !== 6) return "Mã OTP gồm 6 chữ số";
     return "";
   }
-  if (name === "newPassword") {
-    if (!value) return "Mật khẩu không được để trống";
-    if (value.length < 6) return "Mật khẩu phải có ít nhất 6 ký tự";
-    return "";
-  }
+  if (name === "newPassword") return validatePassword(value);
   if (name === "confirmPassword") {
     if (!value) return "Vui lòng xác nhận mật khẩu";
     if (value !== allValues.newPassword) return "Mật khẩu xác nhận không khớp";
@@ -90,11 +81,11 @@ const ForgotPasswordPage = () => {
   };
 
   const inputClass = (name, extra = "pr-10") => {
-    const base = `w-full bg-gray-50 border rounded-xl pl-12 ${extra} py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 outline-none transition-all duration-200 font-medium`;
+    const base = `w-full bg-gray-50 dark:bg-gray-700 border rounded-xl pl-12 ${extra} py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 outline-none transition-all duration-200 font-medium`;
     const state = fieldState(name);
-    if (state === "error") return `${base} border-red-400 focus:ring-red-100 focus:border-red-500`;
-    if (state === "success") return `${base} border-green-400 focus:ring-green-100 focus:border-green-500 bg-green-50/30`;
-    return `${base} border-gray-200 focus:ring-red-100 focus:border-[#dc2626]`;
+    if (state === "error") return `${base} border-red-400 focus:ring-red-100 dark:focus:ring-red-900/20 focus:border-red-500`;
+    if (state === "success") return `${base} border-green-400 focus:ring-green-100 dark:focus:ring-green-900/20 focus:border-green-500 bg-green-50/30 dark:bg-green-900/10`;
+    return `${base} border-gray-200 dark:border-gray-600 focus:ring-red-100 dark:focus:ring-red-900/20 focus:border-[#dc2626]`;
   };
 
   const leadIconColor = (name) => {
@@ -122,7 +113,7 @@ const ForgotPasswordPage = () => {
     setIsLoading(true);
     setServerError("");
     try {
-      await axiosInstance.post("/auth/forgot-password", { email: fields.email });
+      await authService.forgotPassword(fields.email);
       setStep(2);
       setErrors({});
       setTouched({});
@@ -146,11 +137,7 @@ const ForgotPasswordPage = () => {
     setIsLoading(true);
     setServerError("");
     try {
-      await axiosInstance.post("/auth/reset-password", {
-        email: fields.email,
-        otp: fields.otp,
-        newPassword: fields.newPassword,
-      });
+      await authService.resetPassword(fields.email, fields.otp, fields.newPassword);
       navigate("/login");
     } catch (err) {
       setServerError(err.response?.data?.message || "OTP không hợp lệ hoặc đã hết hạn");
@@ -168,7 +155,7 @@ const ForgotPasswordPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-4">
       <style>{`
         @keyframes fadeDown {
           from { opacity: 0; transform: translateY(-4px); }
@@ -176,7 +163,7 @@ const ForgotPasswordPage = () => {
         }
       `}</style>
 
-      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row min-h-[600px]">
+      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row min-h-[600px]">
         {/* Left panel */}
         <div className="hidden md:block w-1/2 bg-gray-900 relative">
           <img
@@ -197,15 +184,15 @@ const ForgotPasswordPage = () => {
         <div className="w-full md:w-1/2 p-8 sm:p-12 flex flex-col justify-center relative">
           <Link
             to="/login"
-            className="absolute top-8 left-8 text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-2 text-sm font-medium"
+            className="absolute top-8 left-8 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors flex items-center gap-2 text-sm font-medium"
           >
             <ArrowLeft size={18} /> Quay lại đăng nhập
           </Link>
 
           <div className="max-w-md mx-auto w-full">
             <div className="mb-10 text-center md:text-left">
-              <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Đặt lại mật khẩu</h1>
-              <p className="text-gray-500">
+              <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">Đặt lại mật khẩu</h1>
+              <p className="text-gray-500 dark:text-gray-400">
                 {step === 1 ? "Nhập email để nhận mã OTP xác nhận." : `Nhập mã OTP đã gửi đến ${fields.email}`}
               </p>
             </div>
@@ -214,10 +201,10 @@ const ForgotPasswordPage = () => {
             <div className="flex items-center gap-2 mb-8">
               {[1, 2].map((s) => (
                 <React.Fragment key={s}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step >= s ? "bg-[#dc2626] text-white" : "bg-gray-100 text-gray-400"}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step >= s ? "bg-[#dc2626] text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500"}`}>
                     {s}
                   </div>
-                  {s < 2 && <div className={`flex-1 h-1 rounded transition-all ${step > s ? "bg-[#dc2626]" : "bg-gray-100"}`} />}
+                  {s < 2 && <div className={`flex-1 h-1 rounded transition-all ${step > s ? "bg-[#dc2626]" : "bg-gray-100 dark:bg-gray-700"}`} />}
                 </React.Fragment>
               ))}
             </div>
@@ -225,7 +212,7 @@ const ForgotPasswordPage = () => {
             {step === 1 ? (
               <form onSubmit={handleSendOtp} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
                   <div className="relative">
                     <Mail className={`absolute left-4 top-3.5 ${leadIconColor("email")}`} size={20} />
                     <input
@@ -244,7 +231,7 @@ const ForgotPasswordPage = () => {
                 </div>
 
                 {serverError && (
-                  <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 animate-[fadeDown_0.2s_ease]">
+                  <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm rounded-xl px-4 py-3 animate-[fadeDown_0.2s_ease]">
                     <AlertCircle size={16} className="shrink-0 mt-0.5" />
                     <span>{serverError}</span>
                   </div>
@@ -261,7 +248,7 @@ const ForgotPasswordPage = () => {
             ) : (
               <form onSubmit={handleResetPassword} className="space-y-5">
                 {otpPreFilled && (
-                  <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3">
+                  <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm rounded-xl px-4 py-3">
                     <CheckCircle size={16} className="shrink-0" />
                     <span>Đã điền mã OTP từ email!</span>
                   </div>
@@ -269,7 +256,7 @@ const ForgotPasswordPage = () => {
 
                 {/* OTP */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Mã OTP (6 chữ số)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mã OTP (6 chữ số)</label>
                   <div className="relative">
                     <KeyRound className={`absolute left-4 top-3.5 ${leadIconColor("otp")}`} size={20} />
                     <input
@@ -290,7 +277,7 @@ const ForgotPasswordPage = () => {
 
                 {/* Mật khẩu mới */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Mật khẩu mới</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mật khẩu mới</label>
                   <div className="relative">
                     <Lock className={`absolute left-4 top-3.5 ${leadIconColor("newPassword")}`} size={20} />
                     <input
@@ -310,7 +297,7 @@ const ForgotPasswordPage = () => {
 
                 {/* Xác nhận mật khẩu */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Xác nhận mật khẩu</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Xác nhận mật khẩu</label>
                   <div className="relative">
                     <Lock className={`absolute left-4 top-3.5 ${leadIconColor("confirmPassword")}`} size={20} />
                     <input
@@ -329,7 +316,7 @@ const ForgotPasswordPage = () => {
                 </div>
 
                 {serverError && (
-                  <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 animate-[fadeDown_0.2s_ease]">
+                  <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm rounded-xl px-4 py-3 animate-[fadeDown_0.2s_ease]">
                     <AlertCircle size={16} className="shrink-0 mt-0.5" />
                     <span>{serverError}</span>
                   </div>
@@ -346,7 +333,7 @@ const ForgotPasswordPage = () => {
                 <button
                   type="button"
                   onClick={goBackToStep1}
-                  className="w-full text-gray-500 text-sm hover:text-red-600 transition-colors"
+                  className="w-full text-gray-500 dark:text-gray-400 text-sm hover:text-red-600 dark:hover:text-red-400 transition-colors"
                 >
                   Đổi email khác
                 </button>
