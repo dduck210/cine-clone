@@ -42,7 +42,8 @@ const bookingSchema = new mongoose.Schema({
 bookingSchema.index({ user: 1, status: 1 });
 bookingSchema.index({ status: 1, createdAt: -1 });
 bookingSchema.index({ showtime: 1 });
-bookingSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // TTL auto-cleanup
+// NOTE: No TTL index here — expire-bookings.js cron handles pending cleanup
+// TTL would delete paid/refunded bookings since expiresAt is not cleared on payment
 
 bookingSchema.pre('save', async function () {
     if (!this.bookingCode) {
