@@ -1,4 +1,4 @@
-name: Deploy Backend to Railway
+name: Deploy Backend to Render
 
 on:
   push:
@@ -26,18 +26,13 @@ jobs:
       - name: Install deps (sanity check)
         run: npm ci
 
-      - name: Install Railway CLI
-        run: npm i -g @railway/cli
-
-      - name: Deploy to Railway
-        run: railway redeploy --service ${{ secrets.RAILWAY_SERVICE_ID }} --yes
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      - name: Trigger Render deploy
+        run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
 
       - name: Health smoke test
         run: |
           echo "Waiting for deploy to settle..."
-          sleep 45
-          code=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.RAILWAY_HEALTH_URL }}")
+          sleep 60
+          code=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.RENDER_HEALTH_URL }}")
           echo "Health status: $code"
           test "$code" = "200"
