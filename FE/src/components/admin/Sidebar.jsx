@@ -12,6 +12,7 @@ import {
   Star,
   Building2,
   Tag,
+  ClipboardList,
 } from "lucide-react";
 
 const Sidebar = ({ activeTab, onTabChange }) => {
@@ -26,6 +27,7 @@ const Sidebar = ({ activeTab, onTabChange }) => {
     { id: "users", label: "Người dùng", icon: Users },
     { id: "reviews", label: "Đánh giá", icon: Star },
     { id: "vouchers", label: "Voucher", icon: Tag },
+    { id: "audit", label: "Nhật ký", icon: ClipboardList },
   ];
 
   return (

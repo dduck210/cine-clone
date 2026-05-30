@@ -21,6 +21,8 @@ const notificationService = require('../services/notification-service');
 const ticketEvents = require('../services/ticket-event-emitter');
 const { countActualSeats, validateSeatMatrixIntegrity } = require('../utils/seat-validator');
 const bulkController = require('../controllers/bulkController');
+const AuditLog = require('../models/AuditLog');
+const { auditLog } = require('../utils/audit-logger');
 
 // Utility to handle common Mongoose errors
 const handleErrors = (res, error, defaultMsg = 'Internal Server Error') => {
@@ -649,8 +651,7 @@ router.delete('/users/:id', protect, admin, async (req, res) => {
         await Review.updateMany({ user: user._id }, { $set: { user: null } });
 
         await user.deleteOne();
-
-        console.log(`[DELETE USER] Successfully deleted user ${user._id}`);
+        auditLog(req, 'DELETE_USER', 'User', user._id, `Deleted user ${user.name} (${user.email})`);
 
         res.json({ message: 'Đã xóa người dùng thành công', deletedUserId: user._id });
     } catch (error) {
@@ -898,6 +899,28 @@ router.get('/reports/timeslots', protect, admin, async (req, res) => {
             { $sort: { bookings: -1 } },
         ]);
         res.json(data);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// GET /api/admin/audit-logs — paginated audit trail
+router.get('/audit-logs', protect, admin, async (req, res) => {
+    try {
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(50, parseInt(req.query.limit) || 20);
+        const skip = (page - 1) * limit;
+
+        const [logs, total] = await Promise.all([
+            AuditLog.find()
+                .populate('admin', 'name email')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit),
+            AuditLog.countDocuments(),
+        ]);
+
+        res.json({ logs, total, page, pages: Math.ceil(total / limit) });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

@@ -22,4 +22,9 @@ const showtimeSchema = new mongoose.Schema({
     bookingLockMinutes: { type: Number, default: 5 }, // lock ticket booking N minutes before start
 }, { timestamps: true });
 
+showtimeSchema.index({ date: 1, status: 1 });
+showtimeSchema.index({ movie: 1, date: 1 });
+showtimeSchema.index({ cinema: 1, date: 1 });
+showtimeSchema.index({ room: 1, date: 1 });
+
 module.exports = mongoose.model('Showtime', showtimeSchema);

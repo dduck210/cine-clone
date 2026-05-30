@@ -120,10 +120,19 @@ const CinemaDetailPage = () => {
       <Navbar />
 
       {loading ? (
-        <div className="pt-24 pb-16 max-w-6xl mx-auto px-4 sm:px-6 animate-pulse space-y-6">
-          <div className="h-64 bg-gray-200 rounded-2xl" />
-          <div className="h-8 bg-gray-200 rounded w-1/3" />
-          <div className="h-4 bg-gray-200 rounded w-1/2" />
+        <div className="pt-24 pb-16 max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
+          <div className="h-64 bg-gray-200 rounded-2xl animate-pulse" />
+          <div className="flex gap-4 items-start">
+            <div className="w-20 h-20 bg-gray-200 rounded-2xl animate-pulse shrink-0" />
+            <div className="flex-1 space-y-3 pt-2">
+              <div className="h-6 bg-gray-200 rounded w-1/2 animate-pulse" />
+              <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
+              <div className="h-4 bg-gray-200 rounded w-1/3 animate-pulse" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[1,2,3].map(i => <div key={i} className="h-32 bg-gray-200 rounded-2xl animate-pulse" />)}
+          </div>
         </div>
       ) : !cinema ? (
         <div className="pt-24 text-center py-24 max-w-6xl mx-auto px-4">

@@ -138,13 +138,28 @@ const MovieDetailPage = () => {
     return (
       <div className="min-h-screen bg-[#0a0a0f]">
         <Navbar />
-        <div className="animate-pulse pt-24 max-w-6xl mx-auto px-6 flex flex-col md:flex-row gap-10 py-20">
-          <div className="w-[220px] h-[330px] bg-white/5 rounded-2xl shrink-0" />
-          <div className="flex-1 space-y-4 pt-4">
-            <div className="h-8 bg-white/5 rounded w-2/3" />
-            <div className="h-5 bg-white/5 rounded w-1/4" />
-            <div className="h-20 bg-white/5 rounded mt-6" />
+        {/* Hero skeleton */}
+        <div className="relative pt-20 pb-10 bg-gradient-to-b from-black to-[#0a0a0f] overflow-hidden">
+          <div className="absolute inset-0 bg-white/5 animate-pulse" />
+          <div className="relative max-w-6xl mx-auto px-6 flex flex-col md:flex-row gap-8 items-end pt-16">
+            <div className="w-[160px] md:w-[200px] h-[240px] md:h-[300px] bg-white/10 rounded-2xl animate-pulse shrink-0" />
+            <div className="flex-1 space-y-4 pb-4">
+              <div className="h-4 bg-white/10 rounded w-24 animate-pulse" />
+              <div className="h-10 bg-white/10 rounded w-2/3 animate-pulse" />
+              <div className="h-4 bg-white/10 rounded w-40 animate-pulse" />
+              <div className="h-16 bg-white/10 rounded animate-pulse" />
+              <div className="flex gap-3 pt-2">
+                <div className="h-12 w-36 bg-white/10 rounded-xl animate-pulse" />
+                <div className="h-12 w-28 bg-white/10 rounded-xl animate-pulse" />
+              </div>
+            </div>
           </div>
+        </div>
+        {/* Body skeleton */}
+        <div className="max-w-6xl mx-auto px-6 py-10 space-y-6 bg-[#f8f8f8]">
+          {[1,2,3].map(i => (
+            <div key={i} className="h-20 bg-gray-200 rounded-2xl animate-pulse" />
+          ))}
         </div>
       </div>
     );

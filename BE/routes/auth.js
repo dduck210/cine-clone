@@ -6,6 +6,15 @@ const PendingRegistration = require('../models/PendingRegistration');
 const jwt = require('jsonwebtoken');
 const { protect } = require('../middleware/auth');
 const { isEmailConfigured, sendEmail } = require('../services/email-service');
+const { body, validationResult } = require('express-validator');
+
+const handleValidation = (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ message: errors.array()[0].msg });
+    }
+    return null;
+};
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -61,7 +70,13 @@ const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expires
 const generateRefreshToken = (id) => jwt.sign({ id }, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET + '_refresh', { expiresIn: '7d' });
 
 // Register user
-router.post('/register', async (req, res) => {
+router.post('/register',
+    body('name').trim().isLength({ min: 2, max: 50 }).withMessage('Họ tên phải từ 2-50 ký tự'),
+    body('email').isEmail().normalizeEmail().withMessage('Email không đúng định dạng'),
+    body('password').isLength({ min: 8 }).withMessage('Mật khẩu phải có ít nhất 8 ký tự'),
+    body('phone').optional().matches(/^[0-9]{9,11}$/).withMessage('Số điện thoại không hợp lệ'),
+async (req, res) => {
+    const validErr = handleValidation(req, res); if (validErr) return;
     const { name, email, password, phone } = req.body;
     try {
         if (!email || !EMAIL_RE.test(email)) {
@@ -102,7 +117,7 @@ router.post('/register', async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-});
+}); // end register
 
 // Login user
 router.post('/login', async (req, res) => {

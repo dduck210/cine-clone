@@ -5,7 +5,7 @@ import Sidebar from "../../components/admin/Sidebar";
 import axiosInstance from "../../api/axiosConfig";
 import {
   Bell, DollarSign, Ticket, Clock, AlertTriangle, Menu, ExternalLink,
-  Popcorn, RefreshCw, TrendingUp, Trophy,
+  Popcorn, RefreshCw, TrendingUp, Trophy, Download,
 } from "lucide-react";
 import { OrdersManager, OrderDetailModal } from "../../components/admin/OrdersTab";
 import { MoviesManager, MovieModal } from "../../components/admin/MoviesTab";
@@ -15,6 +15,7 @@ import { RoomsManager } from "../../components/admin/RoomsTab";
 import { CinemasManager } from "../../components/admin/CinemasTab";
 import { ReviewsManager } from "../../components/admin/ReviewsTab";
 import { VouchersManager } from "../../components/admin/VouchersTab";
+import { AuditManager } from "../../components/admin/AuditTab";
 
 const StatCard = ({ icon, label, value, sub, color }) => {
   const Icon = icon;
@@ -32,12 +33,48 @@ const StatCard = ({ icon, label, value, sub, color }) => {
   );
 };
 
+const exportCSV = (stats, extStats) => {
+  const rows = [
+    ["Chỉ số", "Giá trị"],
+    ["Doanh thu vé", stats.totalRevenue.toLocaleString("vi-VN") + "đ"],
+    ["Doanh thu F&B", extStats.comboRevenue.toLocaleString("vi-VN") + "đ"],
+    ["Vé đã bán", stats.totalBookings],
+    ["Vé hoàn", extStats.refunds.totalRefunds],
+    ["Tổng hoàn tiền", extStats.refunds.totalRefundAmount.toLocaleString("vi-VN") + "đ"],
+    [],
+    ["Chi tiết F&B", "Doanh thu"],
+    ...extStats.comboItems.map(c => [c.name, c.revenue.toLocaleString("vi-VN") + "đ"]),
+    [],
+    ["Khung giờ", "Số vé"],
+    ...extStats.timeslots.map(t => [t._id, t.bookings]),
+  ];
+  const csv = rows.map(r => r.join(",")).join("\n");
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `5cine-report-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 const DashboardView = ({ stats, extStats, loading }) => {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { const id = setTimeout(() => setMounted(true), 50); return () => clearTimeout(id); }, []);
 
   return (
   <div className="space-y-6">
+    {/* Header with export button */}
+    {!loading && (
+      <div className="flex justify-end">
+        <button
+          onClick={() => exportCSV(stats, extStats)}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:border-red-300 hover:text-red-600 text-slate-600 text-sm font-bold rounded-xl shadow-sm transition-all active:scale-95"
+        >
+          <Download size={15} /> Xuất CSV
+        </button>
+      </div>
+    )}
     {/* Main stats */}
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
       {loading ? (
@@ -872,6 +909,7 @@ const Dashboard = () => {
             )}
             {activeTab === "reviews" && <ReviewsManager />}
             {activeTab === "vouchers" && <VouchersManager />}
+            {activeTab === "audit" && <AuditManager />}
           </div>
         </div>
       </main>

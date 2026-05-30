@@ -39,6 +39,11 @@ const bookingSchema = new mongoose.Schema({
     refundReason: { type: String },
 }, { timestamps: true });
 
+bookingSchema.index({ user: 1, status: 1 });
+bookingSchema.index({ status: 1, createdAt: -1 });
+bookingSchema.index({ showtime: 1 });
+bookingSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // TTL auto-cleanup
+
 bookingSchema.pre('save', async function () {
     if (!this.bookingCode) {
         this.bookingCode = 'BK' + Date.now() + Math.floor(Math.random() * 1000);
