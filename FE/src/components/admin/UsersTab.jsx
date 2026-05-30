@@ -147,6 +147,7 @@ export const UsersManager = ({ users, loading, onUpdate }) => {
                   <tr className="border-b border-slate-100 bg-slate-50/80 text-xs uppercase tracking-wider text-slate-500 font-bold">
                     <th className="text-left px-6 py-3.5">Thành viên</th>
                     <th className="text-left px-6 py-3.5">Vai trò</th>
+                    <th className="text-left px-6 py-3.5 hidden xl:table-cell">SĐT</th>
                     <th className="text-left px-6 py-3.5 hidden lg:table-cell">Tham gia</th>
                     <th className="text-right px-6 py-3.5">Thao tác</th>
                   </tr>
@@ -180,6 +181,9 @@ export const UsersManager = ({ users, loading, onUpdate }) => {
                           </span>
                         )}
                       </td>
+                      <td className="px-6 py-4 text-slate-500 text-xs hidden xl:table-cell">
+                        {user.phone || <span className="text-slate-300">—</span>}
+                      </td>
                       <td className="px-6 py-4 text-slate-400 text-xs hidden lg:table-cell">
                         {formatDate(user.createdAt)}
                       </td>
@@ -198,7 +202,7 @@ export const UsersManager = ({ users, loading, onUpdate }) => {
                   ))}
                   {filtered.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="text-center py-12 text-slate-400 font-medium">
+                      <td colSpan={5} className="text-center py-12 text-slate-400 font-medium">
                         Không tìm thấy thành viên nào.
                       </td>
                     </tr>

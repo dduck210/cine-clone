@@ -974,7 +974,7 @@ export const ShowtimesManager = ({ showtimes, loading, movies, cinemas, onAddNew
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full min-w-[960px] text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-[13px] uppercase tracking-wider text-slate-500 font-bold">
                   <th className="p-5 pl-6 w-12">

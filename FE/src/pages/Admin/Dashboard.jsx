@@ -26,7 +26,7 @@ const StatCard = ({ icon, label, value, sub, color }) => {
         </div>
       </div>
       <p className="text-slate-500 text-sm font-semibold uppercase tracking-wider">{label}</p>
-      <h3 className="text-3xl font-extrabold text-slate-800 mt-1 group-hover:text-[#dc2626] transition-colors">{value}</h3>
+      <h3 className="text-2xl font-extrabold text-slate-800 mt-1 group-hover:text-[#dc2626] transition-colors whitespace-nowrap truncate">{value}</h3>
       <p className="text-xs text-slate-400 mt-2 font-medium">{sub}</p>
     </div>
   );

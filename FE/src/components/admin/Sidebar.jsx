@@ -58,7 +58,7 @@ const Sidebar = ({ activeTab, onTabChange }) => {
         </div>
       </div>
 
-      <div className="flex-1 py-6 px-4 space-y-2 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 py-4 px-4 space-y-1 overflow-y-auto custom-scrollbar">
         <div className="mb-4 px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">
           Menu Chính
         </div>
@@ -72,7 +72,7 @@ const Sidebar = ({ activeTab, onTabChange }) => {
               key={item.id}
               onClick={() => onTabChange(item.id)}
               className={`
-                relative w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl 
+                relative w-full flex items-center gap-3 px-4 py-3 rounded-2xl
                 font-bold text-sm transition-all duration-300 ease-out group
                 outline-none focus:outline-none
                 active:scale-[0.98] 
@@ -109,7 +109,7 @@ const Sidebar = ({ activeTab, onTabChange }) => {
       <div className="p-4 border-t border-slate-50">
         <button
           onClick={() => setShowLogoutConfirm(true)}
-          className="w-full flex items-center gap-3 px-4 py-3.5 text-slate-500 hover:bg-red-50 hover:text-[#dc2626] rounded-2xl transition-all duration-300 hover:shadow-sm group active:scale-[0.98]"
+          className="w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-red-50 hover:text-[#dc2626] rounded-2xl transition-all duration-300 hover:shadow-sm group active:scale-[0.98]"
         >
           <LogOut
             size={20}
