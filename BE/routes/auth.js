@@ -283,8 +283,8 @@ router.post('/reset-password', async (req, res) => {
         if (new Date() > new Date(user.resetOtpExpiry)) {
             return res.status(400).json({ message: 'OTP đã hết hạn' });
         }
-        if (!newPassword || newPassword.length < 6) {
-            return res.status(400).json({ message: 'Mật khẩu phải có ít nhất 6 ký tự' });
+        if (!newPassword || newPassword.length < 8) {
+            return res.status(400).json({ message: 'Mật khẩu phải có ít nhất 8 ký tự' });
         }
 
         user.password = newPassword;

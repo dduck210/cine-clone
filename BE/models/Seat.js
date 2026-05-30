@@ -14,5 +14,6 @@ const seatSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 seatSchema.index({ showtime: 1, room: 1, seatNumber: 1 }, { unique: true });
+seatSchema.index({ showtime: 1, status: 1, isLocked: 1 }); // speed up availability queries
 
 module.exports = mongoose.model('Seat', seatSchema);

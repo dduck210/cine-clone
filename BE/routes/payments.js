@@ -139,8 +139,8 @@ router.post('/:id/refund', protect, async (req, res) => {
 
         const booking = await Booking.findById(payment.booking);
         if (!booking) return res.status(404).json({ message: 'Booking not found' });
-        if (req.user.role !== 'admin' && booking.user.toString() !== req.user._id.toString())
-            return res.status(403).json({ message: 'Not authorized' });
+        if (req.user.role !== 'admin')
+            return res.status(403).json({ message: 'Chỉ admin mới có thể hoàn tiền qua endpoint này' });
         if (booking.status === 'cancelled')
             return res.status(400).json({ message: 'Booking already cancelled' });
 

@@ -29,6 +29,18 @@ router.post('/bulk-delete', protect, admin, bulkController.bulkDeleteMovies);
 
 router.get('/', async (req, res) => {
     try {
+        // Pagination opt-in: ?page=1&limit=20 → returns { movies, total, page, pages }
+        // Default (no params): returns plain array for backward compat
+        if (req.query.page || req.query.limit) {
+            const page = Math.max(1, parseInt(req.query.page) || 1);
+            const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+            const skip = (page - 1) * limit;
+            const [movies, total] = await Promise.all([
+                Movie.find({}).populate('genre').skip(skip).limit(limit),
+                Movie.countDocuments(),
+            ]);
+            return res.json({ movies, total, page, pages: Math.ceil(total / limit) });
+        }
         const movies = await Movie.find({}).populate('genre');
         res.json(movies);
     } catch (error) {

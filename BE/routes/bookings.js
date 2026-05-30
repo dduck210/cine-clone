@@ -99,9 +99,10 @@ router.post('/', protect, async (req, res) => {
         const seatTotal = availableSeats.reduce((sum, s) => sum + s.price, 0);
         const extraTotal = extraItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
         const rawTotal = seatTotal + extraTotal;
-        // Monday 20% discount — use UTC+7 (Vietnam) day to avoid server-timezone shift
-        const vnDate = new Date(new Date(showtime.date).getTime() + 7 * 60 * 60 * 1000);
-        const isMonday = vnDate.getUTCDay() === 1;
+        // Monday 20% discount — use Vietnam timezone via Intl
+        const vnDay = new Intl.DateTimeFormat('en-US', { weekday: 'long', timeZone: 'Asia/Ho_Chi_Minh' })
+            .format(new Date(showtime.date));
+        const isMonday = vnDay === 'Monday';
         const afterMonday = isMonday ? Math.round(rawTotal * 0.8) : rawTotal;
 
         // Voucher discount
@@ -151,7 +152,7 @@ router.get('/user/all', protect, async (req, res) => {
     try {
         const bookings = await Booking.find({ user: req.user._id })
             .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }, { path: 'room', select: 'name' }] })
-            .populate('seats')
+            .populate('seats', 'seatNumber type price')
             .populate('paymentId', 'method status')
             .sort({ createdAt: -1 });
         res.json(bookings);
@@ -225,7 +226,9 @@ router.put('/:id/cancel', protect, async (req, res) => {
             if (!st || !st.date || !st.startTime) {
                 return res.status(400).json({ message: 'Không thể xác định giờ chiếu' });
             }
-            const [h, m] = st.startTime.split(':').map(Number);
+            const timeParts = /^(\d{1,2}):(\d{2})$/.exec(st.startTime);
+            if (!timeParts) return res.status(400).json({ message: 'Định dạng giờ chiếu không hợp lệ' });
+            const [, h, m] = timeParts.map(Number);
             const showtimeDate = new Date(st.date);
             showtimeDate.setHours(h, m, 0, 0);
             const deadline = new Date(showtimeDate.getTime() - 2 * 60 * 60 * 1000);

@@ -12,4 +12,10 @@ const paymentSchema = new mongoose.Schema({
     notes: String,
 }, { timestamps: true });
 
+// Prevent duplicate successful payments for the same booking
+paymentSchema.index({ booking: 1, status: 1 }, {
+    unique: true,
+    partialFilterExpression: { status: 'success' },
+});
+
 module.exports = mongoose.model('Payment', paymentSchema);

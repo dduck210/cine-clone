@@ -10,7 +10,7 @@ async function sendReviewReminders() {
     const bookings = await Booking.find({
         status: 'paid',
         reviewReminderSentAt: { $exists: false },
-    })
+    }).limit(500)
         .populate('user', 'name email')
         .populate({
             path: 'showtime',
