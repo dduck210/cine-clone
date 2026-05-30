@@ -18,7 +18,7 @@ const SectionHeading = ({ children, action }) => {
       ref={ref}
       className={`flex items-center justify-between mb-8 transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"}`}
     >
-      <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 uppercase tracking-wide relative pl-5 before:absolute before:left-0 before:top-[4px] before:bottom-[4px] before:w-[4px] before:rounded-full before:bg-red-600">
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wide relative pl-5 before:absolute before:left-0 before:top-[4px] before:bottom-[4px] before:w-[4px] before:rounded-full before:bg-red-600">
         {children}
       </h2>
       {action}
@@ -46,9 +46,7 @@ const HomePage = () => {
     const fetchData = async () => {
       try {
         setError(null);
-        const [moviesRes] = await Promise.all([
-          axiosInstance.get("/movies"),
-        ]);
+        const [moviesRes] = await Promise.all([axiosInstance.get("/movies")]);
         setMovies(moviesRes.data);
       } catch (err) {
         console.error("Home fetch failed:", err);
@@ -105,7 +103,7 @@ const HomePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white font-bromega font-bold text-gray-900">
+    <div className="min-h-screen bg-white dark:bg-gray-950 font-bromega font-bold text-gray-900 dark:text-gray-100">
       <Helmet>
         <title>5Cine — Đặt vé xem phim online nhanh nhất</title>
         <meta name="description" content="Đặt vé xem phim online tại 5Cine. Chọn phim, chọn ghế, thanh toán dễ dàng. Hệ thống rạp chiếu phim hiện đại tại Hà Nội, TP.HCM, Đà Nẵng." />
@@ -134,7 +132,7 @@ const HomePage = () => {
           ref={movieSectionRef}
           className={`mb-8 transition-all duration-700 delay-100 ${movieSectionVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"}`}
         >
-          <div className="relative flex bg-gray-100 p-1 rounded-xl w-fit">
+          <div className="relative flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit">
             <div
               className={`absolute top-1 bottom-1 left-1 w-[calc(50%-0.25rem)] bg-red-600 rounded-lg shadow-md transition-all duration-400 ease-in-out ${activeTab === "coming" ? "translate-x-full" : "translate-x-0"}`}
             />
@@ -142,7 +140,7 @@ const HomePage = () => {
               <button
                 key={key}
                 onClick={() => { setActiveTab(key); setVisibleCount(10); }}
-                className={`relative z-10 px-5 py-2.5 text-sm font-bold min-w-[120px] transition-colors duration-300 ${activeTab === key ? "text-white" : "text-gray-500 hover:text-gray-800"}`}
+                className={`relative z-10 px-5 py-2.5 text-sm font-bold min-w-[120px] transition-colors duration-300 ${activeTab === key ? "text-white" : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"}`}
               >
                 {label}
               </button>
@@ -155,24 +153,24 @@ const HomePage = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
             {Array.from({ length: 10 }).map((_, i) => (
               <div key={i} className="animate-pulse">
-                <div className="aspect-[2/3] rounded-2xl bg-gray-200" />
-                <div className="mt-3 h-4 bg-gray-200 rounded w-3/4" />
-                <div className="mt-2 h-3 bg-gray-200 rounded w-1/2" />
+                <div className="aspect-[2/3] rounded-2xl bg-gray-200 dark:bg-gray-800" />
+                <div className="mt-3 h-4 bg-gray-200 dark:bg-gray-800 rounded w-3/4" />
+                <div className="mt-2 h-3 bg-gray-200 dark:bg-gray-800 rounded w-1/2" />
               </div>
             ))}
           </div>
         ) : error ? (
-          <div className="text-center py-16 bg-red-50 rounded-3xl border-2 border-dashed border-red-200 px-6">
-            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="text-center py-16 bg-red-50 dark:bg-red-900/10 rounded-3xl border-2 border-dashed border-red-200 dark:border-red-800/50 px-6">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Kết nối API thất bại</h3>
-            <p className="text-gray-500 max-w-md mx-auto mb-6">
-              Hệ thống không thể tải dữ liệu phim. Vui lòng kiểm tra xem đường truyền <strong>Ngrok</strong> có đang hoạt động không.
+            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">Kết nối API thất bại</h3>
+            <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-6">
+              Hệ thống không thể tải dữ liệu phim. Vui lòng kiểm tra xem server có đang hoạt động không.
             </p>
-            <button 
+            <button
               onClick={() => window.location.reload()}
               className="px-6 py-2.5 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all active:scale-95"
             >
@@ -180,7 +178,7 @@ const HomePage = () => {
             </button>
           </div>
         ) : currentMovies.length === 0 ? (
-          <div className="text-center py-20 text-gray-400 font-bold text-lg">
+          <div className="text-center py-20 text-gray-400 dark:text-gray-500 font-bold text-lg">
             Hiện chưa có phim trong mục này.
           </div>
         ) : (
@@ -201,7 +199,7 @@ const HomePage = () => {
           <div className="mt-10 flex justify-center">
             <button
               onClick={() => setVisibleCount((p) => p + 5)}
-              className="flex items-center gap-2 px-8 py-3.5 bg-white border-2 border-red-600 text-red-600 font-bold rounded-2xl hover:bg-red-600 hover:text-white transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-red-100 group"
+              className="flex items-center gap-2 px-8 py-3.5 bg-white dark:bg-transparent border-2 border-red-600 text-red-600 font-bold rounded-2xl hover:bg-red-600 hover:text-white transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-red-100 dark:hover:shadow-red-900/20 group"
             >
               <ChevronDown size={18} className="group-hover:translate-y-0.5 transition-transform" />
               Xem thêm ({currentMovies.length - visibleCount} phim còn lại)
@@ -213,7 +211,7 @@ const HomePage = () => {
       {/* ── News section ── */}
       <section
         ref={newsSectionRef}
-        className={`bg-gray-50 py-14 border-t border-gray-100 overflow-hidden transition-all duration-700 ${newsSectionVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+        className={`bg-gray-50 dark:bg-gray-900 py-14 border-t border-gray-100 dark:border-gray-800 overflow-hidden transition-all duration-700 ${newsSectionVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
       >
         <div className="container mx-auto px-4 max-w-7xl">
           <SectionHeading>Tin Bên Lề</SectionHeading>
@@ -221,7 +219,7 @@ const HomePage = () => {
           <div className="relative group/news">
             <button
               onClick={() => scrollNews("left")}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-20 -ml-2 md:-ml-5 w-11 h-11 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-red-600 hover:text-white hover:border-transparent hover:scale-110 transition-all opacity-0 group-hover/news:opacity-100 duration-300"
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-20 -ml-2 md:-ml-5 w-11 h-11 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-red-600 hover:text-white hover:border-transparent hover:scale-110 transition-all opacity-0 group-hover/news:opacity-100 duration-300"
             >
               <ChevronLeft size={22} />
             </button>
@@ -235,12 +233,12 @@ const HomePage = () => {
               className={`flex gap-6 overflow-x-auto pb-4 px-2 hide-scrollbar ${isDragging ? "cursor-grabbing select-none" : "cursor-grab"}`}
               style={{ scrollbarWidth: "none" }}
             >
-              {NEWS_LIST.map((item, i) => (
+              {NEWS_LIST.map((item) => (
                 <Link
                   key={item.id}
                   to={`/news/${item.id}`}
                   onDragStart={(e) => e.preventDefault()}
-                  className="w-[300px] md:w-[360px] flex-shrink-0 flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group/card border border-gray-100 hover:-translate-y-1"
+                  className="w-[300px] md:w-[360px] flex-shrink-0 flex flex-col bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl dark:hover:shadow-gray-900/50 transition-all duration-300 group/card border border-gray-100 dark:border-gray-700 hover:-translate-y-1"
                 >
                   <div className="h-48 flex-shrink-0 overflow-hidden">
                     <img
@@ -251,11 +249,11 @@ const HomePage = () => {
                   </div>
                   <div className="p-5 flex flex-col flex-1">
                     <span className="text-[10px] font-black text-red-600 uppercase tracking-widest">{item.category}</span>
-                    <h3 className="font-bold text-gray-800 mt-1.5 mb-3 text-[15px] line-clamp-2 group-hover/card:text-red-600 transition-colors leading-snug flex-1">
+                    <h3 className="font-bold text-gray-800 dark:text-gray-100 mt-1.5 mb-3 text-[15px] line-clamp-2 group-hover/card:text-red-600 transition-colors leading-snug flex-1">
                       {item.title}
                     </h3>
-                    <p className="text-xs text-gray-400 font-semibold flex items-center gap-1.5">
-                      <span className="w-1 h-1 rounded-full bg-gray-300 inline-block" />
+                    <p className="text-xs text-gray-400 dark:text-gray-500 font-semibold flex items-center gap-1.5">
+                      <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600 inline-block" />
                       {item.timeAgo}
                     </p>
                   </div>
@@ -265,7 +263,7 @@ const HomePage = () => {
 
             <button
               onClick={() => scrollNews("right")}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-20 -mr-2 md:-mr-5 w-11 h-11 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-red-600 hover:text-white hover:border-transparent hover:scale-110 transition-all opacity-0 group-hover/news:opacity-100 duration-300"
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-20 -mr-2 md:-mr-5 w-11 h-11 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-red-600 hover:text-white hover:border-transparent hover:scale-110 transition-all opacity-0 group-hover/news:opacity-100 duration-300"
             >
               <ChevronRight size={22} />
             </button>
