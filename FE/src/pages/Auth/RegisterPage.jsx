@@ -116,7 +116,7 @@ const RegisterPage = () => {
   };
 
   const inputClass = (name, extraRight = "pr-10") => {
-    const base = `w-full bg-gray-50 border rounded-xl pl-11 ${extraRight} py-3 text-sm focus:ring-2 outline-none transition-all duration-200 font-medium`;
+    const base = `w-full bg-gray-50 border rounded-xl pl-11 ${extraRight} py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 outline-none transition-all duration-200 font-medium`;
     const state = fieldState(name);
     if (state === "error") return `${base} border-red-400 focus:ring-red-100 focus:border-red-500`;
     if (state === "success") return `${base} border-green-400 focus:ring-green-100 focus:border-green-500 bg-green-50/30`;
