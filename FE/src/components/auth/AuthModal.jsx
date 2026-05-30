@@ -86,6 +86,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
           password: formData.password,
         });
         localStorage.setItem("token", data.token);
+        if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
         const user = { name: data.name, email: data.email, role: data.role, avatar: null };
         localStorage.setItem("currentUser", JSON.stringify(user));
         toast.success("Đăng nhập thành công!", { id: "auth-toast" });

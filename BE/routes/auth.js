@@ -56,10 +56,9 @@ function otpHtml(title, name, otp, email, expireMin = 15, contextText = '') {
         </div>`;
 }
 
-// Generate JWT
-const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30m' });
-};
+// Generate short-lived access token (30min) and long-lived refresh token (7 days)
+const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30m' });
+const generateRefreshToken = (id) => jwt.sign({ id }, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET + '_refresh', { expiresIn: '7d' });
 
 // Register user
 router.post('/register', async (req, res) => {
@@ -110,12 +109,38 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
         const user = await User.findOne({ email });
+
+        // Account lockout check
+        if (user?.lockUntil && user.lockUntil > new Date()) {
+            const minsLeft = Math.ceil((user.lockUntil - new Date()) / 60000);
+            return res.status(423).json({ message: `Tài khoản tạm khóa do đăng nhập sai nhiều lần. Vui lòng thử lại sau ${minsLeft} phút.` });
+        }
+
         if (!user || !(await user.matchPassword(password))) {
+            if (user) {
+                user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+                if (user.failedLoginAttempts >= 5) {
+                    user.lockUntil = new Date(Date.now() + 15 * 60 * 1000); // lock 15 min
+                    user.failedLoginAttempts = 0;
+                    await user.save();
+                    return res.status(423).json({ message: 'Đăng nhập sai quá nhiều lần. Tài khoản bị tạm khóa 15 phút.' });
+                }
+                await user.save();
+            }
             return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng' });
         }
+
         if (user.isVerified === false && user.role !== 'admin') {
             return res.status(403).json({ message: 'Tài khoản chưa xác thực email. Vui lòng kiểm tra email hoặc yêu cầu gửi lại mã OTP.' });
         }
+
+        // Reset failed attempts on success
+        const refreshToken = generateRefreshToken(user._id);
+        user.failedLoginAttempts = 0;
+        user.lockUntil = null;
+        user.refreshToken = refreshToken;
+        await user.save();
+
         res.json({
             _id: user._id,
             name: user.name,
@@ -123,6 +148,7 @@ router.post('/login', async (req, res) => {
             phone: user.phone || '',
             role: user.role,
             token: generateToken(user._id),
+            refreshToken,
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -293,6 +319,34 @@ router.post('/reset-password', async (req, res) => {
         await user.save();
 
         res.json({ message: 'Đặt lại mật khẩu thành công' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Refresh access token using refresh token
+router.post('/refresh', async (req, res) => {
+    const { refreshToken } = req.body;
+    if (!refreshToken) return res.status(401).json({ message: 'Refresh token required' });
+
+    try {
+        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET + '_refresh');
+        const user = await User.findById(decoded.id).select('refreshToken role');
+        if (!user || user.refreshToken !== refreshToken) {
+            return res.status(401).json({ message: 'Invalid refresh token' });
+        }
+        const newToken = generateToken(user._id);
+        res.json({ token: newToken });
+    } catch {
+        res.status(401).json({ message: 'Refresh token expired or invalid' });
+    }
+});
+
+// Logout — invalidate refresh token
+router.post('/logout', protect, async (req, res) => {
+    try {
+        await User.findByIdAndUpdate(req.user._id, { refreshToken: null });
+        res.json({ message: 'Logged out' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

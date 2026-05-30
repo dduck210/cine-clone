@@ -79,6 +79,7 @@ const LoginPage = () => {
         password: fields.password,
       });
       localStorage.setItem("token", data.token);
+      if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
       localStorage.setItem(
         "currentUser",
         JSON.stringify({ name: data.name, email: data.email, phone: data.phone || "", role: data.role, avatar: null })

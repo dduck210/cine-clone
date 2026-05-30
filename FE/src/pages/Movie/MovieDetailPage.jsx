@@ -8,7 +8,7 @@ import ReviewSection from "../../components/movie/ReviewSection";
 import axiosInstance from "../../api/axiosConfig";
 import {
   Star, Clock, Calendar, MapPin, ChevronDown,
-  Ticket, Play, X, Heart,
+  Ticket, Play, X, Heart, Share2, Copy, Check,
 } from "lucide-react";
 import { useWishlist } from "../../context/wishlist-context";
 
@@ -38,6 +38,20 @@ const MovieDetailPage = () => {
   const navigate = useNavigate();
   const { ids: wishlistIds, toggle: toggleWishlist } = useWishlist();
   const isLoggedIn = !!localStorage.getItem("token");
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      navigator.share({ title: movie?.title, text: `Xem phim ${movie?.title} tại 5Cine`, url });
+    } else {
+      navigator.clipboard.writeText(url).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        toast.success("Đã sao chép link!", { duration: 1500 });
+      });
+    }
+  };
   const [movie, setMovie] = useState(null);
   const [cinemaList, setCinemaList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -312,6 +326,14 @@ const MovieDetailPage = () => {
                   {wishlistIds.has(movie._id) ? "Đã lưu" : "Yêu thích"}
                 </button>
               )}
+              <button
+                onClick={handleShare}
+                className="inline-flex items-center gap-2 py-3.5 px-5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white transition-all text-sm font-bold"
+                title="Chia sẻ phim"
+              >
+                {copied ? <Check size={16} /> : <Share2 size={16} />}
+                {copied ? "Đã sao chép" : "Chia sẻ"}
+              </button>
             </div>
           </div>
         </div>
@@ -413,8 +435,17 @@ const MovieDetailPage = () => {
                                   }`}
                                 >
                                   <span className="font-black text-base">{showtime.startTime}</span>
-                                  <span className={`text-[10px] font-medium mt-0.5 ${isSelected ? "text-red-100" : locked ? "text-slate-400" : "text-slate-400"}`}>
-                                    {locked ? "Đã khóa" : showtime.availableSeats !== undefined ? `${showtime.availableSeats} ghế trống` : ""}
+                                  <span className={`text-[10px] font-medium mt-0.5 ${
+                                    isSelected ? "text-red-100"
+                                    : locked ? "text-slate-400"
+                                    : showtime.availableSeats <= 5 ? "text-orange-500 font-bold"
+                                    : "text-slate-400"
+                                  }`}>
+                                    {locked ? "Đã khóa"
+                                      : showtime.availableSeats === 0 ? "Hết ghế"
+                                      : showtime.availableSeats <= 5 ? `⚡ Còn ${showtime.availableSeats} ghế`
+                                      : showtime.availableSeats !== undefined ? `${showtime.availableSeats} ghế trống`
+                                      : ""}
                                   </span>
                                 </button>
                               );

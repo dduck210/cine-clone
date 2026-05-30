@@ -39,9 +39,25 @@ axiosInstance.interceptors.response.use(
             console.error(` [Server Error] Status ${response.status}: ${response.data?.message || 'Internal Server Error'}`);
         } else if (response.status === 401) {
             const url = config?.url || '';
-            const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/register');
-            if (!isAuthEndpoint) {
+            const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/register') || url.includes('/auth/refresh');
+
+            // Try refresh token before redirecting to login
+            if (!isAuthEndpoint && !config.__isRetryAfterRefresh) {
+                const refreshToken = localStorage.getItem('refreshToken');
+                if (refreshToken) {
+                    try {
+                        const refreshRes = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
+                        const newToken = refreshRes.data.token;
+                        localStorage.setItem('token', newToken);
+                        config.headers.Authorization = `Bearer ${newToken}`;
+                        config.__isRetryAfterRefresh = true;
+                        return axiosInstance(config);
+                    } catch {
+                        // Refresh failed — clear storage and redirect
+                    }
+                }
                 localStorage.removeItem('token');
+                localStorage.removeItem('refreshToken');
                 localStorage.removeItem('currentUser');
                 if (window.location.pathname !== '/login') {
                     window.location.href = '/login';
