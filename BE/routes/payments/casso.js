@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const Booking = require('../models/Booking');
-const Payment = require('../models/Payment');
-const Seat = require('../models/Seat');
-const { protect } = require('../middleware/auth');
-const { sendPaymentSuccessEmail, sendAdminPaymentNotificationEmail } = require('../services/email-service');
-const notificationService = require('../services/notification-service');
+const Booking = require('../../models/Booking');
+const Payment = require('../../models/Payment');
+const Seat = require('../../models/Seat');
+const { protect } = require('../../middleware/auth');
+const { sendPaymentSuccessEmail, sendAdminPaymentNotificationEmail } = require('../../services/email-service');
+const notificationService = require('../../services/notification-service');
 
 const CASSO_API_KEY = process.env.CASSO_API_KEY || '';
 const CASSO_API_URL = 'https://oauth.casso.vn/v2/transactions';
@@ -28,8 +28,7 @@ router.get('/status/:bookingId', protect, async (req, res) => {
                 cinemaName: booking.showtime?.cinema?.name || '',
                 roomName: booking.showtime?.room?.name || '',
                 showTime: booking.showtime?.startTime || '',
-                showDate: booking.showtime?.date
-                    ? new Date(booking.showtime.date).toLocaleDateString('vi-VN') : '',
+                showDate: booking.showtime?.date ? new Date(booking.showtime.date).toLocaleDateString('vi-VN') : '',
                 selectedSeats: booking.seatNumbers || [],
                 finalTotalPrice: booking.totalPrice,
                 poster: booking.showtime?.movie?.poster || '',
@@ -37,7 +36,6 @@ router.get('/status/:bookingId', protect, async (req, res) => {
             });
         }
 
-        // Poll Casso API để tìm giao dịch khớp
         if (CASSO_API_KEY) {
             const found = await findMatchingTransaction(booking);
             if (found) {
@@ -64,7 +62,7 @@ router.post('/webhook', async (req, res) => {
         for (const tx of transactions) {
             const description = tx.description || '';
             const amount = tx.amount || 0;
-            if (amount <= 0) continue; // chỉ xử lý tiền vào
+            if (amount <= 0) continue;
 
             const codes = extractBookingCodes(description);
             if (!codes.length) continue;
@@ -85,9 +83,7 @@ router.post('/webhook', async (req, res) => {
 });
 
 async function findMatchingTransaction(booking) {
-    // Lấy giao dịch trong 24 giờ qua
-    const fromDate = new Date(Date.now() - 24 * 60 * 60 * 1000)
-        .toISOString().slice(0, 10);
+    const fromDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
     const response = await axios.get(CASSO_API_URL, {
         headers: { Authorization: `Apikey ${CASSO_API_KEY}` },
@@ -101,7 +97,7 @@ async function findMatchingTransaction(booking) {
     const bookingCode = booking.bookingCode.toUpperCase();
 
     return records.find((tx) => {
-        if (tx.amount <= 0) return false; // bỏ giao dịch tiền ra
+        if (tx.amount <= 0) return false;
         const desc = (tx.description || '').toUpperCase();
         if (!desc.includes(bookingCode)) return false;
         if (Math.abs(tx.amount - booking.totalPrice) > 1000) return false;
@@ -122,14 +118,7 @@ async function processSuccessfulPayment(bookingId, transactionId, amount) {
     );
     if (!booking) return;
 
-    const payment = new Payment({
-        booking: bookingId,
-        method: 'qr',
-        amount,
-        transactionId,
-        status: 'success',
-        paymentDate: new Date(),
-    });
+    const payment = new Payment({ booking: bookingId, method: 'qr', amount, transactionId, status: 'success', paymentDate: new Date() });
     await payment.save();
     booking.paymentId = payment._id;
     await booking.save();

@@ -1,24 +1,24 @@
 const express = require('express');
 const router = express.Router();
 const { PayOS } = require('@payos/node');
-const Booking = require('../models/Booking');
-const Payment = require('../models/Payment');
-const Seat = require('../models/Seat');
-const { protect } = require('../middleware/auth');
-const { sendPaymentSuccessEmail, sendAdminPaymentNotificationEmail } = require('../services/email-service');
-const notificationService = require('../services/notification-service');
+const Booking = require('../../models/Booking');
+const Payment = require('../../models/Payment');
+const Seat = require('../../models/Seat');
+const { protect } = require('../../middleware/auth');
+const { sendPaymentSuccessEmail, sendAdminPaymentNotificationEmail } = require('../../services/email-service');
+const notificationService = require('../../services/notification-service');
 
 let payosClient = null;
 function getPayOS() {
-  if (payosClient) return payosClient;
-  const clientId = process.env.PAYOS_CLIENT_ID;
-  const apiKey = process.env.PAYOS_API_KEY;
-  const checksumKey = process.env.PAYOS_CHECKSUM_KEY;
-  if (!clientId || !apiKey || !checksumKey) {
-    throw new Error('PayOS chưa được cấu hình. Thiếu PAYOS_CLIENT_ID, PAYOS_API_KEY hoặc PAYOS_CHECKSUM_KEY trong .env');
-  }
-  payosClient = new PayOS(clientId, apiKey, checksumKey);
-  return payosClient;
+    if (payosClient) return payosClient;
+    const clientId = process.env.PAYOS_CLIENT_ID;
+    const apiKey = process.env.PAYOS_API_KEY;
+    const checksumKey = process.env.PAYOS_CHECKSUM_KEY;
+    if (!clientId || !apiKey || !checksumKey) {
+        throw new Error('PayOS chưa được cấu hình. Thiếu PAYOS_CLIENT_ID, PAYOS_API_KEY hoặc PAYOS_CHECKSUM_KEY trong .env');
+    }
+    payosClient = new PayOS(clientId, apiKey, checksumKey);
+    return payosClient;
 }
 
 // POST /api/payments/payos/create — tạo payment link
@@ -42,11 +42,7 @@ router.post('/create', protect, async (req, res) => {
 
         await Booking.findByIdAndUpdate(bookingId, { payosOrderCode: orderCode });
 
-        res.json({
-            qrCode: paymentLink.qrCode,
-            checkoutUrl: paymentLink.checkoutUrl,
-            orderCode,
-        });
+        res.json({ qrCode: paymentLink.qrCode, checkoutUrl: paymentLink.checkoutUrl, orderCode });
     } catch (err) {
         console.error('[PayOS] Create error:', err);
         res.status(500).json({ message: err.message });
@@ -90,8 +86,7 @@ router.get('/status/:bookingId', protect, async (req, res) => {
                 movieTitle: booking.showtime?.movie?.title || '',
                 cinemaName: booking.showtime?.cinema?.name || '',
                 showTime: booking.showtime?.startTime || '',
-                showDate: booking.showtime?.date
-                    ? new Date(booking.showtime.date).toLocaleDateString('vi-VN') : '',
+                showDate: booking.showtime?.date ? new Date(booking.showtime.date).toLocaleDateString('vi-VN') : '',
                 selectedSeats: booking.seatNumbers || [],
                 finalTotalPrice: booking.totalPrice,
                 poster: booking.showtime?.movie?.poster || '',
@@ -113,14 +108,7 @@ async function processSuccessfulPayment(bookingId, transactionId, amount) {
     );
     if (!booking) return;
 
-    const payment = new Payment({
-        booking: bookingId,
-        method: 'qr',
-        amount,
-        transactionId,
-        status: 'success',
-        paymentDate: new Date(),
-    });
+    const payment = new Payment({ booking: bookingId, method: 'qr', amount, transactionId, status: 'success', paymentDate: new Date() });
     await payment.save();
 
     booking.paymentId = payment._id;
@@ -130,14 +118,7 @@ async function processSuccessfulPayment(bookingId, transactionId, amount) {
 
     const bookingContext = await Booking.findById(bookingId)
         .populate('user', 'name email phone')
-        .populate({
-            path: 'showtime',
-            populate: [
-                { path: 'movie', select: 'title poster' },
-                { path: 'cinema', select: 'name address' },
-                { path: 'room', select: 'name' },
-            ],
-        })
+        .populate({ path: 'showtime', populate: [{ path: 'movie', select: 'title poster' }, { path: 'cinema', select: 'name address' }, { path: 'room', select: 'name' }] })
         .populate('paymentId', 'method status');
 
     await sendPaymentSuccessEmail(bookingContext, 'qr').catch(() => {});

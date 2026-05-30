@@ -1,24 +1,10 @@
-const express = require('express');
-const router = express.Router();
-const crypto = require('crypto');
-const Booking = require('../models/Booking');
-const Payment = require('../models/Payment');
-const Seat = require('../models/Seat');
-const { protect } = require('../middleware/auth');
-const { sendPaymentSuccessEmail, sendAdminPaymentNotificationEmail } = require('../services/email-service');
-const notificationService = require('../services/notification-service');
+const Booking = require('../../models/Booking');
+const { PARTNER_CODE, ACCESS_KEY, SECRET_KEY, MOMO_API, hmac, processSuccessfulPayment } = require('../../services/momo-payment');
 
-const PARTNER_CODE = process.env.MOMO_PARTNER_CODE || 'MOMO';
-const ACCESS_KEY = process.env.MOMO_ACCESS_KEY || 'F8BBA842ECF85';
-const SECRET_KEY = process.env.MOMO_SECRET_KEY || 'K951B6PE1waDMi640xX08PD3vg6EkVlz';
-const MOMO_API = process.env.MOMO_API_URL || 'https://test-payment.momo.vn/v2/gateway/api/create';
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:5000';
 
-const hmac = (data) => crypto.createHmac('sha256', SECRET_KEY).update(data).digest('hex');
-
-// POST /api/payments/momo/create — Tạo QR thanh toán MoMo (captureWallet)
-router.post('/create', protect, async (req, res) => {
+const createPayment = async (req, res) => {
     const { bookingId } = req.body;
     try {
         const booking = await Booking.findById(bookingId);
@@ -40,21 +26,7 @@ router.post('/create', protect, async (req, res) => {
         const response = await fetch(MOMO_API, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                partnerCode: PARTNER_CODE,
-                accessKey: ACCESS_KEY,
-                requestId,
-                amount,
-                orderId,
-                orderInfo,
-                redirectUrl,
-                ipnUrl,
-                extraData,
-                requestType,
-                signature,
-                lang: 'vi',
-                autoCapture: true,
-            }),
+            body: JSON.stringify({ partnerCode: PARTNER_CODE, accessKey: ACCESS_KEY, requestId, amount, orderId, orderInfo, redirectUrl, ipnUrl, extraData, requestType, signature, lang: 'vi', autoCapture: true }),
         });
 
         const data = await response.json();
@@ -62,23 +34,17 @@ router.post('/create', protect, async (req, res) => {
             return res.status(400).json({ message: data.message || 'Tạo thanh toán MoMo thất bại' });
         }
 
-        // Extend booking hold to 15 min so it doesn't expire while user is on MoMo page
         booking.momoOrderId = orderId;
         booking.expiresAt = new Date(Date.now() + 15 * 60 * 1000);
         await booking.save();
 
-        res.json({
-            payUrl: data.payUrl,
-            qrCodeUrl: data.qrCodeUrl || null,
-            orderId,
-        });
+        res.json({ payUrl: data.payUrl, qrCodeUrl: data.qrCodeUrl || null, orderId });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-});
+};
 
-// POST /api/payments/momo/ipn — MoMo gọi khi user thanh toán thành công
-router.post('/ipn', async (req, res) => {
+const handleIPN = async (req, res) => {
     const { partnerCode, orderId, requestId, amount, orderInfo, orderType,
         transId, resultCode, message, payType, responseTime, extraData, signature } = req.body;
 
@@ -94,7 +60,6 @@ router.post('/ipn', async (req, res) => {
             const booking = await Booking.findById(bookingId);
             if (!booking) return res.status(200).json({ message: 'ok' });
 
-            // Save transId and process payment immediately
             booking.momoTransId = transId.toString();
             await booking.save();
 
@@ -107,10 +72,9 @@ router.post('/ipn', async (req, res) => {
     }
 
     res.status(200).json({ message: 'ok' });
-});
+};
 
-// GET /api/payments/momo/status/:bookingId — Frontend poll payment status
-router.get('/status/:bookingId', protect, async (req, res) => {
+const getStatus = async (req, res) => {
     try {
         const booking = await Booking.findById(req.params.bookingId)
             .populate({ path: 'showtime', populate: [{ path: 'movie' }, { path: 'cinema' }] })
@@ -126,8 +90,7 @@ router.get('/status/:bookingId', protect, async (req, res) => {
                 cinemaName: booking.showtime?.cinema?.name || '',
                 roomName: booking.showtime?.room?.name || '',
                 showTime: booking.showtime?.startTime || '',
-                showDate: booking.showtime?.date
-                    ? new Date(booking.showtime.date).toLocaleDateString('vi-VN') : '',
+                showDate: booking.showtime?.date ? new Date(booking.showtime.date).toLocaleDateString('vi-VN') : '',
                 selectedSeats: booking.seatNumbers || [],
                 finalTotalPrice: booking.totalPrice,
                 poster: booking.showtime?.movie?.poster || '',
@@ -140,10 +103,9 @@ router.get('/status/:bookingId', protect, async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-});
+};
 
-// POST /api/payments/momo/confirm — Fallback khi user bị redirect về từ MoMo app
-router.post('/confirm', protect, async (req, res) => {
+const confirm = async (req, res) => {
     const { partnerCode, orderId, requestId, amount, orderInfo, orderType,
         transId, resultCode, message, payType, responseTime, extraData, signature } = req.body;
 
@@ -183,8 +145,7 @@ router.post('/confirm', protect, async (req, res) => {
             cinemaName: updated.showtime?.cinema?.name || '',
             roomName: updated.showtime?.room?.name || '',
             showTime: updated.showtime?.startTime || '',
-            showDate: updated.showtime?.date
-                ? new Date(updated.showtime.date).toLocaleDateString('vi-VN') : '',
+            showDate: updated.showtime?.date ? new Date(updated.showtime.date).toLocaleDateString('vi-VN') : '',
             selectedSeats: updated.seatNumbers || [],
             finalTotalPrice: updated.totalPrice,
             poster: updated.showtime?.movie?.poster || '',
@@ -193,55 +154,9 @@ router.post('/confirm', protect, async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-});
+};
 
-async function processSuccessfulPayment(bookingId, transactionId, amount) {
-    const booking = await Booking.findOneAndUpdate(
-        { _id: bookingId, status: 'pending' },
-        { $set: { status: 'paid' } },
-        { returnDocument: 'after' }
-    );
-    if (!booking) return;
-
-    const payment = new Payment({
-        booking: bookingId,
-        method: 'momo',
-        amount,
-        transactionId,
-        status: 'success',
-        paymentDate: new Date(),
-    });
-    await payment.save();
-
-    booking.paymentId = payment._id;
-    await booking.save();
-
-    await Seat.updateMany({ _id: { $in: booking.seats } }, { status: 'booked' });
-
-    const bookingContext = await Booking.findById(bookingId)
-        .populate('user', 'name email phone')
-        .populate({
-            path: 'showtime',
-            populate: [
-                { path: 'movie', select: 'title poster' },
-                { path: 'cinema', select: 'name address' },
-                { path: 'room', select: 'name' },
-            ],
-        })
-        .populate('paymentId', 'method status');
-
-    await sendPaymentSuccessEmail(bookingContext, 'momo');
-    sendAdminPaymentNotificationEmail(bookingContext, 'momo').catch(() => { });
-    notificationService.createNotification({
-        type: 'payment_paid',
-        title: 'Thanh toán MoMo thành công',
-        message: `${bookingContext?.user?.name || 'Khách hàng'} vừa thanh toán đơn ${bookingContext?.bookingCode}`,
-        data: { bookingId: bookingContext?._id?.toString(), bookingCode: bookingContext?.bookingCode },
-    });
-}
-
-// POST /api/payments/momo/confirm-demo/:bookingId — Simulate MoMo success for localhost demo
-router.post('/confirm-demo/:bookingId', protect, async (req, res) => {
+const confirmDemo = async (req, res) => {
     try {
         const booking = await Booking.findById(req.params.bookingId);
         if (!booking) return res.status(404).json({ message: 'Booking not found' });
@@ -260,6 +175,6 @@ router.post('/confirm-demo/:bookingId', protect, async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-});
+};
 
-module.exports = router;
+module.exports = { createPayment, handleIPN, getStatus, confirm, confirmDemo };
