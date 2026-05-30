@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import axiosInstance from "../../api/axiosConfig";
 import toast from "react-hot-toast";
-import { isVietnameseHoliday } from "../../utils/vietnamese-holidays";
+import { isVietnameseHoliday } from "../../shared/utils/vietnamese-holidays";
 import { TIME_SLOT_MULTS, DAY_TYPE_MULTS, SEAT_MULTS } from "../../shared/constants";
 
 const DAYS_VI = [
