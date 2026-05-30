@@ -339,10 +339,7 @@ const HistoryTab = ({ navigate }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      axiosInstance.get("/bookings/user/all").then((res) => setBookings(res.data)).catch(() => setBookings([])),
-      new Promise((r) => setTimeout(r, 1000)),
-    ]).finally(() => setLoading(false));
+    axiosInstance.get("/bookings/user/all").then((res) => setBookings(res.data)).catch(() => setBookings([])).finally(() => setLoading(false));
   }, []);
 
   const handleViewDetail = (booking) => {

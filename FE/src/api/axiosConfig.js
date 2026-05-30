@@ -51,7 +51,7 @@ axiosInstance.interceptors.response.use(
 
         // 2. Retry Logic for Network Errors or 503/504 (Gateway issues like Ngrok)
         const isNetworkError = !response && message !== 'Canceled';
-        const isRetryableError = isNetworkError || (response && [502, 503, 504].includes(response.status));
+        const isRetryableError = isNetworkError || (response && [503, 504].includes(response.status));
 
         if (isRetryableError && (!config.__retryCount || config.__retryCount < MAX_RETRIES)) {
             config.__retryCount = (config.__retryCount || 0) + 1;

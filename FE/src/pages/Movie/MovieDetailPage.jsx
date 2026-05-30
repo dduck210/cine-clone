@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Helmet } from "react-helmet-async";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import Navbar from "../../components/common/Navbar";
@@ -70,7 +71,6 @@ const MovieDetailPage = () => {
         const [movieRes, showtimeRes] = await Promise.all([
           axiosInstance.get(`/movies/${id}`),
           axiosInstance.get(`/showtimes?movieId=${id}`),
-          new Promise((r) => setTimeout(r, 1000)),
         ]);
         setMovie(movieRes.data);
         const grouped = {};
@@ -151,6 +151,13 @@ const MovieDetailPage = () => {
 
   return (
     <div className="min-h-screen bg-[#f8f8f8] font-sans text-gray-900">
+      <Helmet>
+        <title>{movie ? `${movie.title} — 5Cine` : "5Cine"}</title>
+        <meta name="description" content={movie?.description?.slice(0, 160) || "Xem thông tin phim và đặt vé tại 5Cine"} />
+        <meta property="og:title" content={movie ? `${movie.title} — 5Cine` : "5Cine"} />
+        <meta property="og:image" content={movie?.poster || ""} />
+        <meta property="og:type" content="video.movie" />
+      </Helmet>
       <Navbar />
 
       {/* ── HERO ── */}

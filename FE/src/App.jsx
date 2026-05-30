@@ -1,6 +1,28 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback, Component } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+
+class ErrorBoundary extends Component {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(err) { console.error("[ErrorBoundary]", err); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center p-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Đã xảy ra lỗi</h2>
+            <p className="text-gray-500 mb-4">Vui lòng tải lại trang.</p>
+            <button onClick={() => window.location.reload()} className="px-6 py-2.5 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all">
+              Tải lại
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 import HomePage from "./pages/Home/HomePage";
 import MovieDetailPage from "./pages/Movie/MovieDetailPage";
@@ -36,25 +58,18 @@ function ScrollToTop() {
 }
 
 function App() {
-  const [showSplash, setShowSplash] = useState(true);
   const location = useLocation();
-  const prevPath = useRef(null);
+  // Splash only on first visit to "/"
+  const [showSplash, setShowSplash] = useState(location.pathname === "/");
 
   const hideSplash = useCallback(() => { window.scrollTo(0, 0); setShowSplash(false); }, []);
-
-  // Re-trigger splash khi navigate về "/" (kể cả khi đang ở "/")
-  useEffect(() => {
-    if (prevPath.current !== null && location.pathname === "/") {
-      setShowSplash(true);
-    }
-    prevPath.current = location.pathname;
-  }, [location.pathname, location.state?.splashTs]);
 
   return (
     <>
       {showSplash && <SplashScreen onDone={hideSplash} />}
       <ScrollToTop />
       <Toaster position="top-center" toastOptions={{ duration: 2000 }} containerStyle={{ zIndex: 100000, top: '88px' }} />
+      <ErrorBoundary>
       <Routes>
         {/* Public */}
         <Route path="/" element={<HomePage />} />
@@ -93,6 +108,7 @@ function App() {
         {/* Chỉ dành cho admin */}
         <Route path="/admin" element={<AdminRoute><Dashboard /></AdminRoute>} />
       </Routes>
+      </ErrorBoundary>
     </>
   );
 }

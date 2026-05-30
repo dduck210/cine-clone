@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { ChevronDown, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import Navbar from "../../components/common/Navbar";
 import Hero from "../../components/common/Hero";
@@ -47,7 +48,6 @@ const HomePage = () => {
         setError(null);
         const [moviesRes] = await Promise.all([
           axiosInstance.get("/movies"),
-          new Promise((r) => setTimeout(r, 800)),
         ]);
         setMovies(moviesRes.data);
       } catch (err) {
@@ -106,6 +106,13 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-white font-bromega font-bold text-gray-900">
+      <Helmet>
+        <title>5Cine — Đặt vé xem phim online nhanh nhất</title>
+        <meta name="description" content="Đặt vé xem phim online tại 5Cine. Chọn phim, chọn ghế, thanh toán dễ dàng. Hệ thống rạp chiếu phim hiện đại tại Hà Nội, TP.HCM, Đà Nẵng." />
+        <meta property="og:title" content="5Cine — Đặt vé xem phim online" />
+        <meta property="og:description" content="Đặt vé xem phim online nhanh nhất. Phim mới cập nhật hàng tuần." />
+        <meta property="og:type" content="website" />
+      </Helmet>
       <Navbar />
       <Hero movies={nowShowing} />
       <FeaturesStrip />

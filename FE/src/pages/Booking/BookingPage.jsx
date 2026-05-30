@@ -263,19 +263,24 @@ const BookingPage = () => {
   const timerProgress = secondsLeft / HOLD_SECONDS; // 1 → 0
   const activeCombos = combos.filter((c) => c.quantity > 0);
 
-  const goToPayment = () => navigate("/payment", {
-    state: {
-      showtimeId, movieTitle: title, poster, cinemaName, showTime, showDate,
-      showAddress, selectedSeats, combos, finalTotalPrice: priceAfterVoucher, roomName, duration,
-      originalPrice: finalTotalPrice,
-      mondayDiscount: isMonday ? finalTotalPrice - discountedPrice : 0,
-      voucherDiscount,
-      voucherCode: appliedVoucher?.code || null,
-      voucherType: appliedVoucher?.type || null,
-      voucherValue: appliedVoucher?.value || null,
-      seatMap: Object.fromEntries(selectedSeats.map((sn) => [sn, { type: seatMap[sn]?.type, price: seatMap[sn]?.price }])),
-    },
-  });
+  const [navigating, setNavigating] = useState(false);
+  const goToPayment = () => {
+    if (navigating) return;
+    setNavigating(true);
+    navigate("/payment", {
+      state: {
+        showtimeId, movieTitle: title, poster, cinemaName, showTime, showDate,
+        showAddress, selectedSeats, combos, finalTotalPrice: priceAfterVoucher, roomName, duration,
+        originalPrice: finalTotalPrice,
+        mondayDiscount: isMonday ? finalTotalPrice - discountedPrice : 0,
+        voucherDiscount,
+        voucherCode: appliedVoucher?.code || null,
+        voucherType: appliedVoucher?.type || null,
+        voucherValue: appliedVoucher?.value || null,
+        seatMap: Object.fromEntries(selectedSeats.map((sn) => [sn, { type: seatMap[sn]?.type, price: seatMap[sn]?.price }])),
+      },
+    });
+  };
 
   // Step indicator
   const renderStepBar = () => (
@@ -385,9 +390,10 @@ const BookingPage = () => {
         ) : (
           <button
             onClick={goToPayment}
-            className="w-full font-black py-3.5 rounded-xl bg-[#dc2626] hover:bg-red-700 text-white shadow-lg shadow-red-200 transition-all flex items-center justify-center gap-2 text-sm"
+            disabled={navigating}
+            className="w-full font-black py-3.5 rounded-xl bg-[#dc2626] hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-lg shadow-red-200 transition-all flex items-center justify-center gap-2 text-sm"
           >
-            <CreditCard size={16} /> Thanh toán ngay
+            <CreditCard size={16} /> {navigating ? "Đang chuyển..." : "Thanh toán ngay"}
           </button>
         )}
       </div>

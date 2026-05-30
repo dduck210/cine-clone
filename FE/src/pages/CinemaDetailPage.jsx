@@ -34,7 +34,6 @@ const CinemaDetailPage = () => {
         const [cinemasRes, showtimesRes] = await Promise.all([
           axiosInstance.get("/admin/cinemas"),
           axiosInstance.get(`/showtimes?cinemaId=${id}`),
-          new Promise((r) => setTimeout(r, 800)),
         ]);
 
         const found = cinemasRes.data.find((c) => c._id === id);

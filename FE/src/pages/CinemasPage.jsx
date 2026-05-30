@@ -50,10 +50,7 @@ const CinemasPage = () => {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   useEffect(() => {
-    Promise.all([
-      axiosInstance.get("/admin/cinemas").then((res) => setCinemas(res.data)).catch(() => setCinemas([])),
-      new Promise((r) => setTimeout(r, 800)),
-    ]).finally(() => setLoading(false));
+    axiosInstance.get("/admin/cinemas").then((res) => setCinemas(res.data)).catch(() => setCinemas([])).finally(() => setLoading(false));
   }, []);
 
   // Extract cities dynamically from cinema data

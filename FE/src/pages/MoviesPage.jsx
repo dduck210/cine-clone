@@ -20,10 +20,7 @@ const MoviesPage = () => {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   useEffect(() => {
-    Promise.all([
-      axiosInstance.get("/movies").then((res) => setMovies(res.data)).catch(() => setMovies([])),
-      new Promise((r) => setTimeout(r, 1000)),
-    ]).finally(() => setLoading(false));
+    axiosInstance.get("/movies").then((res) => setMovies(res.data)).catch(() => setMovies([])).finally(() => setLoading(false));
   }, []);
 
   const nowShowing = movies.filter((m) => m.status === "now_showing");
