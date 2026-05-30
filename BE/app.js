@@ -1,7 +1,8 @@
-require('dns').setServers(['8.8.8.8', '8.8.4.4']);
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const connectDB = require('./config/database');
 const { startExpireBookingsJob } = require('./jobs/expire-bookings');
@@ -66,8 +67,13 @@ io.on('connection', (socket) => {
 initNotificationService(io);
 
 // 2. MIDDLEWARE ORDER (CRITICAL)
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+
+// Auth rate limiters
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { message: 'Quá nhiều yêu cầu, vui lòng thử lại sau 15 phút' }, standardHeaders: true, legacyHeaders: false });
+const otpLimiter = rateLimit({ windowMs: 60 * 1000, max: 3, message: { message: 'Vui lòng đợi trước khi gửi lại mã OTP' }, standardHeaders: true, legacyHeaders: false });
 
 // Request logger for debugging
 app.use((req, res, next) => {
@@ -78,7 +84,9 @@ app.use((req, res, next) => {
 // Routes
 app.get('/api/test-routing', (req, res) => res.json({ message: 'Routing is working!' }));
 
-app.use('/api/auth', require('./routes/auth'));
+app.use('/api/auth', authLimiter, require('./routes/auth'));
+app.use('/api/auth/resend-verify-otp', otpLimiter);
+app.use('/api/auth/forgot-password', otpLimiter);
 app.use('/api/movies', require('./routes/movies'));
 app.use('/api/showtimes', require('./routes/showtimes'));
 app.use('/api/bookings', require('./routes/bookings'));
@@ -93,7 +101,7 @@ app.use('/api/vouchers', require('./routes/vouchers'));
 app.use('/api/push', require('./routes/push'));
 app.use('/api/admin', require('./routes/admin'));
 
-app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date() }));
+app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString(), uptime: Math.floor(process.uptime()), version: '1.0.0' }));
 
 app.get('/', (req, res) => res.send('Cinema Clone Backend API'));
 
