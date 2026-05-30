@@ -1,3 +1,6 @@
+// Force Google DNS to fix SRV record resolution for MongoDB Atlas on some ISPs
+require('dns').setServers(['8.8.8.8', '8.8.4.4']);
+
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
