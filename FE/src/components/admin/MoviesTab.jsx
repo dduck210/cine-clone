@@ -153,6 +153,7 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
       status: "now_showing",
       poster: "",
       backdrop: "",
+      trailer: "",
       description: "",
       director: "",
       cast: "",
@@ -435,6 +436,17 @@ export const MovieModal = ({ currentMovie, setIsModalOpen, handleSave, genreOpti
                 placeholder="VD: Tiếng Việt, Phụ đề Việt..."
               />
             </div>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+              Trailer YouTube URL
+            </label>
+            <input
+              {...register("trailer")}
+              className={inputClass(false)}
+              placeholder="https://www.youtube.com/watch?v=..."
+            />
+            <p className="text-[11px] text-slate-400 mt-1 ml-1">Dán link YouTube — trailer sẽ hiển thị trên trang chi tiết phim</p>
           </div>
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">

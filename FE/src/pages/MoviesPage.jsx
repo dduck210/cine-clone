@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
-import { Film, Calendar, Search, X, Clapperboard, ChevronDown } from "lucide-react";
+import { Film, Calendar, Search, X, Clapperboard, ChevronDown, Tag } from "lucide-react";
 import MovieCard from "../components/movie/MovieCard";
 import axiosInstance from "../api/axiosConfig";
 
@@ -14,6 +14,7 @@ const MoviesPage = () => {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(10);
+  const selectedGenre = searchParams.get("genre") || "";
 
   const PAGE_SIZE = 10;
 
@@ -25,14 +26,58 @@ const MoviesPage = () => {
 
   const nowShowing = movies.filter((m) => m.status === "now_showing");
   const comingSoon = movies.filter((m) => m.status === "coming_soon");
-  const allDisplay = searchQuery
-    ? movies.filter((m) => m.title.toLowerCase().includes(searchQuery.toLowerCase()))
-    : activeTab === "now" ? nowShowing : comingSoon;
+
+  // Collect unique genres from all movies
+  const allGenres = useMemo(() => {
+    const seen = new Set();
+    const result = [];
+    movies.forEach((m) => {
+      (Array.isArray(m.genre) ? m.genre : [m.genre]).forEach((g) => {
+        if (!g) return;
+        const id = g._id || g;
+        const name = g.name || g;
+        if (!seen.has(id)) { seen.add(id); result.push({ id, name }); }
+      });
+    });
+    return result.sort((a, b) => a.name.localeCompare(b.name, "vi"));
+  }, [movies]);
+
+  const matchesSearch = (m) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    const genreNames = (Array.isArray(m.genre) ? m.genre : [m.genre])
+      .map((g) => (g?.name || "").toLowerCase()).join(" ");
+    return (
+      m.title?.toLowerCase().includes(q) ||
+      m.director?.toLowerCase().includes(q) ||
+      m.cast?.toLowerCase().includes(q) ||
+      genreNames.includes(q)
+    );
+  };
+
+  const matchesGenre = (m) => {
+    if (!selectedGenre) return true;
+    return (Array.isArray(m.genre) ? m.genre : [m.genre])
+      .some((g) => (g?._id || g) === selectedGenre);
+  };
+
+  const baseList = searchQuery ? movies : (activeTab === "now" ? nowShowing : comingSoon);
+  const allDisplay = baseList.filter((m) => matchesSearch(m) && matchesGenre(m));
   const displayMovies = allDisplay.slice(0, visibleCount);
   const hasMore = visibleCount < allDisplay.length;
 
   const handleTabChange = (tab) => {
-    setSearchParams((prev) => { const n = new URLSearchParams(prev); n.set("tab", tab); return n; });
+    setSearchParams((prev) => { const n = new URLSearchParams(prev); n.set("tab", tab); n.delete("genre"); return n; });
+    setVisibleCount(PAGE_SIZE);
+  };
+
+  const handleGenreFilter = (genreId) => {
+    setSearchParams((prev) => {
+      const n = new URLSearchParams(prev);
+      if (genreId === selectedGenre) n.delete("genre");
+      else n.set("genre", genreId);
+      return n;
+    });
     setVisibleCount(PAGE_SIZE);
   };
 
@@ -123,6 +168,27 @@ const MoviesPage = () => {
               Hiển thị <span className="font-black text-gray-800">{Math.min(visibleCount, allDisplay.length)}</span>
               /<span className="font-black text-gray-800">{allDisplay.length}</span> phim
             </p>
+          </div>
+        )}
+
+        {/* Genre filter pills */}
+        {!searchQuery && !loading && allGenres.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            <button
+              onClick={() => handleGenreFilter("")}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold border transition-all ${!selectedGenre ? "bg-red-600 text-white border-red-600" : "bg-white text-gray-500 border-gray-200 hover:border-red-300 hover:text-red-600"}`}
+            >
+              <Tag size={13} /> Tất cả
+            </button>
+            {allGenres.map((g) => (
+              <button
+                key={g.id}
+                onClick={() => handleGenreFilter(g.id)}
+                className={`px-3.5 py-1.5 rounded-full text-sm font-bold border transition-all ${selectedGenre === g.id ? "bg-red-600 text-white border-red-600" : "bg-white text-gray-500 border-gray-200 hover:border-red-300 hover:text-red-600"}`}
+              >
+                {g.name}
+              </button>
+            ))}
           </div>
         )}
 

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { User, LogOut, Menu, X, ChevronDown, LayoutDashboard, Ticket } from "lucide-react";
+import { User, LogOut, Menu, X, ChevronDown, LayoutDashboard, Ticket, Search } from "lucide-react";
 import axiosInstance from "../../api/axiosConfig";
 
 const Navbar = () => {
@@ -10,6 +10,9 @@ const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQ, setSearchQ] = useState("");
+  const searchRef = useRef(null);
   const [currentUser, setCurrentUser] = useState(() => {
     const savedUser = localStorage.getItem("currentUser");
     return savedUser ? JSON.parse(savedUser) : null;
@@ -49,6 +52,19 @@ const Navbar = () => {
       localStorage.removeItem("token");
       navigate("/");
     }, 800);
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (!searchQ.trim()) return;
+    setSearchOpen(false);
+    setSearchQ("");
+    navigate(`/movies?q=${encodeURIComponent(searchQ.trim())}`);
+  };
+
+  const openSearch = () => {
+    setSearchOpen(true);
+    setTimeout(() => searchRef.current?.focus(), 50);
   };
 
   const navLinks = [
@@ -109,6 +125,32 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
+          </div>
+
+          {/* Search bar — desktop */}
+          <div className="hidden md:flex items-center">
+            {searchOpen ? (
+              <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 animate-in slide-in-from-right-4 duration-200">
+                <input
+                  ref={searchRef}
+                  value={searchQ}
+                  onChange={(e) => setSearchQ(e.target.value)}
+                  placeholder="Tìm phim, diễn viên, đạo diễn..."
+                  className="w-56 lg:w-72 px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all font-medium"
+                  onKeyDown={(e) => e.key === "Escape" && setSearchOpen(false)}
+                />
+                <button type="submit" className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                  <Search size={18} />
+                </button>
+                <button type="button" onClick={() => setSearchOpen(false)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors">
+                  <X size={18} />
+                </button>
+              </form>
+            ) : (
+              <button onClick={openSearch} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Tìm kiếm phim">
+                <Search size={20} />
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
@@ -217,6 +259,17 @@ const Navbar = () => {
           }`}
         >
           <div className="p-4 space-y-2">
+            <form onSubmit={(e) => { setIsMobileMenuOpen(false); handleSearchSubmit(e); }} className="flex gap-2 mb-3">
+              <input
+                value={searchQ}
+                onChange={(e) => setSearchQ(e.target.value)}
+                placeholder="Tìm phim, diễn viên..."
+                className="flex-1 px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all font-medium"
+              />
+              <button type="submit" className="px-4 py-2.5 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-colors">
+                <Search size={16} />
+              </button>
+            </form>
             {navLinks.map((link) => (
               <Link
                 key={link.path}
