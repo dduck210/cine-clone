@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { Tag, Users } from "lucide-react";
 import toast from "react-hot-toast";
-import axiosInstance from "@/api/axiosConfig";
+import { createVoucher } from "@/api/services/voucher-service";
 
 const EMPTY_FORM = {
   code: "", type: "percent", value: "",
@@ -26,7 +26,7 @@ const VoucherModal = ({ onClose, onSaved }) => {
     if (!form.code || !form.value || !form.expiresAt) return toast.error("Điền đủ các trường bắt buộc");
     setSaving(true);
     try {
-      await axiosInstance.post("/vouchers/admin", {
+      await createVoucher({
         ...form,
         value: Number(form.value),
         minOrderAmount: Number(form.minOrderAmount) || 0,

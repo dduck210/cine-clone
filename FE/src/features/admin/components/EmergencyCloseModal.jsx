@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, Zap, AlertTriangle, Calendar, Ticket } from "lucide-react";
-import axiosInstance from "@/api/axiosConfig";
+import { previewEmergencyClose, emergencyCloseRooms } from "@/api/services/room-service";
 import toast from "react-hot-toast";
 
 const EmergencyCloseModal = ({ cinemaId, cinemaName, selectedRooms, onClose, onDone }) => {
@@ -24,9 +24,8 @@ const EmergencyCloseModal = ({ cinemaId, cinemaName, selectedRooms, onClose, onD
 
     setLoading(true);
     setFetchError(null);
-    axiosInstance
-      .post("/admin/emergency-close/rooms/preview", { cinemaId, roomIds })
-      .then((res) => setPreview(res.data))
+    previewEmergencyClose(cinemaId, roomIds)
+      .then((data) => setPreview(data))
       .catch((err) => {
         const msg = err.response?.data?.message || err.message || "Lỗi kết nối";
         setFetchError(msg);
@@ -39,8 +38,8 @@ const EmergencyCloseModal = ({ cinemaId, cinemaName, selectedRooms, onClose, onD
     setClosing(true);
     const roomIds = roomIdsKey.split(",").filter(Boolean);
     try {
-      const res = await axiosInstance.post("/admin/emergency-close/rooms", { cinemaId, roomIds });
-      toast.success(`Đã hủy ${res.data.cancelledShowtimes} suất · Hoàn tiền ${res.data.refundedBookings} đơn`);
+      const data = await emergencyCloseRooms(cinemaId, roomIds);
+      toast.success(`Đã hủy ${data.cancelledShowtimes} suất · Hoàn tiền ${data.refundedBookings} đơn`);
       onDone();
       onClose();
     } catch (err) {
@@ -85,9 +84,8 @@ const EmergencyCloseModal = ({ cinemaId, cinemaName, selectedRooms, onClose, onD
                   const retryRoomIds = roomIdsKey.split(",").filter(Boolean);
                   setLoading(true);
                   setFetchError(null);
-                  axiosInstance
-                    .post("/admin/emergency-close/rooms/preview", { cinemaId, roomIds: retryRoomIds })
-                    .then((r) => setPreview(r.data))
+                  previewEmergencyClose(cinemaId, retryRoomIds)
+                    .then((data) => setPreview(data))
                     .catch((e) => setFetchError(e.response?.data?.message || e.message))
                     .finally(() => setLoading(false));
                 }}

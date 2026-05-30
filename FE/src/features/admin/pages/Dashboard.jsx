@@ -2,7 +2,14 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import Sidebar from "@/features/admin/components/Sidebar";
-import axiosInstance from "@/api/axiosConfig";
+import { getNotifications, markNotificationsRead as markNotificationsReadService } from "@/api/services/notification-service";
+import { getUsers } from "@/api/services/user-service";
+import axiosInstance from "@/api/axiosConfig"; // kept for axiosInstance.defaults.baseURL (SSE URL construction only)
+import { getMovies, getMovieGenres, createMovie, updateMovie, cancelAffectedShowtimes } from "@/api/services/movie-service";
+import { getCinemas } from "@/api/services/cinema-service";
+import { getShowtimes, cancelShowtime, bulkCancelShowtimes } from "@/api/services/showtime-service";
+import { getAdminBookings, confirmBooking, printBooking, updateUser } from "@/api/services/order-service";
+import { getRevenueReport, getBookingsReport, getComboRevenueReport, getTimeslotsReport, getRefundsReport, getTopMoviesReport } from "@/api/services/report-service";
 import {
   Bell, Menu, ExternalLink,
 } from "lucide-react";
@@ -53,9 +60,9 @@ const Dashboard = () => {
 
   const loadNotifications = useCallback(async () => {
     try {
-      const res = await axiosInstance.get("/admin/notifications");
-      setNotifications(res.data.items || []);
-      setUnreadCount(res.data.unreadCount || 0);
+      const data = await getNotifications();
+      setNotifications(data.items || []);
+      setUnreadCount(data.unreadCount || 0);
     } catch {
       // Keep the dashboard usable even if notification history fails to load.
     }
@@ -84,9 +91,9 @@ const Dashboard = () => {
     setUnreadCount((prev) => (ids.length === 0 ? 0 : Math.max(0, prev - ids.length)));
 
     try {
-      const res = await axiosInstance.post("/admin/notifications/read", { ids });
-      setNotifications(res.data.items || []);
-      setUnreadCount(res.data.unreadCount || 0);
+      const data = await markNotificationsReadService(ids);
+      setNotifications(data.items || []);
+      setUnreadCount(data.unreadCount || 0);
     } catch {
       loadNotifications();
     }
@@ -201,8 +208,8 @@ const Dashboard = () => {
                   toast.success(incoming.title || "Có thông báo mới", { id: incoming.id });
                 }
                 if ((incoming.type === "showtime_expired" || incoming.type === "showtime_cancelled") && activeTab === "showtimes") {
-                  axiosInstance.get("/admin/showtimes")
-                    .then((r) => setShowtimes(r.data))
+                  getShowtimes()
+                    .then((data) => setShowtimes(data))
                     .catch(() => {});
                 }
               }
@@ -242,33 +249,33 @@ const Dashboard = () => {
     const timeoutId = window.setTimeout(async () => {
       setStatsLoading(true);
       try {
-        const [revenueRes, bookingsRes, comboRes, timeslotsRes, refundsRes, topMoviesRes] = await Promise.all([
-          axiosInstance.get("/admin/reports/revenue"),
-          axiosInstance.get("/admin/reports/bookings"),
-          axiosInstance.get("/admin/reports/combo-revenue"),
-          axiosInstance.get("/admin/reports/timeslots"),
-          axiosInstance.get("/admin/reports/refunds"),
-          axiosInstance.get("/admin/reports/top-movies"),
+        const [revenueData, bookingsData, comboData, timeslotsData, refundsData, topMoviesData] = await Promise.all([
+          getRevenueReport(),
+          getBookingsReport(),
+          getComboRevenueReport(),
+          getTimeslotsReport(),
+          getRefundsReport(),
+          getTopMoviesReport(),
         ]);
         if (cancelled) return;
 
-        const byStatus = bookingsRes.data.reduce((acc, item) => {
+        const byStatus = bookingsData.reduce((acc, item) => {
           acc[item._id] = item;
           return acc;
         }, {});
 
         setStats({
-          totalRevenue: revenueRes.data.summary?.totalRevenue || 0,
-          totalBookings: revenueRes.data.summary?.totalBookings || 0,
+          totalRevenue: revenueData.summary?.totalRevenue || 0,
+          totalBookings: revenueData.summary?.totalBookings || 0,
           pendingBookings: byStatus.pending?.count || 0,
           expiredBookings: byStatus.expired?.count || 0,
         });
         setExtStats({
-          comboRevenue: comboRes.data.totalComboRevenue || 0,
-          comboItems: comboRes.data.items || [],
-          timeslots: timeslotsRes.data || [],
-          refunds: refundsRes.data || { totalRefunds: 0, totalRefundAmount: 0 },
-          topMovies: topMoviesRes.data || [],
+          comboRevenue: comboData.totalComboRevenue || 0,
+          comboItems: comboData.items || [],
+          timeslots: timeslotsData || [],
+          refunds: refundsData || { totalRefunds: 0, totalRefundAmount: 0 },
+          topMovies: topMoviesData || [],
         });
       } catch {
         // Keep the last dashboard snapshot if the refresh fails.
@@ -289,12 +296,12 @@ const Dashboard = () => {
     const timeoutId = window.setTimeout(() => {
       setMoviesLoading(true);
       Promise.all([
-        axiosInstance.get("/movies"),
-        axiosInstance.get("/movies/genres"),
+        getMovies(),
+        getMovieGenres(),
       ])
-        .then(([moviesRes, genresRes]) => {
-          setMovies(moviesRes.data);
-          setGenreOptions(genresRes.data);
+        .then(([moviesData, genresData]) => {
+          setMovies(moviesData);
+          setGenreOptions(genresData);
         })
         .catch(() => toast.error("Không tải được danh sách phim"))
         .finally(() => setMoviesLoading(false));
@@ -308,9 +315,9 @@ const Dashboard = () => {
     if (activeTab !== "orders") return;
     const timeoutId = window.setTimeout(() => {
       setOrdersLoading(true);
-      axiosInstance.get("/admin/bookings")
-        .then((res) => {
-          const transformed = res.data.map((booking) => {
+      getAdminBookings()
+        .then((bookingList) => {
+          const transformed = bookingList.map((booking) => {
             const showtime = booking.showtime || {};
             const movie = showtime.movie || {};
             const cinema = showtime.cinema || {};
@@ -362,8 +369,8 @@ const Dashboard = () => {
     if (activeTab !== "users") return;
     const timeoutId = window.setTimeout(() => {
       setUsersLoading(true);
-      axiosInstance.get("/admin/users")
-        .then((res) => setUsers(res.data))
+      getUsers()
+        .then((data) => setUsers(data))
         .catch(() => toast.error("Không tải được danh sách thành viên"))
         .finally(() => setUsersLoading(false));
     }, 0);
@@ -374,7 +381,7 @@ const Dashboard = () => {
   // Fetch cinemas when needed (showtimes or rooms tabs)
   useEffect(() => {
     if (activeTab !== "rooms" || cinemas.length > 0) return;
-    axiosInstance.get("/admin/cinemas").then((res) => setCinemas(res.data)).catch(() => { });
+    getCinemas().then((data) => setCinemas(data)).catch(() => { });
   }, [activeTab, cinemas.length]);
 
   // Fetch showtimes + cinemas + movies (dùng cho filter và modal)
@@ -383,13 +390,13 @@ const Dashboard = () => {
     const timeoutId = window.setTimeout(() => {
       setShowtimesLoading(true);
       Promise.all([
-        axiosInstance.get("/admin/showtimes"),
-        axiosInstance.get("/admin/cinemas"),
-        axiosInstance.get("/movies"),
-      ]).then(([stRes, cinemasRes, moviesRes]) => {
-        setShowtimes(stRes.data);
-        setCinemas(cinemasRes.data);
-        setMovies(moviesRes.data);
+        getShowtimes(),
+        getCinemas(),
+        getMovies(),
+      ]).then(([stData, cinemasData, moviesData]) => {
+        setShowtimes(stData);
+        setCinemas(cinemasData);
+        setMovies(moviesData);
       }).catch(() => toast.error("Không tải được danh sách suất chiếu"))
         .finally(() => setShowtimesLoading(false));
     }, 0);
@@ -402,15 +409,15 @@ const Dashboard = () => {
 
     const intervalId = window.setInterval(async () => {
       try {
-        const [stRes, cinemasRes, moviesRes] = await Promise.all([
-          axiosInstance.get("/admin/showtimes"),
-          axiosInstance.get("/admin/cinemas"),
-          axiosInstance.get("/movies"),
+        const [stData, cinemasData, moviesData] = await Promise.all([
+          getShowtimes(),
+          getCinemas(),
+          getMovies(),
         ]);
 
-        setShowtimes(stRes.data);
-        setCinemas(cinemasRes.data);
-        setMovies(moviesRes.data);
+        setShowtimes(stData);
+        setCinemas(cinemasData);
+        setMovies(moviesData);
       } catch {
         // Keep the current list visible if background refresh fails.
       }
@@ -431,9 +438,9 @@ const Dashboard = () => {
     if (!ids?.length) return;
     setBulkActing(true);
     try {
-      const res = await axiosInstance.post("/showtimes/bulk-cancel", { ids });
+      const data = await bulkCancelShowtimes(ids);
       setShowtimes((prev) => prev.map((s) => ids.includes(s._id) ? { ...s, status: "cancelled" } : s));
-      toast.success(res.data?.message || `Đã hủy ${ids.length} suất chiếu`);
+      toast.success(data?.message || `Đã hủy ${ids.length} suất chiếu`);
     } catch (err) {
       toast.error(err.response?.data?.message || "Hủy suất chiếu thất bại");
     } finally {
@@ -454,15 +461,15 @@ const Dashboard = () => {
   const handleSave = async (data) => {
     try {
       if (currentMovie) {
-        const res = await axiosInstance.put(`/movies/${currentMovie._id}`, data);
-        const { movie, warning, affectedShowtimes } = res.data;
+        const resData = await updateMovie(currentMovie._id, data);
+        const { movie, warning, affectedShowtimes } = resData;
         setMovies(movies.map((m) => (m._id === currentMovie._id ? movie : m)));
         if (warning && affectedShowtimes?.length > 0) {
           const msg = `${warning}. Bạn có muốn huỷ và hoàn tiền các suất chiếu bị ảnh hưởng không?`;
           if (window.confirm(msg)) {
             const ids = affectedShowtimes.filter(s => s.affectedBookings > 0).map(s => s._id);
             if (ids.length > 0) {
-              await axiosInstance.post(`/movies/${currentMovie._id}/cancel-affected`, { showtimeIds: ids });
+              await cancelAffectedShowtimes(currentMovie._id, ids);
               toast.success(`Đã hoàn tiền cho các đơn bị ảnh hưởng!`);
             }
           }
@@ -471,8 +478,8 @@ const Dashboard = () => {
           toast.success("Đã cập nhật phim!");
         }
       } else {
-        const res = await axiosInstance.post("/movies", { ...data, rating: 0 });
-        setMovies([res.data, ...movies]);
+        const newMovie = await createMovie({ ...data, rating: 0 });
+        setMovies([newMovie, ...movies]);
         toast.success("Đã thêm phim mới!");
       }
     } catch (err) {
@@ -488,7 +495,7 @@ const Dashboard = () => {
 
   const handleConfirmOrder = async (bookingId) => {
     try {
-      await axiosInstance.put(`/admin/bookings/${bookingId}/confirm`);
+      await confirmBooking(bookingId);
       setOrders(orders.map((o) =>
         o.bookingRawId === bookingId ? { ...o, status: "Đã thanh toán" } : o
       ));
@@ -500,8 +507,8 @@ const Dashboard = () => {
 
   const handleUpdateUser = async (userId, data) => {
     try {
-      const res = await axiosInstance.put(`/admin/users/${userId}`, data);
-      setUsers(users.map((u) => (u._id === userId ? res.data : u)));
+      const updatedUser = await updateUser(userId, data);
+      setUsers(users.map((u) => (u._id === userId ? updatedUser : u)));
       toast.success("Đã cập nhật thành viên!");
     } catch {
       toast.error("Cập nhật thất bại");
@@ -511,7 +518,7 @@ const Dashboard = () => {
 
   const handlePrintTicket = async (bookingId) => {
     try {
-      await axiosInstance.put(`/admin/bookings/${bookingId}/print`);
+      await printBooking(bookingId);
       setOrders(orders.map((o) =>
         o.bookingRawId === bookingId ? { ...o, ticketStatus: "printed" } : o
       ));
@@ -523,7 +530,7 @@ const Dashboard = () => {
 
   const handleCancelShowtime = async (showtime) => {
     try {
-      await axiosInstance.put(`/showtimes/${showtime._id}/cancel`);
+      await cancelShowtime(showtime._id);
       setShowtimes(showtimes.map((s) => s._id === showtime._id ? { ...s, status: "cancelled" } : s));
       toast.success("Đã hủy suất chiếu!");
     } catch {
@@ -677,7 +684,7 @@ const Dashboard = () => {
                 cinemas={cinemas}
                 onAddNew={() => {
                   if (movies.length === 0) {
-                    axiosInstance.get("/movies").then((r) => setMovies(r.data)).catch(() => { });
+                    getMovies().then((data) => setMovies(data)).catch(() => { });
                   }
                   setIsShowtimeModalOpen(true);
                 }}
@@ -710,8 +717,8 @@ const Dashboard = () => {
           onClose={() => setIsShowtimeModalOpen(false)}
           onSaved={() => {
             setShowtimesLoading(true);
-            axiosInstance.get("/admin/showtimes")
-              .then((r) => setShowtimes(r.data))
+            getShowtimes()
+              .then((data) => setShowtimes(data))
               .finally(() => setShowtimesLoading(false));
           }}
         />

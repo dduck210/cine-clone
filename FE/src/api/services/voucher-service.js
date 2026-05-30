@@ -12,5 +12,5 @@ export const updateVoucher = (id, payload) =>
 export const deleteVoucher = (id) =>
   axiosInstance.delete(`/admin/vouchers/${id}`).then((r) => r.data);
 
-export const validateVoucher = (code, showtimeId) =>
-  axiosInstance.post("/vouchers/validate", { code, showtimeId }).then((r) => r.data);
+export const validateVoucher = (payload) =>
+  axiosInstance.post("/vouchers/validate", payload).then((r) => r.data);

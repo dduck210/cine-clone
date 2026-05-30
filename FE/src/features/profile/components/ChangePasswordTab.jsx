@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Lock, Eye, EyeOff } from "lucide-react";
-import axiosInstance from "@/api/axiosConfig";
+import { changePassword } from "@/api/services/user-service";
 import toast from "react-hot-toast";
 
 /**
@@ -54,7 +54,7 @@ const ChangePasswordTab = () => {
     }
     setSaving(true);
     try {
-      await axiosInstance.put("/auth/change-password", {
+      await changePassword({
         currentPassword: form.currentPassword,
         newPassword: form.newPassword,
       });

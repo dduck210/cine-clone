@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, Save, Grid, AlertTriangle } from "lucide-react";
-import axiosInstance from "@/api/axiosConfig";
+import { createRoom, updateRoom } from "@/api/services/room-service";
 import toast from "react-hot-toast";
 import { ROOM_TYPE_INFO } from "@/shared/constants";
 import {
@@ -87,10 +87,10 @@ const RoomModal = ({ room, cinemas, onClose, onSaved }) => {
     setSaving(true);
     try {
       if (room?._id) {
-        await axiosInstance.put(`/admin/rooms/${room._id}`, payload);
+        await updateRoom(room._id, payload);
         toast.success("Cập nhật phòng thành công!");
       } else {
-        await axiosInstance.post("/admin/rooms", payload);
+        await createRoom(payload);
         toast.success("Tạo phòng thành công!");
       }
       onSaved();

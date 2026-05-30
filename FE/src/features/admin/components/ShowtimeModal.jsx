@@ -3,7 +3,8 @@ import { useForm } from "react-hook-form";
 import {
   X, Save, ChevronDown, Calendar, Clock, Layers, AlertTriangle,
 } from "lucide-react";
-import axiosInstance from "@/api/axiosConfig";
+import { getCinemaRooms } from "@/api/services/cinema-service";
+import { createShowtime } from "@/api/services/showtime-service";
 import toast from "react-hot-toast";
 import { isVietnameseHoliday } from "@/shared/utils/vietnamese-holidays";
 import PricingPreview from "@/features/admin/components/PricingPreview";
@@ -64,8 +65,8 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
     if (!selectedCinema) { setRooms([]); return; }
     const ctrl = new AbortController();
     setLoadingRooms(true);
-    axiosInstance.get(`/admin/cinemas/${selectedCinema}/rooms`, { signal: ctrl.signal })
-      .then((res) => setRooms(res.data))
+    getCinemaRooms(selectedCinema)
+      .then((data) => setRooms(data))
       .catch((err) => { if (err.name !== 'CanceledError') setRooms([]); })
       .finally(() => setLoadingRooms(false));
     return () => ctrl.abort();
@@ -127,9 +128,9 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
           bookingLockMinutes: Number(data.bookingLockMinutes) || 5,
         };
       }
-      const res = await axiosInstance.post("/showtimes", payload);
-      const created = res.data?.created?.length ?? (Array.isArray(payload) ? payload.length : 1);
-      const partialErrors = res.data?.errors || [];
+      const result = await createShowtime(payload);
+      const created = result?.created?.length ?? (Array.isArray(payload) ? payload.length : 1);
+      const partialErrors = result?.errors || [];
       if (partialErrors.length > 0) {
         toast.success(`Đã tạo được ${created} suất chiếu.`);
         setCreateErrors(partialErrors);
@@ -140,11 +141,11 @@ export const ShowtimeModal = ({ movies, cinemas, onClose, onSaved }) => {
         onClose();
       }
     } catch (err) {
-      const data = err.response?.data;
-      if (data?.errors?.length > 0) {
-        setCreateErrors(data.errors);
+      const errData = err.response?.data;
+      if (errData?.errors?.length > 0) {
+        setCreateErrors(errData.errors);
       } else {
-        toast.error(data?.message || "Thêm suất chiếu thất bại");
+        toast.error(errData?.message || "Thêm suất chiếu thất bại");
       }
     } finally {
       setSaving(false);

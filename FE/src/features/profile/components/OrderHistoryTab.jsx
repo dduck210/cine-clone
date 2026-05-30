@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Ticket, MapPin, Calendar } from "lucide-react";
-import axiosInstance from "@/api/axiosConfig";
+import { getUserBookings } from "@/api/services/booking-service";
 
 const statusMap = {
   paid: { label: "Đã thanh toán", bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-500" },
@@ -23,8 +23,8 @@ const OrderHistoryTab = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axiosInstance.get("/bookings/user/all")
-      .then((res) => setBookings(res.data))
+    getUserBookings()
+      .then((data) => setBookings(data))
       .catch(() => setBookings([]))
       .finally(() => setLoading(false));
   }, []);

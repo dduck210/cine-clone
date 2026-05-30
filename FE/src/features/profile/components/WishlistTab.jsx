@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Heart } from "lucide-react";
-import axiosInstance from "@/api/axiosConfig";
+import { getWishlist } from "@/api/services/movie-service";
 import { useWishlist } from "@/shared/contexts/wishlist-context";
 
 /**
@@ -13,9 +13,8 @@ const WishlistTab = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axiosInstance
-      .get("/auth/wishlist")
-      .then((res) => setMovies(res.data))
+    getWishlist()
+      .then((data) => setMovies(data))
       .catch(() => setMovies([]))
       .finally(() => setLoading(false));
   }, []);

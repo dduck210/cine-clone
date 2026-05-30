@@ -7,7 +7,8 @@ import {
   Zap,
   RotateCcw,
 } from "lucide-react";
-import axiosInstance from "@/api/axiosConfig";
+import { getRooms } from "@/api/services/room-service";
+import { updateCinemaStatus } from "@/api/services/cinema-service";
 import toast from "react-hot-toast";
 import { ROOM_TYPE_STYLE } from "@/shared/constants";
 import RoomDetailModal from "@/features/admin/components/RoomDetailModal";
@@ -71,17 +72,14 @@ export const RoomsManager = ({ cinemas }) => {
   const loadRooms = async (cinemaId) => {
     setLoading(true);
     try {
-      const url = cinemaId
-        ? `/admin/cinemas/${cinemaId}/rooms`
-        : `/admin/rooms`;
-      const res = await axiosInstance.get(url);
-      setRooms(res.data);
+      const data = await getRooms(cinemaId);
+      setRooms(data);
       setSelectedRoomIds((prev) =>
-        prev.filter((id) => res.data.some((room) => room._id === id)),
+        prev.filter((id) => data.some((room) => room._id === id)),
       );
-      if (cinemaId && res.data.length > 0) {
+      if (cinemaId && data.length > 0) {
         setCinemaStatus(
-          res.data.some((r) => r.status === "active") ? "active" : "incident",
+          data.some((r) => r.status === "active") ? "active" : "incident",
         );
       }
     } catch {
@@ -135,16 +133,13 @@ export const RoomsManager = ({ cinemas }) => {
     const status = statusConfirm;
     setStatusConfirm(null);
     try {
-      const res = await axiosInstance.patch(
-        `/admin/cinemas/${selectedCinema}/status`,
-        { status },
-      );
+      const data = await updateCinemaStatus(selectedCinema, status);
       setCinemaStatus(status);
       let msg = "Đã cập nhật trạng thái rạp";
       if (status === "active") {
         msg = "Đã mở lại rạp · Tất cả phòng đã hoạt động";
       } else if (status === "incident") {
-        const cancelled = res.data.cancelledShowtimes;
+        const cancelled = data.cancelledShowtimes;
         msg =
           cancelled > 0
             ? `Rạp chuyển bảo trì · Đã huỷ ${cancelled} suất chiếu`

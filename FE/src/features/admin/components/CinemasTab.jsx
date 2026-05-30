@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Plus, X, Save, Edit, MapPin, Phone, ImageIcon } from "lucide-react";
-import axiosInstance from "@/api/axiosConfig";
+import { getCinemas, createCinema, updateCinema } from "@/api/services/cinema-service";
 import toast from "react-hot-toast";
 
 const STATUS_MAP = {
@@ -56,10 +56,10 @@ const CinemaModal = ({ cinema, onClose, onSaved }) => {
     setSaving(true);
     try {
       if (cinema?._id) {
-        await axiosInstance.put(`/admin/cinemas/${cinema._id}`, form);
+        await updateCinema(cinema._id, form);
         toast.success("Đã cập nhật rạp");
       } else {
-        await axiosInstance.post("/admin/cinemas", form);
+        await createCinema(form);
         toast.success("Đã thêm rạp mới");
       }
       onSaved();
@@ -221,16 +221,14 @@ export const CinemasManager = () => {
 
   const load = () => {
     setLoading(true);
-    axiosInstance
-      .get("/admin/cinemas")
-      .then((r) => setCinemas(r.data))
+    getCinemas()
+      .then((data) => setCinemas(data))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    axiosInstance
-      .get("/admin/cinemas")
-      .then((r) => setCinemas(r.data))
+    getCinemas()
+      .then((data) => setCinemas(data))
       .finally(() => setLoading(false));
   }, []);
 

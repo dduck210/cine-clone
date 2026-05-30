@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import usePagination from "@/shared/hooks/use-pagination";
 import { Plus, Tag, Users, Clock, Ticket } from "lucide-react";
 import toast from "react-hot-toast";
-import axiosInstance from "@/api/axiosConfig";
+import { getVouchers } from "@/api/services/voucher-service";
 import VoucherModal from "@/features/admin/components/VoucherModal";
 
 const STATUS_COLORS = {
@@ -62,8 +62,8 @@ export const VouchersManager = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await axiosInstance.get("/vouchers/admin");
-      setVouchers((res.data || []).map(normalizeVoucher));
+      const data = await getVouchers();
+      setVouchers((data || []).map(normalizeVoucher));
     } catch {
       toast.error("Không tải được danh sách voucher");
     } finally {
@@ -77,8 +77,8 @@ export const VouchersManager = () => {
   useEffect(() => {
     const id = setInterval(async () => {
       try {
-        const res = await axiosInstance.get("/vouchers/admin");
-        setVouchers((res.data || []).map(normalizeVoucher));
+        const data = await getVouchers();
+        setVouchers((data || []).map(normalizeVoucher));
       } catch { /* silent */ }
     }, 20000);
     return () => clearInterval(id);

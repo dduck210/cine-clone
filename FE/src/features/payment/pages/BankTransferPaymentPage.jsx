@@ -6,7 +6,7 @@ import {
   Ticket, MapPin, Calendar, Armchair, Clock, CheckCircle,
   ArrowLeft, ShieldCheck, Popcorn, Tag, Monitor, Copy,
 } from "lucide-react";
-import axiosInstance from "@/api/axiosConfig";
+import { getCassoStatus } from "@/api/services/payment-service";
 import toast, { Toaster } from "react-hot-toast";
 
 const MB_ACCOUNT = "0964717591";
@@ -42,8 +42,8 @@ const BankTransferPaymentPage = () => {
 
   const pollStatus = async () => {
     try {
-      const res = await axiosInstance.get(`/payments/casso/status/${bookingId}`);
-      if (res.data.paid) handlePaid(location.state);
+      const data = await getCassoStatus(bookingId);
+      if (data.paid) handlePaid(location.state);
     } catch { /* silent */ }
   };
 
@@ -51,8 +51,8 @@ const BankTransferPaymentPage = () => {
     if (isChecking) return;
     setIsChecking(true);
     try {
-      const res = await axiosInstance.get(`/payments/casso/status/${bookingId}`);
-      if (res.data.paid) {
+      const data = await getCassoStatus(bookingId);
+      if (data.paid) {
         handlePaid(location.state);
       } else {
         toast("Chưa nhận được thanh toán, vui lòng thử lại sau giây lát.", { id: "check-pay" });

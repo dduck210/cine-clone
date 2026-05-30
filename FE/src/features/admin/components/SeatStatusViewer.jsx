@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import axiosInstance from "@/api/axiosConfig";
+import { getRoomShowtimes } from "@/api/services/room-service";
+import { getShowtime } from "@/api/services/showtime-service";
 import { Calendar, Clock, ChevronDown } from "lucide-react";
 
 const STATUS = {
@@ -16,8 +17,8 @@ export const SeatStatusViewer = ({ roomId, seatMatrix }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    axiosInstance.get(`/admin/rooms/${roomId}/showtimes`)
-      .then((r) => setShowtimes(r.data))
+    getRoomShowtimes(roomId)
+      .then((data) => setShowtimes(data))
       .catch(() => setShowtimes([]));
   }, [roomId]);
 
@@ -26,8 +27,8 @@ export const SeatStatusViewer = ({ roomId, seatMatrix }) => {
     if (!id) { setSeats(null); return; }
     setLoading(true);
     try {
-      const r = await axiosInstance.get(`/showtimes/${id}`);
-      const seatList = r.data.seats || [];
+      const data = await getShowtime(id);
+      const seatList = data.seats || [];
       const map = {};
       for (const s of seatList) map[s.seatNumber] = s;
       setSeats(map);

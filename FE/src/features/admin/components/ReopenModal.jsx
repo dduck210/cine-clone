@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { X, RotateCcw } from "lucide-react";
-import axiosInstance from "@/api/axiosConfig";
+import { reopenRooms } from "@/api/services/room-service";
 import toast from "react-hot-toast";
 
 const ReopenModal = ({ cinemaId, cinemaName, selectedRooms, onClose, onDone }) => {
@@ -10,12 +10,12 @@ const ReopenModal = ({ cinemaId, cinemaName, selectedRooms, onClose, onDone }) =
   const handleReopen = async () => {
     setReopening(true);
     try {
-      const res = await axiosInstance.post("/admin/rooms/reopen", { cinemaId, roomIds });
-      const msg = res.data.cinemaRestored
-        ? `Đã mở ${res.data.reopenedCount} phòng · Rạp đã khôi phục hoạt động`
-        : `Đã mở ${res.data.reopenedCount} phòng`;
+      const data = await reopenRooms(cinemaId, roomIds);
+      const msg = data.cinemaRestored
+        ? `Đã mở ${data.reopenedCount} phòng · Rạp đã khôi phục hoạt động`
+        : `Đã mở ${data.reopenedCount} phòng`;
       toast.success(msg);
-      onDone(res.data.cinemaRestored);
+      onDone(data.cinemaRestored);
       onClose();
     } catch (err) {
       toast.error(err.response?.data?.message || "Thao tác thất bại");

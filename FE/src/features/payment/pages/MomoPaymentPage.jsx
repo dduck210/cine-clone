@@ -6,7 +6,7 @@ import {
   Smartphone, Ticket, MapPin, Calendar, Armchair, Clock,
   CheckCircle, ArrowLeft, ShieldCheck, Popcorn, Tag, Monitor,
 } from "lucide-react";
-import axiosInstance from "@/api/axiosConfig";
+import { getMomoStatus } from "@/api/services/payment-service";
 import toast, { Toaster } from "react-hot-toast";
 import momoQRFallback from "./momo.png";
 
@@ -44,8 +44,8 @@ const MomoPaymentPage = () => {
 
   const pollStatus = async () => {
     try {
-      const res = await axiosInstance.get(`/payments/momo/status/${bookingId}`);
-      if (res.data.paid) handlePaid(location.state);
+      const data = await getMomoStatus(bookingId);
+      if (data.paid) handlePaid(location.state);
     } catch { /* silent */ }
   };
 
@@ -53,8 +53,8 @@ const MomoPaymentPage = () => {
     if (isConfirming) return;
     setIsConfirming(true);
     try {
-      const res = await axiosInstance.get(`/payments/momo/status/${bookingId}`);
-      if (res.data.paid) {
+      const data = await getMomoStatus(bookingId);
+      if (data.paid) {
         handlePaid(location.state);
       } else {
         toast("Chưa nhận được thanh toán, vui lòng thử lại sau giây lát.", { id: "check-pay" });

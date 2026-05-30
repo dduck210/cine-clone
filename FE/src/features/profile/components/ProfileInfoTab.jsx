@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { User, Mail, Phone, Save } from "lucide-react";
-import axiosInstance from "@/api/axiosConfig";
+import { updateProfile } from "@/api/services/user-service";
 import toast from "react-hot-toast";
 
 const ProfileInfoTab = ({ storedUser }) => {
@@ -28,10 +28,10 @@ const ProfileInfoTab = ({ storedUser }) => {
     if (!validate()) return;
     setSaving(true);
     try {
-      const res = await axiosInstance.put("/auth/profile", { name: form.name, phone: form.phone });
+      const data = await updateProfile({ name: form.name, phone: form.phone });
       const fresh = JSON.parse(localStorage.getItem("currentUser") || "{}");
-      localStorage.setItem("currentUser", JSON.stringify({ ...fresh, name: res.data.name, phone: res.data.phone }));
-      setForm({ name: res.data.name, phone: res.data.phone || "" });
+      localStorage.setItem("currentUser", JSON.stringify({ ...fresh, name: data.name, phone: data.phone }));
+      setForm({ name: data.name, phone: data.phone || "" });
       toast.success("Cập nhật thông tin thành công!");
     } catch (err) {
       toast.error(err.response?.data?.message || "Cập nhật thất bại, thử lại sau");

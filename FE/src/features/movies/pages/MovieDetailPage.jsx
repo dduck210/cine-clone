@@ -7,7 +7,8 @@ import Footer from "@/shared/components/common/Footer";
 import ReviewSection from "@/features/movies/components/ReviewSection";
 import MovieHero from "@/features/movies/components/MovieHero";
 import ShowtimeSelector from "@/features/movies/components/ShowtimeSelector";
-import axiosInstance from "@/api/axiosConfig";
+import { getMovie } from "@/api/services/movie-service";
+import { getMovieShowtimes } from "@/api/services/showtime-service";
 import { Ticket, X } from "lucide-react";
 import { useWishlist } from "@/shared/contexts/wishlist-context";
 
@@ -35,11 +36,11 @@ const MovieDetailPage = () => {
 
   const fetchShowtimes = useCallback(async () => {
     try {
-      const res = await axiosInstance.get(`/showtimes?movieId=${id}`);
+      const data = await getMovieShowtimes(id);
       setCinemaList((prev) => {
         const openIds = new Set(prev.filter((c) => c.isOpen).map((c) => c.id));
         const grouped = {};
-        res.data.forEach((st) => {
+        data.forEach((st) => {
           if (!st.cinema) return;
           const cid = st.cinema._id;
           if (!grouped[cid])
@@ -55,13 +56,13 @@ const MovieDetailPage = () => {
   useEffect(() => {
     (async () => {
       try {
-        const [movieRes, showtimeRes] = await Promise.all([
-          axiosInstance.get(`/movies/${id}`),
-          axiosInstance.get(`/showtimes?movieId=${id}`),
+        const [movieData, showtimeData] = await Promise.all([
+          getMovie(id),
+          getMovieShowtimes(id),
         ]);
-        setMovie(movieRes.data);
+        setMovie(movieData);
         const grouped = {};
-        showtimeRes.data.forEach((st) => {
+        showtimeData.forEach((st) => {
           if (!st.cinema) return;
           const cid = st.cinema._id;
           if (!grouped[cid])
