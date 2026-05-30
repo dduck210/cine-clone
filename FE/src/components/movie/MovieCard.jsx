@@ -91,26 +91,26 @@ const MovieCard = ({ movie }) => {
 
       {/* Info */}
       <div className="mt-3 space-y-1 px-0.5">
-        <h3 className="font-bold text-gray-900 text-sm leading-snug line-clamp-2 group-hover:text-red-600 transition-colors duration-200">
+        <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm leading-snug line-clamp-2 group-hover:text-red-600 transition-colors duration-200">
           {movie.title}
         </h3>
 
         {genreText && (
-          <p className="text-xs text-gray-400 truncate">{genreText}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{genreText}</p>
         )}
 
         <div className="flex items-center justify-between pt-0.5">
           <div className="flex items-center gap-1">
             <Star
               size={12}
-              className={rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300 fill-gray-300"}
+              className={rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300 dark:text-gray-600 fill-gray-300 dark:fill-gray-600"}
             />
-            <span className={`text-xs font-bold ${rating ? "text-yellow-600" : "text-gray-500"}`}>
+            <span className={`text-xs font-bold ${rating ? "text-yellow-600" : "text-gray-500 dark:text-gray-500"}`}>
               {rating ? rating.toFixed(1) : "—"}
             </span>
           </div>
           {duration && (
-            <div className="flex items-center gap-1 text-gray-400">
+            <div className="flex items-center gap-1 text-gray-400 dark:text-gray-500">
               <Clock size={11} />
               <span className="text-xs">{duration}</span>
             </div>

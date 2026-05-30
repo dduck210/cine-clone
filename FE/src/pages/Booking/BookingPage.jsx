@@ -12,20 +12,20 @@ const HOLD_SECONDS = 5 * 60;
 
 const SEAT_COLORS = {
   normal: {
-    available: "bg-white text-slate-700 border-2 border-slate-300 hover:border-[#dc2626] hover:text-[#dc2626] hover:bg-red-50",
-    selected: "bg-[#dc2626] text-white shadow-lg shadow-red-200 scale-110 ring-2 ring-red-100",
+    available: "bg-white text-slate-700 border-2 border-slate-300 hover:border-[#dc2626] hover:text-[#dc2626] hover:bg-red-50 active:scale-95",
+    selected: "bg-[#dc2626] text-white shadow-lg shadow-red-200 scale-110 ring-2 ring-red-300 ring-offset-1",
     locked: "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300 opacity-50",
     label: "Thường", dot: "bg-white border-2 border-slate-300",
   },
   vip: {
-    available: "bg-amber-50 text-amber-700 border-2 border-amber-400 hover:border-amber-600 hover:bg-amber-100",
-    selected: "bg-amber-500 text-white shadow-lg shadow-amber-200 scale-110 ring-2 ring-amber-100",
+    available: "bg-amber-50 text-amber-700 border-2 border-amber-400 hover:border-amber-600 hover:bg-amber-100 active:scale-95",
+    selected: "bg-amber-500 text-white shadow-lg shadow-amber-200 scale-110 ring-2 ring-amber-300 ring-offset-1",
     locked: "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300 opacity-50",
     label: "VIP", dot: "bg-amber-400",
   },
   couple: {
-    available: "bg-pink-50 text-pink-700 border-2 border-pink-400 hover:border-pink-600 hover:bg-pink-100",
-    selected: "bg-pink-500 text-white shadow-lg shadow-pink-200 scale-110 ring-2 ring-pink-100",
+    available: "bg-pink-50 text-pink-700 border-2 border-pink-400 hover:border-pink-600 hover:bg-pink-100 active:scale-95",
+    selected: "bg-pink-500 text-white shadow-lg shadow-pink-200 scale-110 ring-2 ring-pink-300 ring-offset-1",
     locked: "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300 opacity-50",
     label: "Đôi", dot: "bg-pink-400",
   },
@@ -111,6 +111,7 @@ const BookingPage = () => {
   const [loadingSeats, setLoadingSeats] = useState(() => !!showtimeId);
   const [seatLoadError, setSeatLoadError] = useState(false);
   const [selectedSeats, setSelectedSeats] = useState([]);
+  const [justSelected, setJustSelected] = useState(new Set());
   const [gapError, setGapError] = useState("");
   const [fallbackShowDate] = useState(() => new Date());
 
@@ -187,11 +188,16 @@ const BookingPage = () => {
     if (gapError) { setGapError(gapError); setTimeout(() => setGapError(""), 3000); return; }
 
     setGapError("");
+    const isAdding = !selectedSeats.includes(seatNum);
     setSelectedSeats((prev) => {
       const next = prev.includes(seatNum) ? prev.filter((s) => s !== seatNum) : [...prev, seatNum];
       if (next.length > 0 && !timerStarted) setTimerStarted(true);
       return next;
     });
+    if (isAdding) {
+      setJustSelected(new Set([seatNum]));
+      setTimeout(() => setJustSelected(new Set()), 250);
+    }
   };
 
   const handleCoupleSeatClick = (seatNumA, seatNumB) => {
@@ -211,6 +217,8 @@ const BookingPage = () => {
         if (next.length > 0 && !timerStarted) setTimerStarted(true);
         return next;
       });
+      setJustSelected(new Set([seatNumA, seatNumB]));
+      setTimeout(() => setJustSelected(new Set()), 250);
     }
   };
 
@@ -492,7 +500,7 @@ const BookingPage = () => {
         </div>
       )}
 
-      <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-28 pb-28 md:pb-16">
+      <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 pt-28 pb-28 md:pb-16 animate-pageEnter">
         {/* Mobile-only movie info card */}
         <div className="md:hidden mb-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex gap-3">
           {poster && <img src={poster} alt={title} className="w-14 h-20 object-cover rounded-lg shrink-0" />}
@@ -603,7 +611,7 @@ const BookingPage = () => {
                                     <button key={`${seatNum}-couple`} disabled={isUnavailable}
                                       onClick={() => handleCoupleSeatClick(seatNum, nextSeatNum)}
                                       title={`${seatNum} & ${nextSeatNum} - Đôi`}
-                                      className={`h-9 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${isMiddle ? "mr-8" : ""} ${isUnavailable ? colors.locked : isSelected ? colors.selected : colors.available}`}
+                                      className={`h-9 rounded-lg text-xs font-bold transition-all duration-150 flex items-center justify-center gap-1 ${isMiddle ? "mr-8" : ""} ${isUnavailable ? colors.locked : isSelected ? `${colors.selected}${justSelected.has(seatNum) ? " animate-seatPop" : ""}` : colors.available}`}
                                       style={{ width: "calc(2 * 2.25rem + 0.5rem)" }}>
                                       <span>{col}</span><span className="opacity-40 text-[10px]">♥</span><span>{col + 1}</span>
                                     </button>
@@ -617,7 +625,7 @@ const BookingPage = () => {
                               elements.push(
                                 <button key={seatNum} disabled={isUnavailable} onClick={() => handleSeatClick(seatNum)}
                                   title={`${seatNum} - ${colors.label} - ${(seat.price || 0).toLocaleString()}đ`}
-                                  className={`w-9 h-9 rounded-lg text-xs font-bold transition-all flex items-center justify-center ${isMiddle ? "mr-8" : ""} ${isUnavailable ? colors.locked : isSelected ? colors.selected : colors.available}`}>
+                                  className={`w-9 h-9 rounded-lg text-xs font-bold transition-all duration-150 flex items-center justify-center ${isMiddle ? "mr-8" : ""} ${isUnavailable ? colors.locked : isSelected ? `${colors.selected}${justSelected.has(seatNum) ? " animate-seatPop" : ""}` : colors.available}`}>
                                   {col}
                                 </button>
                               );
