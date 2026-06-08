@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { confirmMomoPayment } from "@/api/services/payment-service";
 import { EventSourcePolyfill } from "event-source-polyfill";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { usePushSubscription } from "@/shared/hooks/use-push-subscription";
 import TicketCard from "@/features/tickets/components/TicketCard";
 
