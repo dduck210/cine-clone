@@ -1,8 +1,5 @@
 import axiosInstance from "../axiosConfig";
 
-export const getMyTickets = (params) =>
-  axiosInstance.get("/tickets/my", { params }).then((r) => r.data);
-
 export const getTicket = (id) =>
   axiosInstance.get(`/tickets/${id}`).then((r) => r.data);
 
