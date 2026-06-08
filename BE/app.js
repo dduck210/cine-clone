@@ -95,7 +95,6 @@ app.use('/api/movies', require('./routes/movies'));
 app.use('/api/showtimes', require('./routes/showtimes'));
 app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/payments/momo', require('./routes/payments/momo'));
-app.use('/api/payments/payos', require('./routes/payments/payos'));
 app.use('/api/payments/casso', require('./routes/payments/casso'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/tickets', require('./routes/tickets'));

@@ -14,7 +14,7 @@
 | Database   | MongoDB Atlas · Mongoose                           | Lưu trữ dữ liệu (cloud)                     |
 | Auth       | JWT · bcryptjs · Nodemailer                        | Xác thực · mã hóa mật khẩu · gửi OTP email  |
 | Realtime   | Socket.IO · SSE (Server-Sent Events)               | Thông báo admin · cập nhật trạng thái vé    |
-| Thanh toán | MoMo API · PayOS · Casso                           | Ví điện tử + chuyển khoản QR ngân hàng      |
+| Thanh toán | MoMo API · Casso                                   | Ví điện tử + chuyển khoản QR ngân hàng      |
 | Thông báo  | Web Push (VAPID)                                   | Push notification trên trình duyệt          |
 | Vé PDF     | PDFKit · QRCode                                    | Xuất vé điện tử có mã QR                    |
 | Quét vé    | html5-qrcode                                       | Đọc QR bằng camera trình duyệt              |
@@ -103,7 +103,7 @@ flowchart TD
     G --> H[Nhập voucher nếu có\nHệ thống tính giảm giá]
     H --> I{Chọn phương thức\nthanh toán}
     I -- Ví MoMo --> J1[Nhập OTP giả lập MoMo]
-    I -- QR Banking --> J2[Quét QR MB Bank\nCasso/PayOS xác nhận]
+    I -- QR Banking --> J2[Quét QR MB Bank\nCasso xác nhận]
     J1 & J2 --> K{Thanh toán\nthành công?}
     K -- Thất bại --> L[Đơn giữ trạng thái pending\nCó thể tiếp tục sau]
     K -- Thành công --> M[Tạo Payment · cập nhật Booking]
@@ -143,17 +143,17 @@ sequenceDiagram
     FE->>U: Chuyển trang xem vé
 ```
 
-### QR Banking (Casso / PayOS)
+### QR Banking (Casso)
 
 ```mermaid
 sequenceDiagram
     participant U as Người dùng
     participant FE as Frontend
     participant BE as Backend
-    participant GW as Casso/PayOS
+    participant GW as Casso
 
     U->>FE: Chọn thanh toán QR Banking
-    FE->>BE: GET /api/payments/casso/status/:id (hoặc payos)
+    FE->>BE: GET /api/payments/casso/status/:id
     BE->>DB: Tạo Booking (pending) + tạo bookingCode
     BE-->>FE: QR data + bookingCode
 
@@ -295,7 +295,7 @@ Công thức: `Giá gốc × Hệ số khung giờ × Hệ số loại ngày × 
 ### Thanh toán & Đơn hàng
 
 - Thanh toán qua **MoMo** (tạo đơn → xác nhận OTP giả lập)
-- Thanh toán qua **QR Banking** (Casso / PayOS webhook IPN)
+- Thanh toán qua **QR Banking** (Casso webhook IPN)
 - Tiếp tục thanh toán đơn còn pending · hủy đơn thủ công
 - Lịch sử đặt vé với bộ lọc theo trạng thái
 
@@ -428,7 +428,6 @@ Công thức: `Giá gốc × Hệ số khung giờ × Hệ số loại ngày × 
 | Bookings  | `GET /api/bookings/:id/stream`          | SSE stream trạng thái vé                     |
 | Payments  | `POST /api/payments/momo/create`        | Khởi tạo giao dịch MoMo                      |
 | Payments  | `POST /api/payments/momo/confirm`       | Xác nhận OTP MoMo                            |
-| Payments  | `POST /api/payments/payos`             | Tạo đơn QR Banking (PayOS)                   |
 | Payments  | `POST /api/payments/casso/webhook`     | Casso IPN webhook callback                   |
 | Tickets   | `GET /api/tickets/:bookingId/pdf`       | Tải vé PDF                                   |
 | Tickets   | `POST /api/tickets/:bookingId/email`    | Gửi vé qua email                             |
@@ -490,9 +489,6 @@ EMAIL_PASS=                 # Gmail App Password
 MOMO_PARTNER_CODE=
 MOMO_ACCESS_KEY=
 MOMO_SECRET_KEY=
-PAYOS_CLIENT_ID=
-PAYOS_API_KEY=
-PAYOS_CHECKSUM_KEY=
 VAPID_PUBLIC_KEY=           # Web Push VAPID key
 VAPID_PRIVATE_KEY=
 ```
@@ -514,7 +510,7 @@ VITE_API_URL=http://localhost:5000/api
 | Local FE    | localhost         | http://localhost:5173                            |
 | Local BE    | localhost         | http://localhost:5000                            |
 
-> BE chạy local và expose ra internet qua **ngrok** để nhận IPN webhook callback từ PayOS / Casso.  
+> BE chạy local và expose ra internet qua **ngrok** để nhận IPN webhook callback từ Casso.  
 > `SERVER_URL` trong `.env` trỏ đến ngrok URL, cần cập nhật mỗi khi ngrok tunnel restart (free plan đổi URL).
 
 ---
@@ -524,7 +520,7 @@ VITE_API_URL=http://localhost:5000/api
 | Hạng mục                        | Trạng thái                                                        |
 | ------------------------------- | ----------------------------------------------------------------- |
 | Deploy production cloud         | FE trên Vercel. BE chạy local, expose qua ngrok tunnel (chưa deploy lên server thật) |
-| PayOS / Casso                   | Đang dùng **sandbox** / test mode, chưa kết nối production        |
+| Casso                           | Đang dùng test mode, chưa kết nối production                      |
 | App mobile native (iOS/Android) | Chưa có — chỉ có web app (responsive)                             |
 | Đề xuất phim (AI/ML)            | Chưa có                                                           |
 | Đa ngôn ngữ (i18n)              | Chưa có — toàn bộ giao diện bằng tiếng Việt                       |

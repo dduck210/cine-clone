@@ -33,7 +33,6 @@ const bookingSchema = new mongoose.Schema({
     otpExpiry: { type: Date },
     momoTransId: { type: String },
     momoOrderId: { type: String },
-    payosOrderCode: { type: Number },
     refundAmount: { type: Number, default: 0 },
     refundedAt: { type: Date },
     refundReason: { type: String },

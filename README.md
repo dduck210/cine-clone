@@ -44,7 +44,7 @@ cine-clone/
 │   │   ├── movies.js
 │   │   ├── showtimes.js
 │   │   ├── bookings.js
-│   │   ├── payments/            # Momo, PayOS, Casso
+│   │   ├── payments/            # Momo, Casso
 │   │   ├── tickets.js
 │   │   ├── reviews.js
 │   │   ├── vouchers.js
@@ -150,10 +150,6 @@ FRONTEND_URL=http://localhost:5173
 # URL Backend (dùng khi deploy hoặc ngrok)
 SERVER_URL=http://localhost:5000
 
-# PayOS — thanh toán QR Banking (tùy chọn)
-PAYOS_CLIENT_ID=
-PAYOS_API_KEY=
-PAYOS_CHECKSUM_KEY=
 ```
 
 > **Lấy Gmail App Password:** Google Account → Security → 2-Step Verification → App passwords → Tạo mật khẩu cho "Mail"
@@ -433,7 +429,6 @@ Base URL: `http://localhost:5000/api`
 | POST | `/` | Thanh toán (cash, credit_card) |
 | POST | `/momo/create` | Tạo thanh toán Momo |
 | POST | `/momo/ipn` | Webhook Momo callback |
-| POST | `/payos/create` | Tạo QR PayOS |
 | POST | `/casso/webhook` | Webhook Casso |
 
 ### Vé (`/api/tickets`)
@@ -485,7 +480,6 @@ GET /api/health
 | Helmet | Security headers |
 | Express Rate Limit | Chống brute force |
 | Web-push | Push notifications |
-| @payos/node | Tích hợp PayOS |
 
 ### Cron Jobs tự động (chạy nền)
 
