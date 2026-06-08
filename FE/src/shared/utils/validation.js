@@ -11,14 +11,3 @@ export const validatePassword = (v) => {
   if (v.length < 6) return "Mật khẩu phải có ít nhất 6 ký tự";
   return "";
 };
-
-export const validatePhone = (v) => {
-  if (!v) return "";
-  if (!/^[0-9]{10,11}$/.test(v)) return "Số điện thoại không hợp lệ (10-11 số)";
-  return "";
-};
-
-export const validateRequired = (label) => (v) => {
-  if (!v?.toString().trim()) return `${label} không được để trống`;
-  return "";
-};
