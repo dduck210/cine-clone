@@ -15,7 +15,6 @@ import BankTransferPaymentPage from "@/features/payment/pages/BankTransferPaymen
 import PaymentSuccessPage from "@/features/payment/pages/PaymentSuccessPage";
 import MyTicketsPage from "@/features/tickets/pages/MyTicketsPage";
 import TicketPage from "@/features/tickets/pages/TicketPage";
-import TicketViewPage from "@/features/tickets/pages/TicketViewPage";
 import Dashboard from "@/features/admin/pages/Dashboard";
 import LoginPage from "@/features/auth/pages/LoginPage";
 import RegisterPage from "@/features/auth/pages/RegisterPage";
