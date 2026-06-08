@@ -15,11 +15,10 @@ Tài liệu này mô tả toàn bộ kỹ thuật của tích hợp thanh toán 
 7. [processSuccessfulPayment — Side effects](#7-processsuccessfulpayment--side-effects)
 8. [FE Polling](#8-fe-polling)
 9. [Webhook (tùy chọn)](#9-webhook-tùy-chọn)
-10. [SePay — Phương án thay thế](#10-sepay--phương-án-thay-thế)
-11. [Models liên quan](#11-models-liên-quan)
-12. [Cách test](#12-cách-test)
-13. [Troubleshooting](#13-troubleshooting)
-14. [Mở rộng](#14-mở-rộng)
+10. [Models liên quan](#10-models-liên-quan)
+11. [Cách test](#11-cách-test)
+12. [Troubleshooting](#12-troubleshooting)
+13. [Mở rộng](#13-mở-rộng)
 
 ---
 
@@ -77,7 +76,6 @@ FE navigate('/payment-success', state)
 | File | Vai trò |
 |------|---------|
 | `BE/routes/payments/casso.js` | Router chính — status polling + webhook Casso |
-| `BE/routes/payments/sepay.js` | Router phụ — webhook SePay (không dùng polling từ FE) |
 | `BE/app.js` | Mount routes: `app.use('/api/payments/casso', cassoRouter)` |
 | `BE/.env` | Chứa `CASSO_API_KEY` (không commit lên git) |
 | `BE/models/Booking.js` | Model đơn đặt vé — `status: pending/paid/cancelled` |
@@ -269,14 +267,6 @@ Casso gọi webhook này khi phát hiện giao dịch mới. Không yêu cầu a
 
 ---
 
-### `GET /api/payments/sepay/status/:bookingId`
-
-Tương tự Casso status, nhưng không gọi external API — chỉ đọc DB. FE hiện **không dùng** endpoint này (chỉ dùng Casso).
-
-### `POST /api/payments/sepay/webhook`
-
-SePay gọi endpoint này khi phát hiện chuyển khoản. Xác thực qua header `Authorization: Apikey {SEPAY_API_KEY}`.
-
 ---
 
 ## 6. Logic khớp giao dịch
@@ -332,9 +322,9 @@ async function processSuccessfulPayment(bookingId, transactionId, amount) {
     // 2. Tạo Payment record
     const payment = new Payment({
         booking: bookingId,
-        method: 'qr',          // method = 'qr' cho cả Casso và SePay
+        method: 'qr',          // method = 'qr' cho MB Bank (Casso)
         amount,
-        transactionId,          // Casso tid hoặc SePay referenceCode
+        transactionId,          // Casso tid
         status: 'success',
         paymentDate: new Date()
     });
@@ -433,25 +423,7 @@ ngrok http 5000
 
 ---
 
-## 10. SePay — Phương án thay thế
-
-SePay là gateway thay thế cho Casso. Code đã tích hợp sẵn nhưng **FE hiện chỉ dùng Casso**.
-
-| | Casso | SePay |
-|--|-------|-------|
-| Phát hiện giao dịch | FE poll BE → BE poll Casso API | SePay push webhook vào BE |
-| API Key | `CASSO_API_KEY` | `SEPAY_API_KEY` |
-| Endpoint | `GET /api/payments/casso/status/:id` | `POST /api/payments/sepay/webhook` |
-| FE sử dụng | `getCassoStatus()` | Không (hiện tại) |
-
-**Để chuyển sang dùng SePay:**
-1. Thêm `SEPAY_API_KEY` vào `.env`
-2. Cấu hình webhook trong SePay dashboard → URL: `/api/payments/sepay/webhook`
-3. FE có thể poll `/api/payments/sepay/status/:id` thay vì Casso nếu cần
-
----
-
-## 11. Models liên quan
+## 10. Models liên quan
 
 ### Booking
 
@@ -477,9 +449,9 @@ SePay là gateway thay thế cho Casso. Code đã tích hợp sẵn nhưng **FE 
 {
     _id: ObjectId,
     booking: ObjectId,        // ref Booking
-    method: String,           // 'qr' cho MB Bank / SePay; 'momo' cho MoMo; 'cash'
+    method: String,           // 'qr' cho MB Bank (Casso); 'momo' cho MoMo; 'cash'
     amount: Number,
-    transactionId: String,    // Casso tid hoặc SePay referenceCode
+    transactionId: String,    // Casso tid
     status: String,           // 'success' | 'failed' | 'pending'
     paymentDate: Date,
 }
@@ -497,7 +469,7 @@ SePay là gateway thay thế cho Casso. Code đã tích hợp sẵn nhưng **FE 
 
 ---
 
-## 12. Cách test
+## 11. Cách test
 
 ### Test manual (không có CASSO_API_KEY)
 
@@ -542,7 +514,7 @@ curl -X POST http://localhost:5000/api/payments/casso/webhook \
 
 ---
 
-## 13. Troubleshooting
+## 12. Troubleshooting
 
 ### `paid: false` mãi không chuyển sang `paid: true`
 
@@ -595,7 +567,7 @@ Không xảy ra — được xử lý bởi `findOneAndUpdate({ status: 'pending
 
 ---
 
-## 14. Mở rộng
+## 13. Mở rộng
 
 ### Đổi tài khoản ngân hàng khác (không phải MB Bank)
 

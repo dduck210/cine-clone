@@ -44,7 +44,7 @@ cine-clone/
 │   │   ├── movies.js
 │   │   ├── showtimes.js
 │   │   ├── bookings.js
-│   │   ├── payments/            # Momo, PayOS, SePay, Casso
+│   │   ├── payments/            # Momo, PayOS, Casso
 │   │   ├── tickets.js
 │   │   ├── reviews.js
 │   │   ├── vouchers.js
@@ -434,7 +434,6 @@ Base URL: `http://localhost:5000/api`
 | POST | `/momo/create` | Tạo thanh toán Momo |
 | POST | `/momo/ipn` | Webhook Momo callback |
 | POST | `/payos/create` | Tạo QR PayOS |
-| POST | `/sepay/webhook` | Webhook SePay |
 | POST | `/casso/webhook` | Webhook Casso |
 
 ### Vé (`/api/tickets`)
