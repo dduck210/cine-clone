@@ -41,27 +41,6 @@ router.get('/reports/revenue', protect, admin, async (req, res) => {
     }
 });
 
-// GET /api/admin/reports/occupancy
-router.get('/reports/occupancy', protect, admin, async (req, res) => {
-    try {
-        const showtimes = await Showtime.find({ status: 'active' }).populate('movie', 'title');
-        const occupancy = showtimes.map((showtime) => ({
-            showtimeId: showtime._id,
-            movie: showtime.movie?.title,
-            date: showtime.date,
-            startTime: showtime.startTime,
-            occupied: showtime.totalSeats - showtime.availableSeats,
-            total: showtime.totalSeats,
-            percentage: showtime.totalSeats > 0
-                ? ((showtime.totalSeats - showtime.availableSeats) / showtime.totalSeats * 100).toFixed(1)
-                : '0.0',
-        }));
-        res.json(occupancy);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
 // GET /api/admin/reports/top-movies
 router.get('/reports/top-movies', protect, admin, async (req, res) => {
     try {
@@ -131,34 +110,6 @@ router.get('/reports/combo-revenue', protect, admin, async (req, res) => {
         ]);
 
         res.json({ items: result, totalComboRevenue: result.reduce((sum, item) => sum + item.totalRevenue, 0) });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// GET /api/admin/reports/movies-showtime
-router.get('/reports/movies-showtime', protect, admin, async (req, res) => {
-    try {
-        const { date } = req.query;
-        const showtimeFilter = { status: 'active' };
-        if (date) {
-            const currentDate = new Date(date);
-            showtimeFilter.date = {
-                $gte: new Date(currentDate.setHours(0, 0, 0, 0)),
-                $lt: new Date(currentDate.setHours(23, 59, 59, 999)),
-            };
-        }
-
-        const data = await Showtime.aggregate([
-            { $match: showtimeFilter },
-            { $group: { _id: '$movie', showtimeCount: { $sum: 1 }, totalSeats: { $sum: '$totalSeats' }, bookedSeats: { $sum: { $subtract: ['$totalSeats', '$availableSeats'] } } } },
-            { $lookup: { from: 'movies', localField: '_id', foreignField: '_id', as: 'movie' } },
-            { $unwind: '$movie' },
-            { $project: { title: '$movie.title', poster: '$movie.poster', showtimeCount: 1, totalSeats: 1, bookedSeats: 1 } },
-            { $sort: { showtimeCount: -1 } },
-        ]);
-
-        res.json(data);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
