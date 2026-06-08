@@ -106,11 +106,6 @@ const enrichVoucher = (voucher) => {
 
     const usagePercent = (usageLimit !== -1 && usageLimit > 0) ? Math.round((usedCount / usageLimit) * 100) : 0;
 
-    // Principal Engineering: Production-grade Debugging
-    if (process.env.NODE_ENV !== 'test') {
-        console.log(`[Voucher Audit] Code: ${obj.code} | Status: ${status} | Usage: ${usedCount}/${usageLimit} (${usagePercent}%)`);
-    }
-
     return {
         ...obj,
         // Normalized fields for FE (Final Source of Truth)

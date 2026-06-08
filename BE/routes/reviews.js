@@ -158,11 +158,6 @@ router.get('/admin/all', protect, admin, async (req, res) => {
             .sort({ createdAt: -1 })
             .lean();
 
-        console.log(`[Admin Reviews DEBUG] Total from DB: ${rawReviews.length}`);
-        if (rawReviews.length > 0) {
-            console.log(`[Admin Reviews DEBUG] Sample 0: ID=${rawReviews[0]._id}, User=${rawReviews[0].user?.name}, Movie=${rawReviews[0].movie?.title}`);
-        }
-
         // LAYER 2: Transform
         let reviews = rawReviews.map(r => ({
             ...r,
@@ -185,13 +180,7 @@ router.get('/admin/all', protect, admin, async (req, res) => {
         const limitNum = Math.max(1, Number(limit));
         
         // Check if page is out of bounds
-        if ((pageNum - 1) * limitNum >= total && total > 0) {
-            console.log(`[Admin Reviews DEBUG] Page ${pageNum} out of bounds (total: ${total})`);
-        }
-
         const paginated = reviews.slice((pageNum - 1) * limitNum, pageNum * limitNum);
-
-        console.log(`[Admin Reviews DEBUG] Returning ${paginated.length} reviews for page ${pageNum}`);
 
         res.json({
             reviews: paginated,

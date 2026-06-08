@@ -39,7 +39,6 @@ router.post('/emergency-close/rooms', protect, admin, async (req, res) => {
     try {
         await expireShowtimes();
         const { cinemaId, roomIds = [] } = req.body || {};
-        console.log('[admin] Emergency close rooms request for cinema:', cinemaId, 'rooms:', roomIds);
         if (!cinemaId) return res.status(400).json({ message: 'Cinema ID is required' });
         if (!Array.isArray(roomIds) || roomIds.length === 0) {
             return res.status(400).json({ message: 'Select at least one room' });
@@ -59,13 +58,9 @@ router.post('/emergency-close/rooms', protect, admin, async (req, res) => {
         const anyActive = allRooms.some((r) => r.status === 'active');
         if (!anyActive) {
             await Cinema.findByIdAndUpdate(cinemaId, { status: 'incident' });
-            console.log('[admin] Cinema marked incident (all rooms in maintenance):', cinemaId);
         }
 
-        console.log('[admin] Performing DB updates for showtimes count:', showtimes.length);
         const dbResult = await cancelShowtimesDbUpdates(showtimes, 'Phòng chiếu gặp sự cố khẩn cấp');
-
-        console.log('[admin] DB updates done, scheduling background email tasks for paid bookings:', dbResult.paidBookingIds.length);
         (async () => {
             try {
                 for (const paidId of dbResult.paidBookingIds) {
