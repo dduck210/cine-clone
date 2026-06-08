@@ -1,14 +1,5 @@
 import axiosInstance from "../axiosConfig";
 
-export const getOrders = (params) =>
-  axiosInstance.get("/admin/orders", { params }).then((r) => r.data);
-
-export const getOrder = (id) =>
-  axiosInstance.get(`/admin/orders/${id}`).then((r) => r.data);
-
-export const createOrder = (payload) =>
-  axiosInstance.post("/orders", payload).then((r) => r.data);
-
 // Bookings (used in profile and admin)
 export const createBooking = (payload) =>
   axiosInstance.post("/bookings", payload).then((r) => r.data);
