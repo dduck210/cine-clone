@@ -5,7 +5,7 @@ import Footer from "@/shared/components/common/Footer";
 import { createMomoPayment } from "@/api/services/payment-service";
 import { createBooking } from "@/api/services/booking-service";
 import {
-  User, Mail, CheckCircle, MapPin, Calendar, Armchair, Popcorn,
+  User, Mail, MapPin, Calendar, Armchair, Popcorn,
   Ticket, Clock, Tag,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
@@ -46,9 +46,7 @@ const PaymentPage = () => {
   } = location.state || {};
 
   const [paymentMethod, setPaymentMethod] = useState("momo");
-  const [isSuccess, setIsSuccess] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [countdown, setCountdown] = useState(5);
   const [customerInfo, setCustomerInfo] = useState({ name: "", email: "" });
   const [errors, setErrors] = useState({});
 
@@ -121,38 +119,6 @@ const PaymentPage = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-gray-950 font-sans text-slate-900 dark:text-white relative">
       <Navbar />
-
-      {isSuccess && (
-        <div className="fixed inset-0 bg-slate-900/90 z-[90] flex items-start sm:items-center justify-center p-4 pt-6 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white rounded-[32px] shadow-2xl max-w-sm w-full overflow-hidden border border-slate-100 my-auto">
-            <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-8 text-center">
-              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 ring-4 ring-white/30">
-                <CheckCircle className="w-11 h-11 text-white" strokeWidth={2.5} />
-              </div>
-              <h2 className="text-2xl font-black text-white mb-1">Thanh toán thành công!</h2>
-              <p className="text-emerald-100 text-sm font-medium">Vé của bạn đã được xác nhận</p>
-            </div>
-            <div className="p-6 space-y-3">
-              <div className="flex items-center gap-3 bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                <Ticket size={18} className="text-[#dc2626] shrink-0" />
-                <div><p className="text-xs text-slate-400 font-medium">Phim</p><p className="font-bold text-slate-800 text-sm line-clamp-1">{movieTitle}</p></div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100 text-center"><p className="text-xs text-slate-400 font-medium mb-0.5">Suất chiếu</p><p className="font-bold text-slate-800 text-sm">{showTime}</p></div>
-                <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100 text-center"><p className="text-xs text-slate-400 font-medium mb-0.5">Ghế</p><p className="font-bold text-[#dc2626] text-sm">{selectedSeats?.join(", ")}</p></div>
-              </div>
-              <div className="bg-emerald-50 rounded-2xl p-3 border border-emerald-100 flex items-center justify-between">
-                <span className="text-xs text-emerald-700 font-bold uppercase tracking-wide">Tổng tiền</span>
-                <span className="font-black text-emerald-700 text-lg">{finalTotalPrice?.toLocaleString()}đ</span>
-              </div>
-            </div>
-            <div className="px-6 pb-6">
-              <div className="w-full bg-slate-100 rounded-full h-1.5 mb-2"><div className="bg-emerald-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${((5 - countdown) / 5) * 100}%` }} /></div>
-              <p className="text-center text-slate-400 text-xs font-medium">Đang chuyển đến trang vé ({countdown}s)...</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-28 pb-20">
         <div className="mb-12 text-center">

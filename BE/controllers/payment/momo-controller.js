@@ -38,7 +38,7 @@ const createPayment = async (req, res) => {
         booking.expiresAt = new Date(Date.now() + 15 * 60 * 1000);
         await booking.save();
 
-        res.json({ payUrl: data.payUrl, qrCodeUrl: data.qrCodeUrl || null, orderId });
+        res.json({ payUrl: data.payUrl, qrCodeUrl: data.qrCodeUrl || null, deeplink: data.deeplink || null, orderId });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
